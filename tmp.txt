@@ -1,1 +1,2 @@
-./after_work.sh: line 15: ./test.py: No such file or directory
+cp working code to root/xx_tmp
+asda
