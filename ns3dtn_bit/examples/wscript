@@ -2,5 +2,5 @@
 
 def build(bld):
     obj = bld.create_ns3_program('example_01',
-                                 ['', ''])
+                                 ['core', 'ns3dtn_bit'])
     obj.source = 'example_01.cpp'
