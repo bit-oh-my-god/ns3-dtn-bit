@@ -3,7 +3,7 @@
 
 LOG_FILE="/home/dtn-012345/ns-3_build/ns3-dtn-bit/tmp.txt"
 DATE=`date +%Y-%m-%d`
-cp -rf ./ns-allinone-3.25/ns-3.25/src/ns3dtn_bit ./ns3dtn_bit_tmp
+cp -rf ./ns-allinone-3.25/ns-3.25/src/ns3dtn-bit ./ns3dtn-bit_tmp
 echo "${LOG_FILE}---${DATE}"
 echo 'cp working code to root/xx_tmp' 
 #> ${LOG_FILE} 

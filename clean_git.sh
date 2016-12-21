@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DATE=`date +%Y-%m-%d`
-DIR1="./ns3dtn_bit_tmp"
+DIR1="./ns3dtn-bit_tmp"
 DIR2="./ns-allinone-3.25"
 # delete ns-3 source prepare for git
 if [ -d $DIR2 ]; then
