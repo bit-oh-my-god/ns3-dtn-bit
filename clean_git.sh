@@ -4,11 +4,25 @@ DATE=`date +%Y-%m-%d`
 DIR1="./ns3dtn-bit_tmp"
 DIR2="./ns-allinone-3.25"
 # delete ns-3 source prepare for git
-if [ -d $DIR2 ]; then
-    rm -rf $DIR2
-else
-    echo 'no ns3 directory'
-fi
+function deletefuncion {
+    D=$1
+    if [ -d $D ]; then
+        rm -rf $D
+    else
+        echo "no directory named ${D}"
+    fi
+}
+
+while true; do
+    echo 'do you want to clean ns3 folder, it will not be commit by git since the .gitignore file ?'
+    read -p "yes or no\n" yn
+    case $yn in
+        [Yy]* ) deletefuncion "${DIR2}"; break;;
+        [Nn]* ) break;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+
 if [ -d $DIR1 ]; then
     rm -rf ./ns3dtn_bit
     mv $DIR1 ./ns3dtn_bit
