@@ -1,2 +1,0 @@
-cp working code to root/xx_tmp
-asda

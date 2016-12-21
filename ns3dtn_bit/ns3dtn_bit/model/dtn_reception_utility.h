@@ -1,0 +1,5 @@
+#ifndef DTN_RECEPTION_UTILITY_H
+#define DTN_RECEPTION_UTILITY_H 
+
+#endif /* ifndef DTN_RECEPTION_H */
+
