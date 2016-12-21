@@ -1,5 +1,0 @@
-#ifndef DTN_ADAPTOR_BEYOND_BP_H
-#define DTN_ADAPTOR_BEYOND_BP_H 
-
-#endif /* ifndef DTN_ADAPTOR_BEYOND_BP_H */
-
