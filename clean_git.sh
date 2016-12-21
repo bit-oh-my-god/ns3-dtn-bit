@@ -15,11 +15,11 @@ function deletefuncion {
 
 while true; do
     echo 'do you want to clean ns3 folder, it will not be commit by git since the .gitignore file ?'
-    read -p "yes or no\n" yn
+    read -p "yes or no :" yn
     case $yn in
         [Yy]* ) deletefuncion "${DIR2}"; break;;
         [Nn]* ) break;;
-        * ) echo "Please answer yes or no.";;
+        * ) echo "Please answer y or n.";;
     esac
 done
 
@@ -33,4 +33,4 @@ fi
 git add --all
 git commit -m "${DATE} local commit"
 
-echo 'exit'
+echo 'normal exit'
