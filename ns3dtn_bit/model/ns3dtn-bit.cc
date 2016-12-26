@@ -6,6 +6,8 @@ namespace ns3 {
 
     namespace ns3dtnbit {
         
+        void dtnapp::SendHello(uint32_t dstnode_number, uint32_t payload_size) {
+        }
     } /* ns3dtnbit */ 
 /* ... */
 

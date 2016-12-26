@@ -49,6 +49,8 @@
 
 namespace ns3 {
     namespace ns3dtnbit {
+        
+        enum MessageType {BundleType, AppType};
 
         class BPHeader : public Header {
             public :
@@ -58,14 +60,33 @@ namespace ns3 {
                 TypeId GetTypeId() static;
 
                 TypeId GetInstanceTypeId() const;
+
                 uint32_t GetSerializedSize () const;
                 void Serialize (Buffer::Iterator start) const;
                 uint32_t Deserialize (Buffer::Iterator start);
                 void Print (std::ostream &os) const;
 
                 // own stuff
+                MessageType get_message_type();
+                bool is_valid();
+
+                bool operator==(BPHeader const& rh) const;
             private :
+                MessageType message_type_;
+                bool is_valid_;
+
+                uint32_t hop_count_;
+                uint32_t spray_;
+                uint32_t retransmission_count_;
+                Ipv4Address destination_ip_;
+                Ipv4Address original_ip_;
+                uint32_t original_unique_id_;
+                uint32_t bundle_size_;
+                uint32_t src_time_stamp_;
+                uint32_t hop_time_stamp_;
         }; 
+
+        std::ostream& operator<< (std::ostream& os, BPHeader const& rh);
 
         class APHeader : public Header {
             public:
@@ -81,10 +102,14 @@ namespace ns3 {
                 void Print (std::ostream &os) const;
 
                 // own stuff
+                bool operator==(APHeader const& rh) const;
             private:
 
 
         };
+
+        std::ostream& operator<< (std::ostream& os, APHeader const& rh);
+
     } /* ns3dtnbit */ 
 
 } /* ns3 */ 

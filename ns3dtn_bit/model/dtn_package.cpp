@@ -1,4 +1,5 @@
 #include "dtn_package.h"
+#include "ns3/packet.h"
 
 namespace ns3 {
     namespace ns3dtnbit {
@@ -9,14 +10,20 @@ namespace ns3 {
         }
 
         TypeId BPHeader::GetTypeId() {
+            static TypeId tid = TypeId("ns3::ns3dtnbit::BPHeader")
+                .SetParent<Header>()
+                .AddConstructor<BPHeader>();
+            return tid;
 
         }
 
         TypeId BPHeader::GetInstanceTypeId() {
+            return GetTypeId();
 
         }
 
         void BPHeader::Serialize(Buffer::Iterator start) const {
+            start.WriteU8()
 
         }
 
