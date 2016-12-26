@@ -1,7 +1,8 @@
 #include "dtn_package.h"
+#include "ns3/packet.h"
 
 namespace ns3 {
-    namespace ns3dtn_bit {
+    namespace ns3dtnbit {
         NS_OBJECT_ENSURE_REGISTERED(BPHeader);
 
         BPHeader::BPHeader() {
@@ -9,14 +10,20 @@ namespace ns3 {
         }
 
         TypeId BPHeader::GetTypeId() {
+            static TypeId tid = TypeId("ns3::ns3dtnbit::BPHeader")
+                .SetParent<Header>()
+                .AddConstructor<BPHeader>();
+            return tid;
 
         }
 
         TypeId BPHeader::GetInstanceTypeId() {
+            return GetTypeId();
 
         }
 
         void BPHeader::Serialize(Buffer::Iterator start) const {
+            start.WriteU8()
 
         }
 
@@ -61,6 +68,6 @@ namespace ns3 {
         void APHeader::Print(std::ostream& os) const {
 
         }
-    } /* ns3dtn_bit */ 
+    } /* ns3dtnbit */ 
     
 } /* ns3  */ 

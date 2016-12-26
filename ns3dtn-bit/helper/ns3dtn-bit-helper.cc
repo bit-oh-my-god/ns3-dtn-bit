@@ -4,6 +4,10 @@
 
 namespace ns3 {
 
+    namespace ns3dtnbit
+    {
+        
+    } /* ns3dtnbit */ 
 /* ... */
 
 

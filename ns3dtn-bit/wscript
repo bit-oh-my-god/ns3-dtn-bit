@@ -9,6 +9,7 @@
 def build(bld):
     module = bld.create_ns3_module('ns3dtn-bit', ['core'])
     module.source = [
+        'model/dtn_package.cpp',
         'model/ns3dtn-bit.cc',
         'helper/ns3dtn-bit-helper.cc',
         ]
@@ -21,6 +22,7 @@ def build(bld):
     headers = bld(features='ns3header')
     headers.module = 'ns3dtn-bit'
     headers.source = [
+        'model/dtn_package.h',
         'model/ns3dtn-bit.h',
         'helper/ns3dtn-bit-helper.h',
         ]

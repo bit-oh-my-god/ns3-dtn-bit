@@ -27,6 +27,8 @@ The source code for the new module lives in the directory ``src/ns3dtn-bit``.
 
 Add here a basic description of what is being modeled.
 
+this model is gonna to be an simulation implement for bit-dtn project
+
 Design
 ======
 

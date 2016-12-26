@@ -5,6 +5,10 @@
 #include "ns3/ns3dtn-bit.h"
 
 namespace ns3 {
+    namespace ns3dtnbit
+    {
+        
+    } /* ns3dtnbit */ 
 
 /* ... */
 

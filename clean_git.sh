@@ -24,8 +24,8 @@ while true; do
 done
 
 if [ -d $DIR1 ]; then
-    rm -rf ./ns3dtn_bit
-    mv $DIR1 ./ns3dtn_bit
+    rm -rf ./ns3dtn-bit
+    mv $DIR1 ./ns3dtn-bit
 else
     echo 'no tmp directory'
 fi
