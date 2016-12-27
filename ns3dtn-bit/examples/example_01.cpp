@@ -1,3 +1,4 @@
+#include "../model/common_header.h"
 #include "ns3/core-module.h"
 #include "ns3/ns3dtn-bit-module.h"
 #include "ns3/ns3dtn-bit-helper.h"
@@ -35,9 +36,11 @@ namespace ns3 {
     int main() {
         // support c++11
 #if (__cplusplus==201103L)
-        auto test = ns3::ns3dtn_bit::Example_01();
+        auto test = ns3::ns3dtnbit::Example_01();
+        std::cout << "we can use c++11" << std::endl;
 #else 
-        ns3::ns3dtn_bit::Example_01 test();
+        ns3::ns3dtnbit::Example_01 test();
+        std::cout << "we can't use c++11 " << std::endl;
 #endif
 
         if (! test.Configure()) {

@@ -77,13 +77,13 @@ namespace ns3 {
 
                 uint32_t hop_count_;
                 uint32_t spray_;
-                uint32_t retransmission_count_;
+                uint32_t retransmition_count_;
                 Ipv4Address destination_ip_;
                 Ipv4Address original_ip_;
                 uint32_t original_unique_id_;
                 uint32_t bundle_size_;
-                uint32_t src_time_stamp_;
-                uint32_t hop_time_stamp_;
+                dtn_time_t src_time_stamp_;
+                dtn_time_t hop_time_stamp_;
         }; 
 
         std::ostream& operator<< (std::ostream& os, BPHeader const& rh);
