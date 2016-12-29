@@ -44,13 +44,18 @@
 
  * */
 
-#include "common_header.h"
+#include "ns3/enum.h"
 #include "ns3/header.h"
+#include "ns3/ipv4-address.h"
+#include "ns3/nstime.h"
+#include "common_header.h"
 
 namespace ns3 {
     namespace ns3dtnbit {
         
-        enum MessageType {BundleType, AppType};
+        enum BundleType {BundleType_0, BundleType_1};
+
+        enum AppType {App_1, App_2, App_3};
 
         class BPHeader : public Header {
             public :
@@ -67,20 +72,42 @@ namespace ns3 {
                 void Print (std::ostream &os) const;
 
                 // own stuff
-                MessageType get_message_type();
-                bool is_valid();
-
                 bool operator==(BPHeader const& rh) const;
+
+                enum BundleType get_bundle_type() {return bundle_type_;}
+                void set_bundle_type(enum BundleType arg) {bundle_type_ = arg;}
+                bool is_valid() {return is_valid_;}
+                void set_valid(bool arg) {is_valid_ = arg;}
+                uint32_t get_hop_count() {return hop_count_;}
+                void set_hop_count(uint32_t arg) {hop_count_ = arg;}
+                uint32_t get_spray() {return spray_;}
+                void set_spray(uint32_t arg) {spray_ = arg;}
+                uint32_t get_retransmission_count() {return retransmission_count_;}
+                void set_retransmission_count(uint32_t arg) {retransmission_count_ = arg;}
+                Ipv4Address get_destination_ip() {return destination_ip_;}
+                void set_destination_ip(Ipv4Address arg) {destination_ip_ = arg;}
+                Ipv4Address get_source_ip() {return source_ip_;}
+                void set_source_ip(Ipv4Address arg) {source_ip_ = arg;}
+                dtn_id_t get_source_unique_id() {return source_unique_id_;}
+                void set_source_unique_id(dtn_id_t arg) {source_unique_id_ = arg;}
+                uint32_t get_bundle_size() {return bundle_size_;}
+                void set_bundle_size(uint32_t arg) {bundle_size_ = arg;}
+                dtn_time_t get_src_time_stamp() {return src_time_stamp_;}
+                void set_src_time_stamp(dtn_time_t arg) {src_time_stamp_ = arg;}
+                dtn_time_t get_hop_time_stamp() {return src_time_stamp_;}
+                void set_hop_time_stamp(dtn_time_t arg) {hop_time_stamp_ = arg;}
+
             private :
-                MessageType message_type_;
+
                 bool is_valid_;
+                enum BundleType bundle_type_;
 
                 uint32_t hop_count_;
                 uint32_t spray_;
-                uint32_t retransmition_count_;
+                uint32_t retransmission_count_;
                 Ipv4Address destination_ip_;
-                Ipv4Address original_ip_;
-                uint32_t original_unique_id_;
+                Ipv4Address source_ip_;
+                dtn_id_t source_unique_id_;
                 uint32_t bundle_size_;
                 dtn_time_t src_time_stamp_;
                 dtn_time_t hop_time_stamp_;
@@ -103,8 +130,10 @@ namespace ns3 {
 
                 // own stuff
                 bool operator==(APHeader const& rh) const;
+                enum AppType get_app_type() {return ap_type_;}
+                void set_app_type(enum AppType arg) {ap_type_ = arg;}
             private:
-
+                enum AppType ap_type_;
 
         };
 
