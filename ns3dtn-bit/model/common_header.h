@@ -2,7 +2,7 @@
 #define COMMON_HEADER_H 
 
 // this file should be the neck of the header dependent graph
-// every header file should need outside dependent should include this one
+// every header file would need outside dependent should include this one
 // 
 // 
 

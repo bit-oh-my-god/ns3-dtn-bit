@@ -59,6 +59,7 @@ namespace ns3 {
                     vector<dtn_seqnof_t> info_baq_seqnof_vec_;
                     vector<dtn_seqnof_t> info_sent_bp_seqnof_vec_;
                     vector<dtn_seqnof_t> info_sent_ap_seqnof_vec_;
+                    vecotr<dtn_time_t> info_sent_ap_time_vec_;
                 };
                 DtnApp ();
                 virtual ~DtnApp ();
@@ -119,13 +120,16 @@ namespace ns3 {
                 // check your 'bundle queue' buffer and other related buffer periodly
                 // TODO make code refactory to this 
                 void CheckBuffer(enum CheckState check_state);
+                // remove expired baq packet
+                void RemoveExpiredBAQ();
                 // check whether one packet is already in your 'antipacket_queue' 
                 // by check the 'uni seqno number of the packet'
                 bool IsAntipacketExist(Ptr<packet> pkt);
                 // log for analisis
                 void LogPrint();
+
+                void UpdateNeighborInfo(int which_info, int which_neighbor, int which_pkt_index);
                  
-                // interface of retransmission 
                 void ToRetransmission(struct DaemonBundleHeaderInfo bh_info);
                 // if total send bytes > current send bytes
                 void ToSendMore(struct DaemonBundleQueueInfo bh_info);
@@ -176,7 +180,7 @@ namespace ns3 {
                 //vector<vector<dtn_seqnof_t>> neighbor_hello_neighbor_baq_seqnof_vec_; // neighbor_hello_bundles
                 //vector<vector<dtn_seqnof_t>> neighbor_sent_bp_seqnof_vec_; // neighbor_sent_bundle
                 //vector<vector<dtn_seqnof_t>> neighbor_sent_ap_seqnof_vec_; // neighbor_sent_aps
-                //vector<vector<dtn_time_t>> neighbor_sent_time_vec_; // neighbor_sent_ap_when
+                //vector<vector<dtn_time_t>> neighbor_sent_ap_time_vec_; // neighbor_sent_ap_when
                 //
                 // @NeighborInfo
                 vector<struct NeighborInfo> neighbor_info_vec_;

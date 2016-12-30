@@ -88,14 +88,14 @@ namespace ns3 {
                 void set_destination_ip(Ipv4Address arg) {destination_ip_ = arg;}
                 Ipv4Address get_source_ip() {return source_ip_;}
                 void set_source_ip(Ipv4Address arg) {source_ip_ = arg;}
-                dtn_id_t get_source_unique_id() {return source_unique_id_;}
-                void set_source_unique_id(dtn_id_t arg) {source_unique_id_ = arg;}
+                dtn_seqno_t get_source_seqno() {return source_seqno_;}
+                void set_source_seqno(dtn_seqno_t arg) {source_seqno_ = arg;}
                 uint32_t get_bundle_size() {return bundle_size_;}
                 void set_bundle_size(uint32_t arg) {bundle_size_ = arg;}
-                dtn_time_t get_src_time_stamp() {return src_time_stamp_;}
-                void set_src_time_stamp(dtn_time_t arg) {src_time_stamp_ = arg;}
-                dtn_time_t get_hop_time_stamp() {return src_time_stamp_;}
-                void set_hop_time_stamp(dtn_time_t arg) {hop_time_stamp_ = arg;}
+                Time get_src_time_stamp() {return Time(MilliSeconds(src_time_stamp_));}
+                void set_src_time_stamp(Time arg) {src_time_stamp_ = arg.GetMilliSeconds();}
+                Time get_hop_time_stamp() {return Time(MilliSeconds(hop_time_stamp_));}
+                void set_hop_time_stamp(Time arg) {hop_time_stamp_ = arg.GetMilliSeconds();}
 
             private :
 
@@ -107,7 +107,7 @@ namespace ns3 {
                 uint32_t retransmission_count_;
                 Ipv4Address destination_ip_;
                 Ipv4Address source_ip_;
-                dtn_id_t source_unique_id_;
+                dtn_seqno_t source_seqno_;
                 uint32_t bundle_size_;
                 dtn_time_t src_time_stamp_;
                 dtn_time_t hop_time_stamp_;
