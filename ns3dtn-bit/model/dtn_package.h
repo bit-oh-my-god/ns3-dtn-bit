@@ -53,9 +53,15 @@
 namespace ns3 {
     namespace ns3dtnbit {
         
-        enum BundleType {BundleType_0, BundleType_1};
+        enum BundleType {BundlePacket, AntiPacket};
 
         enum AppType {App_1, App_2, App_3};
+
+        // use this to check bp_headers //TODO
+        struct BPHeaderID {
+            Ipv4Address source_ip_;
+            dtn_seqno_t source_sequence_no_;
+        }
 
         class BPHeader : public Header {
             public :
@@ -115,9 +121,9 @@ namespace ns3 {
 
         std::ostream& operator<< (std::ostream& os, BPHeader const& rh);
 
-        class APHeader : public Header {
+        class AppHeader : public Header {
             public:
-                APHeader ();
+                AppHeader ();
                 // inherited items
                 //    // redefine GetTypeId()
                 TypeId GetTypeId() static;
@@ -133,7 +139,7 @@ namespace ns3 {
                 enum AppType get_app_type() {return ap_type_;}
                 void set_app_type(enum AppType arg) {ap_type_ = arg;}
             private:
-                enum AppType ap_type_;
+                enum AppType app_type_;
 
         };
 

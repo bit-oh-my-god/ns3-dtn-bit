@@ -22,11 +22,13 @@
                     while one utility name of ns-3 is also called 'packet'.
                     bp fragment specification[ref](https://tools.ietf.org/html/rfc5050#page-32)
                 c. we should implement prophet router which is dependent on dynamic neighbor discovery //TODO
-                d. size of pkt header, bytes of buffer queue
+                d. size of pkt header, bytes of buffer queue, 
                 e. baq means bundle and antipacket queue
                 f. every header has a source unique id, which can be used to identify one header, under the assitance of source addr
                 g. how 'dtn.cc' updates 'neighbor_sent_aps'? why? //TODO
-                        
+                j. what is the usage of antipacket ? // TODO
+                k. when talk about seqnof in neighbor info context, negative means this bpheader is sent from this node and received at neighbor, but in original code, the negative sign aways come with antipacket? // TODO
+                l. we don't need congestion control
 
 * Develpment Annoucement
 

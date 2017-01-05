@@ -74,34 +74,34 @@ namespace ns3 {
             << std::endl;
         }
 
-        // APHeader
-        NS_OBJECT_ENSURE_REGISTERED(APHeader);
+        // AppHeader
+        NS_OBJECT_ENSURE_REGISTERED(AppHeader);
 
-        APHeader::APHeader() {
-
-        }
-
-        TypeId APHeader::GetTypeId() {
+        AppHeader::AppHeader() {
 
         }
 
-        TypeId APHeader::GetInstanceTypeId() const {
+        TypeId AppHeader::GetTypeId() {
+
+        }
+
+        TypeId AppHeader::GetInstanceTypeId() const {
 
         }
         
-        void APHeader::Serialize(Buffer::Iterator start) const {
+        void AppHeader::Serialize(Buffer::Iterator start) const {
 
         }
 
-        uint32_t APHeader::Deserialize(Buffer::Iterator start) const {
+        uint32_t AppHeader::Deserialize(Buffer::Iterator start) const {
 
         }
 
-        uint32_t APHeader::GetSerializedSize() const {
+        uint32_t AppHeader::GetSerializedSize() const {
 
         }
 
-        void APHeader::Print(std::ostream& os) const {
+        void AppHeader::Print(std::ostream& os) const {
 
         }
     } /* ns3dtnbit */ 

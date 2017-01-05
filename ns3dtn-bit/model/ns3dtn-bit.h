@@ -34,8 +34,7 @@ namespace ns3 {
                 enum CheckState {
                     State_0,
                     State_1,
-                    State_2,
-                    State_3
+                    State_2
                 };
 
                 struct DaemonBundleQueueInfo {
@@ -52,6 +51,15 @@ namespace ns3 {
                     dtn_seqno_t info_source_seqno_;
                 };
 
+                struct DaemonTransmissionInfo {
+                    uint32_t info_transmission_received_bytes_;
+                    uint32_t info_transmission_total_send_bytes_;
+                    uint32_t info_transmission_current_sent_bytes_;
+                    dtn_time_t info_transmission_bundle_first_sent_time_;
+                    dtn_time_t info_transmission_bundle_last_sent_time_;
+                    uint32_t info_transmission_bundle_last_sent_bytes_;
+                };
+
                 struct NeighborInfo {
                     InetSocketAddress info_address_;
                     uint32_t info_daemon_baq_available_bytes_;
@@ -61,6 +69,7 @@ namespace ns3 {
                     vector<dtn_seqnof_t> info_sent_ap_seqnof_vec_;
                     vecotr<dtn_time_t> info_sent_ap_time_vec_;
                 };
+
                 DtnApp ();
                 virtual ~DtnApp ();
                 // setup
@@ -90,15 +99,14 @@ namespace ns3 {
                 // the interface of bp ip neighbor discovery functionality
                 // broadcast, 
                 // notify msg : how many bytes you can receive
-                // find mincount packet in daemon_bundle_send_buffer_queue_
-                // enqueue it into daemon_bundle_queue_ and 
+                // reorder the packet sequence with daemon_hello_send_buffer_queue_ then
                 // notify msg : how many bundle you already have
                 // notyfy msg : the source unique seqno of all pkt in queue and all in antiqueue
                 // then use this msg to send 'socket raw packet' without header really ? // TODO
                 void ToSendHello(Ptr<Socket> socket, double simulation_end_time, Time hello_interval, bool hello_right_now_boolean);
                 // check addr of hello pkt, if new neighbor create new one
                 // then update neighbor_daemon_baq_avilable_bytes_ & neighbor_hello_neighbor_baq_seqno_vec_
-                void ReceiveHello();
+                void ReceiveHello(Ptr<Socket> socket_handle);
 
                 // *******************
                 // the interface of bp cancellation functionality
@@ -112,16 +120,16 @@ namespace ns3 {
 
             private :
 
-                void ToSendBundleDetail();
-                void ReceiveBundleDetail();
-
+                void ReorderDaemonBundleQueueDetail();
+                void CreateHelloBundleAndSendDetail(string msg_str);
+                void CreateSocketDetail();
+                void RemoveExpiredBAQDetail();
+                void SocketSendDetail(Ptr<Packet> p_pkt, uint32_t flags, const Address& dst_addr);
                 // check whether one packet is already in bundle queue
                 void IsDuplicated(Ptr<packet> pkt, Ptr<Queue> queue);
                 // check your 'bundle queue' buffer and other related buffer periodly
                 // TODO make code refactory to this 
                 void CheckBuffer(enum CheckState check_state);
-                // remove expired baq packet
-                void RemoveExpiredBAQ();
                 // check whether one packet is already in your 'antipacket_queue' 
                 // by check the 'uni seqno number of the packet'
                 bool IsAntipacketExist(Ptr<packet> pkt);
@@ -130,7 +138,7 @@ namespace ns3 {
 
                 void UpdateNeighborInfo(int which_info, int which_neighbor, int which_pkt_index);
                  
-                void ToRetransmission(struct DaemonBundleHeaderInfo bh_info);
+                void ToTransmission(struct DaemonBundleHeaderInfo bh_info);
                 // if total send bytes > current send bytes
                 void ToSendMore(struct DaemonBundleQueueInfo bh_info);
                 // what I want is every real bytes transmission should go through this
@@ -144,7 +152,7 @@ namespace ns3 {
                 // data *********
                 uint32_t bundles_count_; // bundles
                 uint32_t drops_count_; // drops
-                double congestion_control_parameter_; //t_c
+                double congestion_control_parameter_ = 1.0; //t_c     // will only works when enable Dynamic congestion control
                 Ptr<Node> node_; // m_node
                 enum RunningFlag running_flag_; // m_running
                 enum RoutingMethod routing_method_; // rp
@@ -157,9 +165,9 @@ namespace ns3 {
                 uint32_t daemon_queue_bytes_max_; // b_s   
                 Ptr<Queue> daemon_antipacket_queue_; //m_antipacket_queue
                 Ptr<Queue> daemon_mac_queue_; // mac_queue
-                Ptr<Queue> daemon_bundle_send_buffer_queue_; // m_help_queue
-                vector<Packet> daemon_new_packet_buffer_vec_; // newpkt
-                vector<Packet> daemon_retransmission_packet_buffer_vec_; // retxpkt
+                Ptr<Queue> daemon_hello_send_buffer_queue_; // m_help_queue
+                vector<Ptr<Packet>> daemon_new_packet_buffer_vec_; // newpkt
+                vector<Ptr<Packet>> daemon_retransmission_packet_buffer_vec_; // retxpkt
                 // daemon bundle queue, this is where "store and forward" semantic stores
                 Ptr<Queue> daemon_bundle_queue_; // m_queue
                 //vector<uint32_t> daemon_bundle_queue_size_vec_; // bundle_size
@@ -172,7 +180,7 @@ namespace ns3 {
                 vector<struct DaemonBundleQueueInfo> daemon_bundle_queue_info_vec_;
 
                 // neighbor
-                uint32_t neighbor_count_; // neighbors
+                //uint32_t neighbor_count_; // neighbors  // we don't need it since we can do neighbor_info_vec_.size()
                 //vector<InetSocketAddress> neighbor_address_vec_; // neighbor_address
                 //// baq means bundle and antipacket queue
                 //vector<uint32_t> neighbor_daemon_baq_avilable_bytes_; // b_a     
@@ -185,10 +193,16 @@ namespace ns3 {
                 // @NeighborInfo
                 vector<struct NeighborInfo> neighbor_info_vec_;
 
-                // retransmission and transmitiion
-                vector<uint32_t> daemon_transmission_receive_bytes_vec_; // currentServerRxBytes
-                vector<uint32_t> daemon_transmission_send_total_bytes_vec_; // TotalTxBytes 
-                vector<uint32_t> daemon_transmission_current_sent_bytes_vec_; // currentTxBytes
+                // retransmission and transmission
+                vector<uint32_t> daemon_receive_bytes_vec_; // currentServerRxBytes
+                //vector<uint32_t> daemon_transmission_send_total_bytes_vec_; // TotalTxBytes 
+                //vector<uint32_t> daemon_transmission_current_sent_bytes_vec_; // currentTxBytes
+                //vector<dtn_time_t> daemon_transmission_bundle_first_sent_time_vec_; // firstsendtime
+                //vector<dtn_time_t> daemon_transmission_bundle_last_sent_time_vec_; // lastsendtime
+                //vector<uint32_t> daemon_transmission_bundle_last_sent_bytes_vec_; // lastTxBytes
+                //
+                // @DaemonTransmissionInfo
+                vector<struct DaemonTransmissionInfo> daemon_transmission_info_vec_;
                 uint32_t daemon_flow_count_; // NumFlows
                 //vector<InetSocketAddress> daemon_bh_des_address_vec_; // sendTos
                 //vector<uint32_t> daemon_bh_retransmission_count_vec_; // retxs
@@ -196,16 +210,8 @@ namespace ns3 {
                 // 
                 // @DaemonBundleHeaderInfo
                 vector<struct DaemonBundleHeaderInfo> daemon_sent_bh_info_vec_;
-                vector<dtn_time_t> bundle_first_sent_time_vec_; // firstsendtime
-                vector<dtn_time_t> bundle_last_sent_time_vec_; // lastsendtime
-                vector<uint32_t> bundle_last_sent_bytes_vec_; // lastTxBytes
-
         };
-
     } /* ns3dtnbit */ 
-
-
 }
 
 #endif /* NS3DTN_BIT_H */
-
