@@ -53,9 +53,7 @@
 namespace ns3 {
     namespace ns3dtnbit {
         
-        enum BundleType {BundlePacket, AntiPacket};
-
-        enum AppType {App_1, App_2, App_3};
+        enum BundleType {BundlePacket, AntiPacket, HelloPacket, TransmissionAck};
 
         // use this to check bp_headers //TODO
         struct BPHeaderID {
@@ -77,9 +75,10 @@ namespace ns3 {
                 uint32_t Deserialize (Buffer::Iterator start);
                 void Print (std::ostream &os) const;
 
-                // own stuff
+                // own stuff *********
                 bool operator==(BPHeader const& rh) const;
 
+                // assuming that different BundleType has different payload size, and payload size themselves could be different TODO
                 enum BundleType get_bundle_type() {return bundle_type_;}
                 void set_bundle_type(enum BundleType arg) {bundle_type_ = arg;}
                 bool is_valid() {return is_valid_;}
@@ -96,8 +95,8 @@ namespace ns3 {
                 void set_source_ip(Ipv4Address arg) {source_ip_ = arg;}
                 dtn_seqno_t get_source_seqno() {return source_seqno_;}
                 void set_source_seqno(dtn_seqno_t arg) {source_seqno_ = arg;}
-                uint32_t get_bundle_size() {return bundle_size_;}
-                void set_bundle_size(uint32_t arg) {bundle_size_ = arg;}
+                uint32_t get_payload_size() {return payload_size_;}
+                void set_payload_size_(uint32_t arg) {payload_size_ = arg;}
                 Time get_src_time_stamp() {return Time(MilliSeconds(src_time_stamp_));}
                 void set_src_time_stamp(Time arg) {src_time_stamp_ = arg.GetMilliSeconds();}
                 Time get_hop_time_stamp() {return Time(MilliSeconds(hop_time_stamp_));}
@@ -114,13 +113,14 @@ namespace ns3 {
                 Ipv4Address destination_ip_;
                 Ipv4Address source_ip_;
                 dtn_seqno_t source_seqno_;
-                uint32_t bundle_size_;
+                uint32_t payload_size_;
                 dtn_time_t src_time_stamp_;
                 dtn_time_t hop_time_stamp_;
         }; 
 
         std::ostream& operator<< (std::ostream& os, BPHeader const& rh);
 
+        // this AppHeader is going to be useless
         class AppHeader : public Header {
             public:
                 AppHeader ();
@@ -134,7 +134,7 @@ namespace ns3 {
                 uint32_t Deserialize (Buffer::Iterator start);
                 void Print (std::ostream &os) const;
 
-                // own stuff
+                // own stuff *******
                 bool operator==(APHeader const& rh) const;
                 enum AppType get_app_type() {return ap_type_;}
                 void set_app_type(enum AppType arg) {ap_type_ = arg;}

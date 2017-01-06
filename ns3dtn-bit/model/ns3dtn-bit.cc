@@ -25,7 +25,7 @@ namespace ns3 {
                             drops_count_ = 0;
                         }
                     }
-                    int32_t tmp_number = ((daemon_bundle_queue_->GetSize() + daemon_antipacket_queue_->GetSize()) - (dtn_seqnof_t)(congestion_control_parameter_ * daemon_queue_bytes_max_));
+                    int32_t tmp_number = ((daemon_bundle_queue_->GetSize() + daemon_antipacket_queue_->GetSize()) - (dtn_seqnof_t)(congestion_control_parameter_ * daemon_baq_bytes_max_));
                     if (tmp_number <= 0) {
                         sprintf(tmp_msg_00, "%d", 0);
                     } else {
@@ -68,6 +68,7 @@ namespace ns3 {
                         }
                         daemon_antipacket_queue_->Enqueue(p_pkt);
                     }
+                    // this call would use msg.str() as the 'hello content'
                     CreateHelloBundleAndSendDetail(msg.str());
                     Simulator::Schedule(Seconds(0.1), &DtnApp::ToSendHello, this, socket, simulation_end_time, Seconds(HI_TIME), true);
                 }
@@ -91,12 +92,11 @@ namespace ns3 {
                 }
                 neighbor_info_vec_[j].info_last_seen_time_ = Simulator::Now().GetSeconds();
                 neighbor_info_vec_[j].info_baq_seqnof_vec_ = vector<dtn_seqnof_t>(HNBAQ_MAX, 0);
-                uint8_t* msg = new uint8_t[p_pkt->GetSize() + 1];
-                p_pkt->CopyData(msg, p_pkt->GetSize());
-                msg[p_pkt->GetSize()] = "\0";
+                std::string msg;
+                // this call would abstract 'hello content' from p_pkt
+                ReceiveHelloBundleDetail(p_pkt, msg);
                 // dangerous cast, but it's ok here
-                const char* p_char_raw_pkt = std::reinterpret_cast<const char*>(msg);
-                std::stringstream pkt_str_stream = std::stringstream(std::string(p_char_raw_pkt));
+                std::stringstream pkt_str_stream = std::stringstream(msg);
                 do {
                     // parse raw content of pkt
                     int pkt_avilable_bytes;
@@ -127,98 +127,104 @@ namespace ns3 {
                         }
                     }
                 } while (0);
-                delete msg;
             }
         }
         
-        //implement TODO
-        void DtnApp::CreateHelloBundleAndSendDetail(string msg_str) {
-
+        void DtnApp::ToSendBundle(uint32_t dstnode_number, uint32_t payload_size) {
+            Ptr<Packet> p_pkt;
+            BPHeader bp_header;
+            do {
+                // fill up bp_header TODO
+            } while (0);
+            p_pkt->AddHeader(bp_header);
+            if ((daemon_antipacket_queue_->GetNBytes() + daemon_bundle_queue_->GetNBytes + p_pkt->GetNBytes() <= daemon_baq_bytes_max_)) {
+                daemon_bundle_queue_->Enqueue(p_pkt);
+                // NORMAL LOG TODO
+            } else {
+                // ERROR LOG TODO
+            }
         }
 
-        // implement TODO
-        void DtnApp::ReorderDaemonBundleQueueDetail() {
-
+        /* implement TODO
+         * create and fill up antipacket-bundle then enqueue
+         */
+        void ToSendAntipacketBundle(Ipv4Address srcaddr, Ipv4Address dstaddr, dtn_seqno_t bundle_seqno, dtn_time_t src_time_stamp) {
+            int anti_packet_payload_size;
+            char* anti_packet_payload_buffer;
+            do {
+                // fill up buffer
+            } while (0);
+            Ptr<Packet> p_pkt = Create<Packet>(anti_packet_payload_buffer, anti_packet_payload_size);
+            BPHeader bp_header;
+            do {
+                // fill up bp_header
+            } while (0);
+            p_pkt->AddHeader(bp_header);
+            daemon_antipacket_queue_->Enqueue(p_pkt);
+            do {
+                // LOG TODO
+            } while (0);
         }
-
-        void DtnApp::RemoveExpiredBAQDetail() {
-            uint32_t pkt_number = 0, n = 0;
-            // remove expired bundle queue packets
-            pkt_number = daemon_bundle_queue_->GetNPackets();
-            for (int i = 0; i < pkt_number; ++i) {
-                Ptr<Packet> p_pkt = daemon_bundle_queue_->Dequeue();
-                BPHeader bp_header();
-                p_pkt->RemoveHeader(bp_header);
-                //if not expired
-                if (((Simulator::Now().GetSeconds() - bp_header.get_src_time_stamp()) < 750.0) || (bp_header.get_hop_count() == 0)) {
-                    p_pkt->AddHeader(bp_header);
-                    daemon_bundle_queue_->Enqueue(p_pkt);
+          
+        /* implement TODO
+         *     'ack bundle' : call 'sendmore' to send more(if have more) to the 'ack sender'
+         *     'not ack bundle' : send a 'ack bundle', then get the information in that pkt
+         *         'hello packet'
+         *         'normal bundle'
+         *         'antipacket bundle'
+         */
+        void ReceiveBundle(Ptr<socket> socket) {
+            Address own_addr;
+            socket->GetSockName(own_addr);
+            InetSocketAddress own_s_addr = InetSocketAddress::ConvertFrom(own_addr);
+            while (socket->GetRxAvailable() > 0) {
+                Address from_addr;
+                Ptr<Packet> p_pkt = socket->RecvFrom(from_addr);
+                InetSocketAddress from_s_addr = InetSocketAddress::ConvertFrom(from_addr);
+                if () {
+                    // if is 'ack' call 'send more'
                 } else {
-                    for (int j = 0; j < neighbor_count_; j++) {
-                        int m = 0, found_expired = 0;
-                        while (m < HNBAQ_MAX && found_expired == 0) {
-                            // hop count equals zero means that it came from a neighbor
-                            if (bp_header.get_source_seqno() == neighbor_info_vec_[j].info_sent_bp_seqnof_vec_[m]) {
-                                found_expired = 1;
-                            } else {
-                                m++;
-                            }
-                            if (found_expired == 1) {
-                                UpdateNeighborInfo(1, n, j);
-                            }
-                        }
-                    }
+                    // if not, send 'ack'
+                }
+                if () {
+                    // if this bundle is already recorded in daemon_reception_info_vec_
+                } else {
+                    // if not recorded
+                }
+                // keep receiving and check order of fragment, add new fragment to 'daemon_reception_packet_buffer_vec_'
+                // when all fragment received, parse this packet, deal with it
+            }
+        }
+
+        /*implement TODO
+         */
+        void ToTransmit(struct DaemonBundleHeaderInfo bh_info) {
+            bool index_found = false;
+            int index = 0;
+            while ((!index_found) && (index < daemon_flow_count_)) {
+                // use bh_info to find the index of 'transmit bundle' to 'daemon_transmission_info_vec_'
+                if () {
+                    index_found = true;
+                } else {
+                    index++;
                 }
             }
-            // remove expired antipacket queue packets
-            pkt_number = daemon_antipacket_queue_->GetNPackets();
-            for (int i = 0; i < pkt_number; ++i) {
-                Ptr<Packet> p_pkt = daemon_antipacket_queue_->Dequeue();
-                BPHeader bp_header();
-                p_pkt->RemoveHeader(bp_header);
-                assert(bp_header.get_bundle_type() == Antipacket);
-                // if not expired
-                if ((Simulator::Now().GetSeconds() - bp_header.get_src_time_stamp().GetSeconds() < 1000.0)) {
-                    p_pkt->AddHeader(bp_header);
-                    daemon_antipacket_queue_->Enqueue(p_pkt);
+            if (!index_found) {
+
+            } else {
+                if (daemon_transmission_info_vec_[index].info_transmission_current_sent_bytes_ < daemon_transmission_info_vec_[index].info_transmission_total_send_bytes_) {
+                    // total > current, you should send more
+
                 } else {
-                    for (int j = 0; j < neighbor_count_; j++) {
-                        int k = 0, found_expired = 0;
-                        while (k < HNBAQ_MAX && found_expired == 0) {
-                            if (bp_header.get_source_seqno == - NeighborInfo[j].info_sent_ap_seqnof_vec_[k]) {
-                                found_expired = 1;
-                                k++;
-                            }
-                            if (found_expired == 1) {
-                                UpdateNeighborInfo(2, j, k);
-                                UpdateNeighborInfo(3, j, k);
-                            }
-                        }
-                    }
+                    daemon_transmission_info_vec_[index].info_transmission_bundle_last_sent_bytes_ = 0;
                 }
             }
         }
 
-        void DtnApp::UpdateNeighborInfo(int which_info, int which_neighbor, int which_pkt_index) {
-            switch (which_info) {
-                case 0 : {
-                // info_baq_seqnof_vec_
-                             break;
-                         }
-                case 1 : {
-                         // info_sent_bp_seqnof_vec_
-                             break;
-                         }
-                case 2 : {
-                         // info_sent_ap_seqnof_vec_
-                             break;
-                         }
-                case 3 : {
-                         // info_sent_ap_time_vec_
-                             break;
-                         }
-                default : break;
-            }
+        /* implement TODO
+         */
+        void ToSendMore() {
+
         }
 
         void DtnApp::CheckBuffer(CheckState check_state) {
@@ -376,7 +382,7 @@ namespace ns3 {
                             bp_header.get_source_seqno(),
                             bp_header.get_retransmission_count()
                     }
-                    daemon_sent_bh_info_vec_.push_back(tmp_header_info);
+                    daemon_transmission_bh_info_vec_.push_back(tmp_header_info);
                     struct DaemonTransmissionInfo tmp_transmission_info {
                         p_pkt->GetSize(),
                             std::min(TS_MAX, p_pkt->GetSize()),
@@ -425,7 +431,42 @@ namespace ns3 {
             }
         }
 
-        // should handle more condition // TODO
+        void DtnApp::UpdateNeighborInfo(int which_info, int which_neighbor, int which_pkt_index) {
+            switch (which_info) {
+                case 0 : {
+                // info_baq_seqnof_vec_
+                             break;
+                         }
+                case 1 : {
+                         // info_sent_bp_seqnof_vec_
+                             break;
+                         }
+                case 2 : {
+                         // info_sent_ap_seqnof_vec_
+                             break;
+                         }
+                case 3 : {
+                         // info_sent_ap_time_vec_
+                             break;
+                         }
+                default : break;
+            }
+        }
+
+        /*implement TODO
+         */
+        void DtnApp::ReceiveHelloBundleDetail(Ptr<Packet> p_pkt, std::string& msg_str) {
+
+        }
+
+        /*implement TODO
+         */
+        void DtnApp::ReceiveBundleDetail() {
+
+        }
+
+        /* should handle more condition // TODO
+         */
         bool DtnApp::SocketSendDetail(Ptr<Packet> p_pkt, uint32_t flags, const Address& dst_addr) {
             int result = daemon_socket_handle_.SendTo(p_pkt, flags, dst_addr);
             return result != -1 ? true : false;
@@ -438,7 +479,78 @@ namespace ns3 {
             InetSocketAddress local = InetSocketAddress(ipaddr, PORT_NUMBER);
             daemon_socket_handle_->Bind(local);
         }
-    } /* ns3dtnbit */ 
+
+        /* implement TODO
+         */
+        void DtnApp::ReorderDaemonBundleQueueDetail() {
+
+        }
+ 
+        /* implement TODO
+         * create and fill up then send
+         */
+        void DtnApp::CreateHelloBundleAndSendDetail(string msg_str) {
+
+        }
+
+        void DtnApp::RemoveExpiredBAQDetail() {
+            uint32_t pkt_number = 0, n = 0;
+            // remove expired bundle queue packets
+            pkt_number = daemon_bundle_queue_->GetNPackets();
+            for (int i = 0; i < pkt_number; ++i) {
+                Ptr<Packet> p_pkt = daemon_bundle_queue_->Dequeue();
+                BPHeader bp_header();
+                p_pkt->RemoveHeader(bp_header);
+                //if not expired
+                if (((Simulator::Now().GetSeconds() - bp_header.get_src_time_stamp()) < 750.0) || (bp_header.get_hop_count() == 0)) {
+                    p_pkt->AddHeader(bp_header);
+                    daemon_bundle_queue_->Enqueue(p_pkt);
+                } else {
+                    for (int j = 0; j < neighbor_count_; j++) {
+                        int m = 0, found_expired = 0;
+                        while (m < HNBAQ_MAX && found_expired == 0) {
+                            // hop count equals zero means that it came from a neighbor
+                            if (bp_header.get_source_seqno() == neighbor_info_vec_[j].info_sent_bp_seqnof_vec_[m]) {
+                                found_expired = 1;
+                            } else {
+                                m++;
+                            }
+                            if (found_expired == 1) {
+                                UpdateNeighborInfo(1, n, j);
+                            }
+                        }
+                    }
+                }
+            }
+            // remove expired antipacket queue packets
+            pkt_number = daemon_antipacket_queue_->GetNPackets();
+            for (int i = 0; i < pkt_number; ++i) {
+                Ptr<Packet> p_pkt = daemon_antipacket_queue_->Dequeue();
+                BPHeader bp_header();
+                p_pkt->RemoveHeader(bp_header);
+                assert(bp_header.get_bundle_type() == Antipacket);
+                // if not expired
+                if ((Simulator::Now().GetSeconds() - bp_header.get_src_time_stamp().GetSeconds() < 1000.0)) {
+                    p_pkt->AddHeader(bp_header);
+                    daemon_antipacket_queue_->Enqueue(p_pkt);
+                } else {
+                    for (int j = 0; j < neighbor_count_; j++) {
+                        int k = 0, found_expired = 0;
+                        while (k < HNBAQ_MAX && found_expired == 0) {
+                            if (bp_header.get_source_seqno == - NeighborInfo[j].info_sent_ap_seqnof_vec_[k]) {
+                                found_expired = 1;
+                                k++;
+                            }
+                            if (found_expired == 1) {
+                                UpdateNeighborInfo(2, j, k);
+                                UpdateNeighborInfo(3, j, k);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+   } /* ns3dtnbit */ 
     /* ... */
 }
 

@@ -33,8 +33,9 @@ namespace ns3 {
         using std::vector;
         
         using dtn_time_t = uint32_t;
-        // dtn_seqnof_t is used with sign, eg. -(seqno2003) means giving out while (seqno2003) means receiving
-        // Important ! most time the author only check the sequno but not the IP address //TODO
+        /* dtn_seqnof_t is used with sign, eg. -(seqno2003) means giving out while (seqno2003) means receiving
+         * Important ! most time the author only check the sequno but not the IP address //TODO
+         */
         using dtn_seqnof_t = int32_t;
         using dtn_seqno_t = uint32_t;
     } /* ns3dtnbit */ 
