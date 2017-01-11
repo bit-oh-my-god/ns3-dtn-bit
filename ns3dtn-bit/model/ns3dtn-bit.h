@@ -35,25 +35,30 @@ namespace ns3 {
                     State_2
                 };
 
-                struct DaemonReceiveInfo {
+                struct DaemonReceptionInfo {
                     uint32_t info_daemon_received_bytes_;
                     uint32_t info_bundle_should_receive_bytes_;
-                    dtn_time_t info_bundle_time_stamp_;
+                    dtn_time_t info_last_received_time_stamp_;
+                    Ipv4Address info_bundle_source_ip_;
+                    Ipv4Address info_bundle_destination_ip_;
                     dtn_seqno_t info_bundle_seqno_;
-                    InetSocketAddress info_bundle_addr_;
+                    Ipv4Address info_trasmission_receive_from_ip_;
                     BundleType info_bundle_type_;
+                    vector<Ptr<Packet>> info_fragment_pkt_pointer_vec_;
                 };
 
                 struct DaemonBundleHeaderInfo {
                     InetSocketAddress info_dest_addr_;
-                    uint32_t info_retransmission_count_;
+                    uint32_t info_retransmission_count_ = 0;
                     dtn_seqno_t info_source_seqno_;
+                    bool operator==(struct DaemonBundleHeaderInfo const& rhs) {
+                        return (info_dest_addr_ == rhs.info_dest_addr_ && info_retransmission_count_ == rhs.info_retransmission_count_ && info_source_seqno_ == rhs.info_source_seqno_);
+                    }
                 };
 
                 struct DaemonTransmissionInfo {
-                    uint32_t info_transmission_received_bytes_;
                     uint32_t info_transmission_total_send_bytes_;
-                    uint32_t info_transmission_current_sent_bytes_;
+                    uint32_t info_transmission_current_sent_acked_bytes_;
                     dtn_time_t info_transmission_bundle_first_sent_time_;
                     dtn_time_t info_transmission_bundle_last_sent_time_;
                     uint32_t info_transmission_bundle_last_sent_bytes_;
@@ -63,9 +68,9 @@ namespace ns3 {
                     InetSocketAddress info_address_;
                     uint32_t info_daemon_baq_available_bytes_;
                     dtn_time_t info_last_seen_time_;
-                    vector<dtn_seqnof_t> info_baq_seqnof_vec_;
-                    vector<dtn_seqnof_t> info_sent_bp_seqnof_vec_;
-                    vector<dtn_seqnof_t> info_sent_ap_seqnof_vec_;
+                    vector<dtn_seqno_t> info_baq_seqno_vec_;
+                    vector<dtn_seqno_t> info_sent_bp_seqno_vec_;
+                    vector<dtn_seqno_t> info_sent_ap_seqno_vec_;
                     vecotr<dtn_time_t> info_sent_ap_time_vec_;
                 };
 
@@ -119,47 +124,28 @@ namespace ns3 {
                  */
                 void ToSendAntipacketBundle(Ipv4Address scraddr,Ipv4Address dstaddr, dtn_seqno_t bundle_seqno, dtn_time_t src_time_stamp);
                 
-                /* this func would be invoked only in ReceiveBundle()
-                 * it would find the pkt in daemon_bundle_queue_, then dequeue it 
-                 * and update neighbor_sent_bp_seqno_vec_ & daemon_transmission_bh_info_vec_
-                 */
-                void RemoveBundle(Ptr<Packet> pkt);
 
             private :
 
+                void RemoveBundleReceiveAntiDetail();
                 void ReorderDaemonBundleQueueDetail();
                 void CreateHelloBundleAndSendDetail(string msg_str);
+                void FragmentReassembleDetail(int k);
+                bool BPHeaderBasedSendDecisionDetail(BPHeader const& ref_bp_header, int& return_index_of_neighbor, CheckState check_state);
                 void CreateSocketDetail();
                 void RemoveExpiredBAQDetail();
                 void ReceiveHelloBundleDetail(Ptr<Packet> p_pkt, std::string msg);
                 void SocketSendDetail(Ptr<Packet> p_pkt, uint32_t flags, const Address& dst_addr);
-                /* check whether one packet is already in bundle queue
-                 */
-                void IsDuplicated(Ptr<packet> pkt, Ptr<Queue> queue);
-                /* check your 'bundle queue' buffer and other related buffer periodly
-                 * make code refactory to this 
-                 */
+                void IsDuplicatedDetail(Ptr<packet> pkt, Ptr<Queue> queue);
+                bool IsAntipacketExistDetail();
                 void CheckBuffer(enum CheckState check_state);
-                /* check whether one packet is already in your 'antipacket_queue' 
-                 * by check the 'uni seqno number of the packet'
-                 */
-                bool IsAntipacketExist(Ptr<packet> pkt);
-                /* log for analisis
-                 */
-                void LogPrint();
-
                 void UpdateNeighborInfo(int which_info, int which_neighbor, int which_pkt_index);
-                 
                 void ToTransmit(struct DaemonBundleHeaderInfo bh_info);
-
-                /* if total send bytes > current send bytes
-                 */
                 void ToSendMore(struct DaemonBundleQueueInfo bh_info);
-
                 void PowerOn();
-
                 void PowerOff();
-
+                
+                // data
                 // uint32_t bundles_count_; // bundles you can use daemon_reception_info_vec_.size()
                 uint32_t drops_count_; // drops
                 Ptr<Node> node_; // m_node
@@ -172,15 +158,13 @@ namespace ns3 {
 
                 /* daemon
                  */
-                Ptr<Socket> daemon_socket_handle_; // m_socket
+                Ptr<Socket> daemon_socket_handle_; // m_socket, note that hello socket is another socket
                 uint32_t daemon_baq_bytes_max_; // b_s   
                 Ptr<Queue> daemon_antipacket_queue_; //m_antipacket_queue
-                Ptr<Queue> daemon_mac_queue_; // mac_queue
-                Ptr<Queue> daemon_hello_send_buffer_queue_; // m_help_queue
+                Ptr<Queue> daemon_mac_queue_; // mac_queue waiting queue from mac to be sent to PHY
+                Ptr<Queue> daemon_hello_send_buffer_queue_; // m_helper_queue
                 vector<Ptr<Packet>> daemon_retransmission_packet_buffer_vec_; // retxpkt
-                /* daemon bundle queue, this is where "store and forward" semantic stores
-                 */
-                Ptr<Queue> daemon_bundle_queue_; // m_queue
+                Ptr<Queue> daemon_bundle_queue_; // m_queue, daemon bundle queue, this is where "store and forward" semantic stores
                 vector<Ptr<Packet>> daemon_reception_packet_buffer_vec_; // newpkt
                 /* vector<uint32_t> daemon_receive_bytes_vec_; // currentServerRxBytes // fragment probablly
                  * vector<uint32_t> daemon_bundle_receive_size_vec_; // bundle_size
@@ -199,9 +183,9 @@ namespace ns3 {
                  * baq means bundle and antipacket queue
                  * vector<uint32_t> neighbor_daemon_baq_avilable_bytes_; // b_a     
                  * vector<dtn_time_t> neighbor_last_seen_time_vec_; // neighbor_last_seen
-                 * vector<vector<dtn_seqnof_t>> neighbor_hello_neighbor_baq_seqnof_vec_; // neighbor_hello_bundles
-                 * vector<vector<dtn_seqnof_t>> neighbor_sent_bp_seqnof_vec_; // neighbor_sent_bundle
-                 * vector<vector<dtn_seqnof_t>> neighbor_sent_ap_seqnof_vec_; // neighbor_sent_aps
+                 * vector<vector<dtn_seqno_t>> neighbor_hello_neighbor_baq_seqno_vec_; // neighbor_hello_bundles
+                 * vector<vector<dtn_seqno_t>> neighbor_sent_bp_seqno_vec_; // neighbor_sent_bundle
+                 * vector<vector<dtn_seqno_t>> neighbor_sent_ap_seqno_vec_; // neighbor_sent_aps
                  * vector<vector<dtn_time_t>> neighbor_sent_ap_time_vec_; // neighbor_sent_ap_when
                  * 
                  * @NeighborInfo
@@ -225,6 +209,7 @@ namespace ns3 {
                  * @DaemonBundleHeaderInfo
                  */
                 vector<struct DaemonBundleHeaderInfo> daemon_transmission_bh_info_vec_;
+
         };
     } /* ns3dtnbit */ 
 }

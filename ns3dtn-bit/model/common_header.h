@@ -25,19 +25,23 @@
 #define HI_TIME HELLO_BUNDLE_INTERVAL_TIME
 #define NS3DTNBIT_HELLO_BUNDLE_SIZE_MAX 2280
 #define HS_MAX NS3DTNBIT_HELLO_BUNDLE_SIZE_MAX
+#define NS3DTNBIT_HYPOTHETIC_BUNDLE_EXPIRED_TIME 750.0
+#define HB_TIME NS3DTNBIT_HYPOTHETIC_BUNDLE_EXPIRED_TIME
 
 namespace ns3 {
     
     namespace ns3dtnbit {
 
         using std::vector;
+        using std::string;
         
-        using dtn_time_t = uint32_t;
+        using dtn_time_t = double;
         /* dtn_seqnof_t is used with sign, eg. -(seqno2003) means giving out while (seqno2003) means receiving
-         * Important ! most time the author only check the sequno but not the IP address //TODO
+         * Important most time the author only check the sequno but not the IP address, which is ok due to the fact that seqnoes were set as the number of Uid. To us, we should use DaemonBundleHeaderInfo to check a pkt, while still using Header Uid.
          */
         using dtn_seqnof_t = int32_t;
         using dtn_seqno_t = uint32_t;
+        const string END_OF_PAYLOAD = "end";
     } /* ns3dtnbit */ 
 } /* ns3  */ 
 #endif /* ifndef COMMON_HEADER_H */

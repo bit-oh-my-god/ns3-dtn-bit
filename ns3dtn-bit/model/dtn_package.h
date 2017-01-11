@@ -55,12 +55,6 @@ namespace ns3 {
         
         enum BundleType {BundlePacket, AntiPacket, HelloPacket, TransmissionAck};
 
-        // use this to check bp_headers //TODO
-        struct BPHeaderID {
-            Ipv4Address source_ip_;
-            dtn_seqno_t source_sequence_no_;
-        }
-
         class BPHeader : public Header {
             public :
                 BPHeader ();
@@ -81,8 +75,8 @@ namespace ns3 {
                 // assuming that different BundleType has different payload size, and payload size themselves could be different TODO
                 enum BundleType get_bundle_type() {return bundle_type_;}
                 void set_bundle_type(enum BundleType arg) {bundle_type_ = arg;}
-                bool is_valid() {return is_valid_;}
-                void set_valid(bool arg) {is_valid_ = arg;}
+                // bool is_valid() {return is_valid_;}
+                // void set_valid(bool arg) {is_valid_ = arg;}
                 uint32_t get_hop_count() {return hop_count_;}
                 void set_hop_count(uint32_t arg) {hop_count_ = arg;}
                 uint32_t get_spray() {return spray_;}
@@ -96,7 +90,9 @@ namespace ns3 {
                 dtn_seqno_t get_source_seqno() {return source_seqno_;}
                 void set_source_seqno(dtn_seqno_t arg) {source_seqno_ = arg;}
                 uint32_t get_payload_size() {return payload_size_;}
-                void set_payload_size_(uint32_t arg) {payload_size_ = arg;}
+                void set_payload_size(uint32_t arg) {payload_size_ = arg;}
+                uint32_t get_offset_size() {return offset_size_;}
+                void set_offset_size(uint32_t arg) {offset_size_ = arg;}
                 Time get_src_time_stamp() {return Time(MilliSeconds(src_time_stamp_));}
                 void set_src_time_stamp(Time arg) {src_time_stamp_ = arg.GetMilliSeconds();}
                 Time get_hop_time_stamp() {return Time(MilliSeconds(hop_time_stamp_));}
@@ -104,7 +100,7 @@ namespace ns3 {
 
             private :
 
-                bool is_valid_;
+                // bool is_valid_;
                 enum BundleType bundle_type_;
 
                 uint32_t hop_count_;
@@ -113,7 +109,8 @@ namespace ns3 {
                 Ipv4Address destination_ip_;
                 Ipv4Address source_ip_;
                 dtn_seqno_t source_seqno_;
-                uint32_t payload_size_;
+                uint32_t payload_size_; // payload_size_ can be big than avialable 'bundle pkt size', bigger pkt would be fragment later
+                uint32_t offset_size_;
                 dtn_time_t src_time_stamp_;
                 dtn_time_t hop_time_stamp_;
         }; 

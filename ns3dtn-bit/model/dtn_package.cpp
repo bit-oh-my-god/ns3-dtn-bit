@@ -30,7 +30,8 @@ namespace ns3 {
             WriteTo(start, destination_ip_);
             WriteTo(start, source_ip_);
             start.WriteU32(source_seqno_);
-            start.WriteU32(bundle_size_);
+            start.WriteU32(payload_size_);
+            start.WriteU32(offset_size_);
             start.WriteU32(src_time_stamp_);
             start.WriteU32(hop_time_stamp_);
         }
@@ -43,7 +44,8 @@ namespace ns3 {
             ReadFrom(i, destination_ip_);
             ReadFrom(i, source_ip_);
             source_seqno_ = i.ReadU32();
-            bundle_size_ = i.ReadU32();
+            payload_size_ = i.ReadU32();
+            offset_size_ = i.ReadU32();
             src_time_stamp_ = i.ReadU32();
             hop_time_stamp_ = i.ReadU32();
 
@@ -59,18 +61,20 @@ namespace ns3 {
                     sizeof(BPHeader::destination_ip_) +
                     sizeof(BPHeader::source_ip_) +
                     sizeof(BPHeader::source_seqno_) +
-                    sizeof(BPHeader::bundle_size_) +
+                    sizeof(BPHeader::payload_size_) +
+                    sizeof(BPHeader::offset_size_) +
                     sizeof(BPHeader::src_time_stamp_) +
                     sizeof(BPHeader::hop_time_stamp_));
         }
 
         void BPHeader::Print(std::ostream& os) const {
-            os << "destination ip" << destination_ip_
-            << "source ip" << source_ip_
-            << "source seqno" << source_seqno_
-            << "bundle size" << bundle_size_
-            << "src time stamp" << src_time_stamp_
-            << "hop time stamp" << hop_time_stamp_
+            os << ",destination ip" << destination_ip_
+            << ",source ip" << source_ip_
+            << ",source seqno" << source_seqno_
+            << ",payload size" << payload_size_
+            << ",offset size" << offset_size_
+            << ",src time stamp" << src_time_stamp_
+            << ",hop time stamp" << hop_time_stamp_
             << std::endl;
         }
 
