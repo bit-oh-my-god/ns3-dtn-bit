@@ -91,8 +91,8 @@ namespace ns3 {
                 void set_source_seqno(dtn_seqno_t arg) {source_seqno_ = arg;}
                 uint32_t get_payload_size() {return payload_size_;}
                 void set_payload_size(uint32_t arg) {payload_size_ = arg;}
-                uint32_t get_offset_size() {return offset_size_;}
-                void set_offset_size(uint32_t arg) {offset_size_ = arg;}
+                uint32_t get_offset() {return offset_size_;}
+                void set_offset(uint32_t arg) {offset_size_ = arg;}
                 Time get_src_time_stamp() {return Time(MilliSeconds(src_time_stamp_));}
                 void set_src_time_stamp(Time arg) {src_time_stamp_ = arg.GetMilliSeconds();}
                 Time get_hop_time_stamp() {return Time(MilliSeconds(hop_time_stamp_));}
@@ -102,7 +102,6 @@ namespace ns3 {
 
                 // bool is_valid_;
                 enum BundleType bundle_type_;
-
                 uint32_t hop_count_;
                 uint32_t spray_;
                 uint32_t retransmission_count_;

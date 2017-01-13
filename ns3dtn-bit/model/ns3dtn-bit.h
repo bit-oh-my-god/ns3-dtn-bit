@@ -10,8 +10,6 @@ namespace ns3 {
         class DtnApp {  // dtn daemon or dtn agent
 
             public :
-                
-                enum PacketTagType {};
 
                 enum RoutingMethod {
                     Epidemic,
@@ -48,7 +46,7 @@ namespace ns3 {
                 };
 
                 struct DaemonBundleHeaderInfo {
-                    InetSocketAddress info_dest_addr_;
+                    InetSocketAddress info_transmit_addr_;
                     uint32_t info_retransmission_count_ = 0;
                     dtn_seqno_t info_source_seqno_;
                     bool operator==(struct DaemonBundleHeaderInfo const& rhs) {
@@ -107,7 +105,7 @@ namespace ns3 {
                 /* the interface of bp ip neighbor discovery functionality
                  * broadcast, 
                  * notify msg : how many bytes you can receive
-                 * reorder the packet sequence with daemon_hello_send_buffer_queue_ then
+                 * reorder the packet sequence with daemon_reorder_buffer_queue_ then
                  * notify msg : how many bundle you already have
                  * notyfy msg : the source unique seqno of all pkt in queue and all in antiqueue
                  * then use this msg to send 'socket raw packet' without header really ? // TODO
@@ -149,11 +147,13 @@ namespace ns3 {
                 // uint32_t bundles_count_; // bundles you can use daemon_reception_info_vec_.size()
                 uint32_t drops_count_; // drops
                 Ptr<Node> node_; // m_node
+                Ipv4Address own_ip_;
                 uint32_t daemon_flow_count_; // NumFlows
                 enum RunningFlag running_flag_; // m_running
                 enum RoutingMethod routing_method_; // rp
                 enum CongestionControlMethod congestion_control_method_; // cc
                 double congestion_control_parameter_ = 1.0; //t_c     // will only works when enable Dynamic congestion control
+                dtn_time_t retransmission_interval_ = 15.0;
                 EventId send_event_id_; // m_sendEvent
 
                 /* daemon
@@ -161,8 +161,9 @@ namespace ns3 {
                 Ptr<Socket> daemon_socket_handle_; // m_socket, note that hello socket is another socket
                 uint32_t daemon_baq_bytes_max_; // b_s   
                 Ptr<Queue> daemon_antipacket_queue_; //m_antipacket_queue
+                Ptr<Queue> daemon_consume_bundle_queue_; // store the bundle which is aim to be sent to this node
                 Ptr<Queue> daemon_mac_queue_; // mac_queue waiting queue from mac to be sent to PHY
-                Ptr<Queue> daemon_hello_send_buffer_queue_; // m_helper_queue
+                Ptr<Queue> daemon_reorder_buffer_queue_; // m_helper_queue
                 vector<Ptr<Packet>> daemon_retransmission_packet_buffer_vec_; // retxpkt
                 Ptr<Queue> daemon_bundle_queue_; // m_queue, daemon bundle queue, this is where "store and forward" semantic stores
                 vector<Ptr<Packet>> daemon_reception_packet_buffer_vec_; // newpkt
