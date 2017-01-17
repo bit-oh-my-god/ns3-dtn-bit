@@ -7,7 +7,7 @@
 #     conf.check_nonfatal(header_name='stdint.h', define_name='HAVE_STDINT_H')
 
 def build(bld):
-    module = bld.create_ns3_module('ns3dtn-bit', ['core'])
+    module = bld.create_ns3_module('ns3dtn-bit', ['core', 'wifi', 'internet'])
     module.source = [
         'model/dtn_package.cpp',
         'model/ns3dtn-bit.cc',
@@ -22,6 +22,7 @@ def build(bld):
     headers = bld(features='ns3header')
     headers.module = 'ns3dtn-bit'
     headers.source = [
+        'model/common_header.h',
         'model/dtn_package.h',
         'model/ns3dtn-bit.h',
         'helper/ns3dtn-bit-helper.h',

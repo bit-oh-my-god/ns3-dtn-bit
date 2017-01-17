@@ -9,7 +9,6 @@
 # See test.py for more information.
 cpp_examples = [
     ("ns3dtn-bit-example", "True", "True"),
-    ("example_01", "True", "True"), # Takes too long to run
 ]
 
 # A list of Python examples to run in order to ensure that they remain

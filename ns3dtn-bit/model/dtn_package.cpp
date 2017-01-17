@@ -1,5 +1,4 @@
 #include "dtn_package.h"
-#include "ns3/packet.h"
 
 namespace ns3 {
     namespace ns3dtnbit {

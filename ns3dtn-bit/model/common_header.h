@@ -8,7 +8,10 @@
 
 #include <cassert>
 #include <iostream>
+#include <fstream>
+#include <cmath>
 #include <vector>
+#include <sstream>
 #include <string>
 #include <map>
 #include <tuple>

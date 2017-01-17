@@ -3,22 +3,20 @@
 #include "ns3/core-module.h"
 #include "ns3/ns3dtn-bit-module.h"
 #include "ns3/ns3dtn-bit-helper.h"
+#include "../model/common_header.h"
 
 using namespace ns3;
 
 int main (int argc, char *argv[]) {
-  bool verbose = true;
-
-  CommandLine cmd;
-  cmd.AddValue ("verbose", "Tell application to log if true", verbose);
-
-  cmd.Parse (argc,argv);
-
-  /* ... */
-
-  Simulator::Run ();
-  Simulator::Destroy ();
-  return 0;
+#if (__cplusplus==201103L)
+    std::cout << "we can use c++11" << std::endl;
+#else
+#endif
+    ns3dtnbit::DtnExample test();
+    test.Configure(argc, argv);
+    test.Run();
+    test.Report(std::cout);
+    return 0;
 }
 
 

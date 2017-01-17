@@ -1,5 +1,0 @@
-# -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
-
-def build(bld):
-    obj = bld.create_ns3_program('ns3dtn-bit-example', ['ns3dtn-bit'])
-    obj.source = 'ns3dtn-bit-example.cc'

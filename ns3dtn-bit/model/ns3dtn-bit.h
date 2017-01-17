@@ -2,15 +2,29 @@
 #ifndef NS3DTN_BIT_H
 #define NS3DTN_BIT_H
 
+#include "ns3/core-module.h"
+#include "ns3/mobility-module.h"
+#include "ns3/wifi-module.h" 
+#include "ns3/v4ping-helper.h"
+#include "ns3/network-module.h"
+#include "ns3/internet-module.h"
+#include "ns3/applications-module.h"
+#include "ns3/double.h"
+#include "ns3/random-variable-stream.h"
+#include "ns3/rng-seed-manager.h"
+#include "ns3/ipv4-static-routing-helper.h"
+#include "ns3/ns2-mobility-helper.h"
+#include "ns3/qos-tag.h"
 #include "dtn_package.h"
+#include "common_header.h"
+
 
 namespace ns3 {
     namespace ns3dtnbit {
 
-        class DtnApp {  // dtn daemon or dtn agent
+        class DtnApp {
 
             public :
-
                 enum RoutingMethod {
                     Epidemic,
                     SprayAndWait 
@@ -74,18 +88,10 @@ namespace ns3 {
 
                 DtnApp ();
                 virtual ~DtnApp ();
-                /* setup
-                 */
                 void SetUp(Ptr<Node> node);
-
-                /* start app
-                 */
                 void StartApplication();
-                /* stop app
-                 */
                 void StopApplication();
                 void SchedultTx( uint32_t dstnode, Time tNext, uint32_t payload_size);
-
                 /* create a bundle and enqueue, waitting for CheckBuffer() to call SendBundleDetail
                  */
                 void ToSendBundle(uint32_t dstnode_number, uint32_t payload_size);
@@ -123,9 +129,7 @@ namespace ns3 {
                  */
                 void ToSendAntipacketBundle(Ipv4Address scraddr,Ipv4Address dstaddr, dtn_seqno_t bundle_seqno, dtn_time_t src_time_stamp);
                 
-
             private :
-
                 void RemoveBundleReceiveAntiDetail();
                 void ReorderDaemonBundleQueueDetail();
                 void CreateHelloBundleAndSendDetail(string msg_str);
@@ -168,6 +172,7 @@ namespace ns3 {
                 vector<Ptr<Packet>> daemon_retransmission_packet_buffer_vec_; // retxpkt
                 Ptr<Queue> daemon_bundle_queue_; // m_queue, daemon bundle queue, this is where "store and forward" semantic stores
                 vector<Ptr<Packet>> daemon_reception_packet_buffer_vec_; // newpkt
+
                 /* vector<uint32_t> daemon_receive_bytes_vec_; // currentServerRxBytes // fragment probablly
                  * vector<uint32_t> daemon_bundle_receive_size_vec_; // bundle_size
                  * vector<dtn_time_t> daemon_bundle_receive_time_stamp_vec_; // bundle_ts
@@ -204,6 +209,7 @@ namespace ns3 {
                  * @DaemonTransmissionInfo
                  */
                 vector<struct DaemonTransmissionInfo> daemon_transmission_info_vec_;
+
                 /* vector<InetSocketAddress> daemon_bh_des_address_vec_; // sendTos
                  * vector<uint32_t> daemon_bh_retransmission_count_vec_; // retxs
                  * vecotr<dtn_seqno_t> daemon_bh_source_unique_seqno_vec_; // ids

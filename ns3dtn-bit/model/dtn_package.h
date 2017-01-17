@@ -2,52 +2,14 @@
 #define DTN_PACKAGE_H
 
 /* this file would define all data presentation of a bundle package
- * 
-
- 0                   1                   2                   3
- 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1  
- Primary Bundle Block
- +----------------+----------------+----------------+----------------+
- |    Version     |                  Proc. Flags (*)                 |
- +----------------+----------------+----------------+----------------+
- |                          Block length (*)                         |
- +----------------+----------------+---------------------------------+
- |   Destination scheme offset (*) |     Destination SSP offset (*)  |
- +----------------+----------------+----------------+----------------+
- |      Source scheme offset (*)   |        Source SSP offset (*)    |
- +----------------+----------------+----------------+----------------+
- |    Report-to scheme offset (*)  |      Report-to SSP offset (*)   |
- +----------------+----------------+----------------+----------------+
- |    Custodian scheme offset (*)  |      Custodian SSP offset (*)   |
- +----------------+----------------+----------------+----------------+
- |                    Creation Timestamp time (*)                    |
- +---------------------------------+---------------------------------+
- |             Creation Timestamp sequence number (*)                |
- +---------------------------------+---------------------------------+
- |                           Lifetime (*)                            |
- +----------------+----------------+----------------+----------------+
- |                        Dictionary length (*)                      |
- +----------------+----------------+----------------+----------------+
- |                  Dictionary byte array (variable)                 |
- +----------------+----------------+---------------------------------+
- |                      [Fragment offset (*)]                        |
- +----------------+----------------+---------------------------------+
- |              [Total application data unit length (*)]             |
- +----------------+----------------+---------------------------------+
-
- Bundle Payload Block
- +----------------+----------------+----------------+----------------+
- |  Block type    | Proc. Flags (*)|        Block length(*)          |
- +----------------+----------------+----------------+----------------+
- /                     Bundle Payload (variable)                     /
- +-------------------------------------------------------------------+
-
- * */
+ */
 
 #include "ns3/enum.h"
 #include "ns3/header.h"
 #include "ns3/ipv4-address.h"
 #include "ns3/nstime.h"
+#include "ns3/packet.h"
+#include "ns3/address-utils.h"
 #include "common_header.h"
 
 namespace ns3 {
@@ -115,31 +77,6 @@ namespace ns3 {
         }; 
 
         std::ostream& operator<< (std::ostream& os, BPHeader const& rh);
-
-        // this AppHeader is going to be useless
-        class AppHeader : public Header {
-            public:
-                AppHeader ();
-                // inherited items
-                //    // redefine GetTypeId()
-                TypeId GetTypeId() static;
-
-                TypeId GetInstanceTypeId() const;
-                uint32_t GetSerializedSize () const;
-                void Serialize (Buffer::Iterator start) const;
-                uint32_t Deserialize (Buffer::Iterator start);
-                void Print (std::ostream &os) const;
-
-                // own stuff *******
-                bool operator==(APHeader const& rh) const;
-                enum AppType get_app_type() {return ap_type_;}
-                void set_app_type(enum AppType arg) {ap_type_ = arg;}
-            private:
-                enum AppType app_type_;
-
-        };
-
-        std::ostream& operator<< (std::ostream& os, APHeader const& rh);
 
     } /* ns3dtnbit */ 
 
