@@ -7,18 +7,14 @@
 #     conf.check_nonfatal(header_name='stdint.h', define_name='HAVE_STDINT_H')
 
 def build(bld):
+# append user defined flags after all our ones
     module = bld.create_ns3_module('ns3dtn-bit', ['core', 'wifi', 'internet'])
     module.source = [
         'model/dtn_package.cpp',
         'model/ns3dtn-bit.cc',
         'helper/ns3dtn-bit-helper.cc',
         ]
-
-    module_test = bld.create_ns3_module_test_library('ns3dtn-bit')
-    module_test.source = [
-        'test/ns3dtn-bit-test-suite.cc',
-        ]
-
+    module.cxxflags = ['-std=c++11', '-Wall']
     headers = bld(features='ns3header')
     headers.module = 'ns3dtn-bit'
     headers.source = [

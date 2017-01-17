@@ -14,7 +14,7 @@
 #include "ns3/rng-seed-manager.h"
 #include "ns3/ipv4-static-routing-helper.h"
 #include "ns3/ns2-mobility-helper.h"
-#include "ns3/qos-tag.h"
+#include "ns3/qos-utils.h"
 #include "dtn_package.h"
 #include "common_header.h"
 
@@ -64,7 +64,7 @@ namespace ns3 {
                     uint32_t info_retransmission_count_ = 0;
                     dtn_seqno_t info_source_seqno_;
                     bool operator==(struct DaemonBundleHeaderInfo const& rhs) {
-                        return (info_dest_addr_ == rhs.info_dest_addr_ && info_retransmission_count_ == rhs.info_retransmission_count_ && info_source_seqno_ == rhs.info_source_seqno_);
+                        return (info_transmit_addr_ == rhs.info_transmit_addr_ && info_retransmission_count_ == rhs.info_retransmission_count_ && info_source_seqno_ == rhs.info_source_seqno_);
                     }
                 };
 
@@ -83,18 +83,17 @@ namespace ns3 {
                     vector<dtn_seqno_t> info_baq_seqno_vec_;
                     vector<dtn_seqno_t> info_sent_bp_seqno_vec_;
                     vector<dtn_seqno_t> info_sent_ap_seqno_vec_;
-                    vecotr<dtn_time_t> info_sent_ap_time_vec_;
+                    vector<dtn_time_t> info_sent_ap_time_vec_;
                 };
 
                 DtnApp ();
                 virtual ~DtnApp ();
                 void SetUp(Ptr<Node> node);
-                void StartApplication();
-                void StopApplication();
                 void SchedultTx( uint32_t dstnode, Time tNext, uint32_t payload_size);
                 /* create a bundle and enqueue, waitting for CheckBuffer() to call SendBundleDetail
                  */
                 void ToSendBundle(uint32_t dstnode_number, uint32_t payload_size);
+                void ToSendAck(BPHeader const& ref_bp_header, Ipv4Address response_ip);
 
                 /* receive bundle from a socket
                  * should check the 'packet type' : 'acknowledge in one connection' 'bundle you should receive' 'antipacket'
@@ -104,7 +103,7 @@ namespace ns3 {
                  * note that you also need to warry about the bp connection session which you are in
                  * note that you should decouple implementation by calling 'ReceiveBundleDetail'
                  */
-                void ReceiveBundle(Ptr<socket> socket);
+                void ReceiveBundle(Ptr<Socket> socket);
 
                 // call Schedule to call SendBundle and return eventid to DtnApp
                 void ScheduleSend(uint32_t dstnode_number, uint32_t payload_size);
@@ -127,26 +126,24 @@ namespace ns3 {
                 /* the interface of bp cancellation functionality
                  * send anti
                  */
-                void ToSendAntipacketBundle(Ipv4Address scraddr,Ipv4Address dstaddr, dtn_seqno_t bundle_seqno, dtn_time_t src_time_stamp);
+                void ToSendAntipacketBundle(BPHeader const& ref_bp_header);
                 
             private :
-                void RemoveBundleReceiveAntiDetail();
-                void ReorderDaemonBundleQueueDetail();
+                void RemoveBundleFromAntiDetail(Ptr<Packet> p_pkt);
+                void PeriodReorderDaemonBundleQueueDetail();
                 void CreateHelloBundleAndSendDetail(string msg_str);
+                void SemiFillBPHeaderDetail(BPHeader* p_bp_header);
                 void FragmentReassembleDetail(int k);
                 bool BPHeaderBasedSendDecisionDetail(BPHeader const& ref_bp_header, int& return_index_of_neighbor, CheckState check_state);
                 void CreateSocketDetail();
+                void UpdateNeighborInfo(int which_info, int which_neighbor, int which_pkt_index);
                 void RemoveExpiredBAQDetail();
                 void ReceiveHelloBundleDetail(Ptr<Packet> p_pkt, std::string msg);
                 void SocketSendDetail(Ptr<Packet> p_pkt, uint32_t flags, const Address& dst_addr);
-                void IsDuplicatedDetail(Ptr<packet> pkt, Ptr<Queue> queue);
+                void IsDuplicatedDetail(Ptr<Packet> pkt, Ptr<Queue> queue);
                 bool IsAntipacketExistDetail();
                 void CheckBuffer(enum CheckState check_state);
-                void UpdateNeighborInfo(int which_info, int which_neighbor, int which_pkt_index);
-                void ToTransmit(struct DaemonBundleHeaderInfo bh_info);
-                void ToSendMore(struct DaemonBundleQueueInfo bh_info);
-                void PowerOn();
-                void PowerOff();
+                void ToTransmit(DaemonBundleHeaderInfo bh_info);
                 
                 // data
                 // uint32_t bundles_count_; // bundles you can use daemon_reception_info_vec_.size()
@@ -182,7 +179,7 @@ namespace ns3 {
                  * 
                  * @DaemonReceptionInfo
                  */
-                vector<struct DaemonReceptionInfo> daemon_reception_info_vec_;
+                vector<DaemonReceptionInfo> daemon_reception_info_vec_;
 
                 /* neighbor
                  * uint32_t neighbor_count_; // neighbors  // we don't need it since we can do neighbor_info_vec_.size()
@@ -197,7 +194,7 @@ namespace ns3 {
                  * 
                  * @NeighborInfo
                  */
-                vector<struct NeighborInfo> neighbor_info_vec_;
+                vector<NeighborInfo> neighbor_info_vec_;
 
                 /* retransmission and transmission
                  * vector<uint32_t> daemon_transmission_send_total_bytes_vec_; // TotalTxBytes 
@@ -208,7 +205,7 @@ namespace ns3 {
                  * 
                  * @DaemonTransmissionInfo
                  */
-                vector<struct DaemonTransmissionInfo> daemon_transmission_info_vec_;
+                vector<DaemonTransmissionInfo> daemon_transmission_info_vec_;
 
                 /* vector<InetSocketAddress> daemon_bh_des_address_vec_; // sendTos
                  * vector<uint32_t> daemon_bh_retransmission_count_vec_; // retxs
@@ -216,7 +213,7 @@ namespace ns3 {
                  * 
                  * @DaemonBundleHeaderInfo
                  */
-                vector<struct DaemonBundleHeaderInfo> daemon_transmission_bh_info_vec_;
+                vector<DaemonBundleHeaderInfo> daemon_transmission_bh_info_vec_;
 
         };
 
@@ -244,7 +241,7 @@ namespace ns3 {
                 void InstallInternetStack();
                 void InstallApplications();
                 void PopulateArpCache();
-        }
+        };
     } /* ns3dtnbit */ 
 }
 

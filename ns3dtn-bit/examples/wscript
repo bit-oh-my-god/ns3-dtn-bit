@@ -3,3 +3,4 @@
 def build(bld):
     obj = bld.create_ns3_program('ns3dtn-bit-example', ['ns3dtn-bit'])
     obj.source = 'ns3dtn-bit-example.cc'
+    obj.cxxflags = ['-std=c++11', '-Wall']

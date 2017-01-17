@@ -21,11 +21,8 @@ namespace ns3 {
             public :
                 BPHeader ();
                 // inherited items
-                //    // redefine GetTypeId()
-                TypeId GetTypeId() static;
-
+                static TypeId GetTypeId();
                 TypeId GetInstanceTypeId() const;
-
                 uint32_t GetSerializedSize () const;
                 void Serialize (Buffer::Iterator start) const;
                 uint32_t Deserialize (Buffer::Iterator start);

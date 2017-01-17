@@ -12,7 +12,7 @@ int main (int argc, char *argv[]) {
     std::cout << "we can use c++11" << std::endl;
 #else
 #endif
-    ns3dtnbit::DtnExample test();
+    ns3dtnbit::DtnExample test = ns3dtnbit::DtnExample();
     test.Configure(argc, argv);
     test.Run();
     test.Report(std::cout);

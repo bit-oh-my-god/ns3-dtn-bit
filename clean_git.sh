@@ -2,7 +2,7 @@
 
 DATE=`date +%Y-%m-%d`
 DIR1="./ns3dtn-bit_tmp"
-DIR2="./ns-allinone-3.25"
+DIR2="./ns-allinone-3.26"
 # delete ns-3 source prepare for git
 function deletefuncion {
     D=$1

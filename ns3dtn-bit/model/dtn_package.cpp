@@ -14,12 +14,10 @@ namespace ns3 {
                 .SetParent<Header>()
                 .AddConstructor<BPHeader>();
             return tid;
-
         }
 
-        TypeId BPHeader::GetInstanceTypeId() {
+        TypeId BPHeader::GetInstanceTypeId() const {
             return GetTypeId();
-
         }
 
         void BPHeader::Serialize(Buffer::Iterator start) const {
@@ -75,37 +73,6 @@ namespace ns3 {
             << ",src time stamp" << src_time_stamp_
             << ",hop time stamp" << hop_time_stamp_
             << std::endl;
-        }
-
-        // AppHeader
-        NS_OBJECT_ENSURE_REGISTERED(AppHeader);
-
-        AppHeader::AppHeader() {
-
-        }
-
-        TypeId AppHeader::GetTypeId() {
-
-        }
-
-        TypeId AppHeader::GetInstanceTypeId() const {
-
-        }
-        
-        void AppHeader::Serialize(Buffer::Iterator start) const {
-
-        }
-
-        uint32_t AppHeader::Deserialize(Buffer::Iterator start) const {
-
-        }
-
-        uint32_t AppHeader::GetSerializedSize() const {
-
-        }
-
-        void AppHeader::Print(std::ostream& os) const {
-
         }
     } /* ns3dtnbit */ 
     
