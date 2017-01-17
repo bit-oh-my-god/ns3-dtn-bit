@@ -1,7 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 
 #include "ns3dtn-bit.h"
-#include "./common_header.h"
 
 namespace ns3 {
 
@@ -211,7 +210,7 @@ namespace ns3 {
         /* refine 
          * create and fill up antipacket-bundle then enqueue
          */
-        void DtnApp::ToSendAntipacketBundle(BPheader const& ref_bp_header) {
+        void DtnApp::ToSendAntipacketBundle(BPHeader const& ref_bp_header) {
             string anti_packet_payload_str;
             do {
                 // fill up payload buffer
@@ -962,14 +961,17 @@ namespace ns3 {
             // default 3, newset 10
             Config::SetDefault("ns3::ArpCache::AliveTimeout", StringValue("5000000000000ns"));
             // default 120 s, newset 5000s
-            std::cout << "**************************************************" << std::endl;
+            std::cout << "******************** create nodes ******************" << std::endl;
             CreateNodes();
+            std::cout << "******************** create devices ******************" << std::endl;
             CreateDevices();
+            std::cout << "******************** install stack ******************" << std::endl;
             InstallInternetStack();
+            std::cout << "******************** install app ******************" << std::endl;
             InstallApplications();
+            std::cout << "******************** populate arpcache ******************" << std::endl;
             PopulateArpCache();
-
-            std::cout << "**************************************************" << std::endl;
+            std::cout << "********************* Simulate **************" << std::endl;
             std::cout << "simulator began, simulate time = " << simulation_duration_ << "randmon seed = " << randmon_seed_ << std::endl;
             Simulator::Stop(Seconds(simulation_duration_));
             Simulator::Run();
@@ -1127,4 +1129,3 @@ namespace ns3 {
     } /* ns3dtnbit */ 
     /* ... */
 }
-
