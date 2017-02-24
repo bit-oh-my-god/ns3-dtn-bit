@@ -6,37 +6,57 @@ namespace ns3 {
 
     namespace ns3dtnbit {
 
+        static void CourseChange (std::ostream *myos, std::string foo, Ptr<const MobilityModel> mobility)
+        {
+            Ptr<Node> node = mobility->GetObject<Node> ();
+            Vector pos = mobility->GetPosition (); // Get position
+            Vector vel = mobility->GetVelocity (); // Get velocity
+
+            std::cout.precision(5);
+            *myos << Simulator::Now () << "; NODE: " << node->GetId() << "; POS: x=" << pos.x << ", y=" << pos.y
+                << ", z=" << pos.z << "; VEL: x=" << vel.x << ", y=" << vel.y
+                << ", z=" << vel.z << std::endl;
+        }
+
+        static Ptr<QueueItem> Packet2Queueit(Ptr<Packet> p_pkt) {
+            QueueItem* p = new QueueItem(p_pkt);
+            return Ptr<QueueItem>(p);
+        }
+
         using std::vector;
         using std::string;
 
-        void DtnApp::DtnApp() {
+        DtnApp::DtnApp() {
 
         }
 
-        void DtnExample::DtnExample() {
+        DtnExample::DtnExample() {
 
         }
 
         /* refine
-         */
+        */
         void DtnApp::SetUp(Ptr<Node> node) {
             node_ = node;
             daemon_antipacket_queue_ = CreateObject<DropTailQueue>();
-            daemon_antipacket_queue_->SetAttribute("MaxPackets", UintegerValue(1000));
             daemon_bundle_queue_ = CreateObject<DropTailQueue>();
-            daemon_bundle_queue_->SetAttribute("MaxPackets", UintegerValue(1000));
             daemon_consume_bundle_queue_ = CreateObject<DropTailQueue>();
-            daemon_consume_bundle_queue_->SetAttribute("MaxPackets", UintegerValue(1000));
             daemon_reorder_buffer_queue_ = CreateObject<DropTailQueue>();
-            daemon_reorder_buffer_queue_->SetAttribute("MaxPackets", UintegerValue(1000));
+
             Ptr<UniformRandomVariable> y = CreateObject<UniformRandomVariable>();
+
+            daemon_antipacket_queue_->SetAttribute("MaxPackets", UintegerValue(1000));
+            daemon_bundle_queue_->SetAttribute("MaxPackets", UintegerValue(1000));
+            daemon_consume_bundle_queue_->SetAttribute("MaxPackets", UintegerValue(1000));
+            daemon_reorder_buffer_queue_->SetAttribute("MaxPackets", UintegerValue(1000));
+
             daemon_baq_bytes_max_ = 1375000 + y->GetInteger(0, 1)*9625000;
         }
 
         /* refine 
         */
         void DtnApp::ToSendHello(Ptr<Socket> socket, dtn_time_t simulation_end_time, Time hello_interval, bool hello_right_now_boolean) {
-            Ptr<Packet> p_pkt;
+            Ptr<Packet> p_pkt; 
             BPHeader bp_header;
             if (hello_right_now_boolean) {
                 if (Simulator::Now().GetSeconds() > simulation_end_time) {
@@ -69,7 +89,7 @@ namespace ns3 {
                         int anti_pkts = daemon_antipacket_queue_->GetNPackets();
                         sprintf(tmp_msg_01, "%d", pkts);
                         for (int i = 0; i < pkts; i++) {
-                            Ptr<Packet> p_pkt = daemon_bundle_queue_->Dequeue();
+                            p_pkt = daemon_bundle_queue_->Dequeue()->GetPacket();
                             if (msg.str().length() < NS3DTNBIT_HELLO_BUNDLE_SIZE_MAX) {
                                 BPHeader bp_header;
                                 p_pkt->RemoveHeader(bp_header);
@@ -82,10 +102,10 @@ namespace ns3 {
                                 // ERROR LOG TODO
                                 // 'at time, too big hello bundle'
                             }
-                            daemon_bundle_queue_->Enqueue(p_pkt);
+                            daemon_bundle_queue_->Enqueue(Packet2Queueit(p_pkt));
                         }
                         for (int i = 0; i < anti_pkts; i++) {
-                            p_pkt = daemon_antipacket_queue_->Dequeue();
+                            p_pkt = daemon_antipacket_queue_->Dequeue()->GetPacket();
                             if (msg.str().length() < NS3DTNBIT_HELLO_BUNDLE_SIZE_MAX) {
                                 p_pkt->RemoveHeader(bp_header);
                                 dtn_seqno_t tmp_seqno = bp_header.get_source_seqno();
@@ -96,11 +116,11 @@ namespace ns3 {
                             } else {
                                 // ERROR LOG TODO
                             }
-                            daemon_antipacket_queue_->Enqueue(p_pkt);
+                            daemon_antipacket_queue_->Enqueue(Packet2Queueit(p_pkt));
                         }
                     } while (0);
                     // this call would use msg.str() as the 'hello content'
-                    CreateHelloBundleAndSendDetail(msg.str());
+                    CreateHelloBundleAndSendDetail(msg.str(), socket);
                     Simulator::Schedule(Seconds(NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME), &DtnApp::ToSendHello, this, socket, simulation_end_time, Seconds(NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME), true);
                 }
             } else {
@@ -122,14 +142,14 @@ namespace ns3 {
                     neighbor_found = neighbor_info_vec_[j].info_address_ == addr ? true : false;
                 }
                 if (!neighbor_found) {
-                    NeighborInfo tmp_neighbor_info {
+                    NeighborInfo tmp_neighbor_info = {
                         addr,
-                            0,
-                            0,
-                            vector<dtn_seqno_t>(),
-                            vector<dtn_seqno_t>(),
-                            vector<dtn_seqno_t>(),
-                            vector<dtn_time_t>()
+                        0,
+                        0,
+                        vector<dtn_seqno_t>(),
+                        vector<dtn_seqno_t>(),
+                        vector<dtn_seqno_t>(),
+                        vector<dtn_time_t>()
                     };
                     neighbor_info_vec_.push_back(tmp_neighbor_info);
                 }
@@ -137,19 +157,19 @@ namespace ns3 {
                 neighbor_info_vec_[j].info_baq_seqno_vec_ = vector<dtn_seqno_t>(NS3DTNBIT_HYPOTHETIC_NEIGHBOR_BAQ_NUMBER_MAX, 0);
                 std::stringstream pkt_str_stream;
                 p_pkt->RemoveHeader(bp_header);
-                p_pkt->CopeDate(pkt_str_stream, bp_header.get_payload_size);
+                p_pkt->CopyData(&pkt_str_stream, bp_header.get_payload_size());
                 do {
                     // parse raw content of pkt and update 'neighbor_info_vec_'
                     pkt_str_stream >> neighbor_info_vec_[j].info_daemon_baq_available_bytes_;
-                    int pkt_pktseqno_number;
+                    int pkt_seqno_number;
                     // the rest seqno is the seqno for antipacket
-                    pkt_str_stream >> pkt_pktseqno_number;
+                    pkt_str_stream >> pkt_seqno_number;
                     int m = 0;
-                    for (; m < pkt_bundleseqno_number; m++) {
+                    for (; m < pkt_seqno_number; m++) {
                         pkt_str_stream >> neighbor_info_vec_[j].info_baq_seqno_vec_[m];
                     }
                     // check whether 'stringstream' has sth to read
-                    while (pkt_str_stream.rebuf()->in_avail() != 0) {
+                    while (pkt_str_stream.rdbuf()->in_avail() != 0) {
                         dtn_seqno_t tmp_antipacket_seqno;
                         pkt_str_stream >> tmp_antipacket_seqno;
                         // we need negative to indicate this seqno is from antipacket
@@ -158,8 +178,8 @@ namespace ns3 {
                         for (int k = 0; ((k < NS3DTNBIT_HYPOTHETIC_NEIGHBOR_BAQ_NUMBER_MAX) && (anti_found)); k++) {
                             anti_found = neighbor_info_vec_[j].info_sent_ap_seqno_vec_[k] == tmp_antipacket_seqno ? true : false;
                             if (anti_found) {
-                                UpdateNeighborInfoDetail(2, j, k);
                                 UpdateNeighborInfoDetail(3, j, k);
+                                UpdateNeighborInfoDetail(2, j, k);
                             }
                         }
                     }
@@ -169,7 +189,7 @@ namespace ns3 {
 
         /* refine 
         */
-        void DtnApp::ToSendAck(BPHeader const& ref_bp_header, Ipv4Address response_ip) {
+        void DtnApp::ToSendAck(BPHeader& ref_bp_header, Ipv4Address response_ip) {
             std::string tmp_payload_str;
             do {
                 // fill up payload
@@ -197,9 +217,10 @@ namespace ns3 {
                 bp_header.set_offset(tmp_payload_str.size());
             } while (0);
             p_pkt->AddHeader(bp_header);
-            InetSocketAddress response_addr(response_ip, NS3DTNBIT_PORT_NUMBER);
-            SocketSendDetail(p_pkt, 0, response_addr)
-        }
+            InetSocketAddress response_addr = InetSocketAddress(response_ip, NS3DTNBIT_PORT_NUMBER);
+            SocketSendDetail(p_pkt, 0, response_addr);
+        };
+
         /* refine 
          * 
          */
@@ -224,7 +245,7 @@ namespace ns3 {
             } while (0);
             p_pkt->AddHeader(bp_header);
             if ((daemon_antipacket_queue_->GetNBytes() + daemon_bundle_queue_->GetNBytes() + p_pkt->GetSize() <= daemon_baq_bytes_max_)) {
-                daemon_bundle_queue_->Enqueue(p_pkt);
+                daemon_bundle_queue_->Enqueue(Packet2Queueit(p_pkt));
                 // NORMAL LOG TODO
             } else {
                 // ERROR LOG TODO
@@ -234,7 +255,7 @@ namespace ns3 {
         /* refine 
          * create and fill up antipacket-bundle then enqueue
          */
-        void DtnApp::ToSendAntipacketBundle(BPHeader const& ref_bp_header) {
+        void DtnApp::ToSendAntipacketBundle(BPHeader& ref_bp_header) {
             string anti_packet_payload_str;
             do {
                 // fill up payload buffer
@@ -259,7 +280,7 @@ namespace ns3 {
                 bp_header.set_offset(anti_packet_payload_str.size());
             } while (0);
             p_pkt->AddHeader(bp_header);
-            daemon_antipacket_queue_->Enqueue(p_pkt);
+            daemon_antipacket_queue_->Enqueue(Packet2Queueit(p_pkt));
             do {
                 // LOG TODO
             } while (0);
@@ -292,48 +313,50 @@ namespace ns3 {
                     uint32_t acked_offset; 
                     uint32_t retransmit_count;
                     std::stringstream ss;
-                    p_pkt->CopyData(ss, bp_header->get_payload_size());
+                    p_pkt->CopyData(&ss, bp_header.get_payload_size());
                     ss >> ip_ack_from >> seqno_was_acked >> bundle_total_payload >> acked_offset >> retransmit_count;
-                    DaemonBundleHeaderInfo tmp_bh_info {
+                    DaemonBundleHeaderInfo tmp_bh_info = {
                         ip_ack_from,
-                            retransmit_count,
-                            seqno_was_acked
+                        retransmit_count,
+                        seqno_was_acked
                     };
-                    for (int k = 0; k < daemon_transmission_info_vec_.size(); k++) {
+                    int k = 0;
+                    for (; k < daemon_transmission_info_vec_.size(); k++) {
                         if (tmp_bh_info == daemon_transmission_bh_info_vec_[k]) { break; }
                     }
                     daemon_transmission_info_vec_[k].info_transmission_current_sent_acked_bytes_ += 
                         daemon_transmission_info_vec_[k].info_transmission_bundle_last_sent_bytes_;
-                    ToTransmit(tmp_header_info);
+                    ToTransmit(tmp_bh_info, false);
                 } else {
                     // if not, send 'ack'
                     ToSendAck(bp_header, from_ip);
                 }
                 do {
                     // process the receiving pkt, then shrift state
-                    DaemonReceptionInfo tmp_recept_info {
+                    DaemonReceptionInfo tmp_recept_info = {
                         p_pkt->GetSize(),
-                            bp_header.get_payload_size(),
-                            Simulator::Now().GetSeconds(),
-                            bp_header.get_source_ip(),
-                            bp_header.get_destination_ip(),
-                            bp_header.get_source_seqno(),
-                            from_ip,
-                            bp_header.get_bundle_type(),
-                            vector<Ptr<Packet>>()
+                        bp_header.get_payload_size(),
+                        Simulator::Now().GetSeconds(),
+                        bp_header.get_source_ip(),
+                        bp_header.get_destination_ip(),
+                        bp_header.get_source_seqno(),
+                        from_ip,
+                        bp_header.get_bundle_type(),
+                        vector<Ptr<Packet>>()
                     };
                     if (tmp_recept_info.info_bundle_type_ == AntiPacket) {
                         // antipacket must not be fragment, it's safe to directly process
                         // keep antipacket and remove the bundle 'corresponded to'
+                        BPHeader tmp_bp_header = bp_header;
                         p_pkt->AddHeader(bp_header);
-                        if (!IsDuplicatedDetail(p_pkt)) {
-                            daemon_antipacket_queue_->Enqueue(p_pkt->Copy());
+                        if (!IsDuplicatedDetail(tmp_bp_header)) {
+                            daemon_antipacket_queue_->Enqueue(Packet2Queueit(p_pkt->Copy()));
                             RemoveBundleFromAntiDetail(p_pkt);
                         }
                     } else if (tmp_recept_info.info_bundle_type_ == BundlePacket) {
                         bool reception_info_found = false;
                         int k = 0;
-                        while (; k < daemon_reception_info_vec_.size(); k++) {
+                        for (; k < daemon_reception_info_vec_.size(); k++) {
                             if (tmp_recept_info.info_bundle_source_ip_ == daemon_reception_info_vec_[k].info_bundle_source_ip_ 
                                     && tmp_recept_info.info_bundle_seqno_ == daemon_reception_info_vec_[k].info_bundle_seqno_
                                     && tmp_recept_info.info_trasmission_receive_from_ip_ == daemon_reception_info_vec_[k].info_trasmission_receive_from_ip_) {
@@ -379,14 +402,14 @@ namespace ns3 {
                 daemon_reception_info_vec_[k].info_fragment_pkt_pointer_vec_[i]->AddHeader(bp_header);
             }
             if (totoal_bytes == current_fragment_bytes) {
-                std::sort(x_info_vec.begin(), x_info_vec.end(), [](std::pair<int, int> a, std::pair<int, int> b) { return get<1>(a) < get<1>(b); });
+                std::sort(x_info_vec.begin(), x_info_vec.end(), [](std::pair<int, int> a, std::pair<int, int> b) { return std::get<1>(a) < std::get<1>(b); });
                 for (auto t : x_info_vec) {
                     Ptr<Packet> tmp_p;
-                    tmp_p = daemon_reception_info_vec_[k].info_fragment_pkt_pointer_vec_[get<0>(t)];
-                    tmp_p->Remove(BPHeader);
-                    reassembel_p_pkt->AddAtEnd(tmp_p);
+                    tmp_p = daemon_reception_info_vec_[k].info_fragment_pkt_pointer_vec_[std::get<0>(t)];
+                    tmp_p->RemoveHeader(tmp_bph);
+                    reassemble_p_pkt->AddAtEnd(tmp_p);
                 }
-                reassemble_p_pkt->AddHeader(BPHeader);
+                reassemble_p_pkt->AddHeader(tmp_bph);
                 daemon_reception_packet_buffer_vec_[k] = reassemble_p_pkt;
             } else {
                 daemon_reception_info_vec_[k].info_fragment_pkt_pointer_vec_.pop_back();
@@ -398,18 +421,18 @@ namespace ns3 {
          */
         void DtnApp::BundleReceptionTailWorkDetail() {
             auto it = daemon_reception_packet_buffer_vec_.rbegin();
-            Ptr<Packet> tmp_p_pkt = *it;
+            Ptr<Packet> tmp_p_pkt = (*it)->Copy();
             BPHeader bp_header;
-            tmp_p_pkt->RemoveHeader(tmp_bp_header);
+            tmp_p_pkt->RemoveHeader(bp_header);
             if (bp_header.get_payload_size() == tmp_p_pkt->GetSize()) {
                 // this bundle is non-fragment or reassemble one
                 if (bp_header.get_destination_ip() == own_ip_) {
                     ToSendAntipacketBundle(bp_header);
                     tmp_p_pkt->AddHeader(bp_header);
-                    daemon_consume_bundle_queue_->Enqueue(tmp_p_pkt->Copy());
+                    daemon_consume_bundle_queue_->Enqueue(Packet2Queueit(tmp_p_pkt->Copy()));
                 } else {
                     tmp_p_pkt->AddHeader(bp_header);
-                    daemon_bundle_queue_->Enqueue(tmp_p_pkt->Copy());
+                    daemon_bundle_queue_->Enqueue(Packet2Queueit(tmp_p_pkt->Copy()));
                 }
             }
         }
@@ -422,13 +445,12 @@ namespace ns3 {
          * note the packet size problem, size < NS3DTNBIT_HYPOTHETIC_TRANS_SIZE_FRAGMENT_MAX
          * update 'daemon_transmission_info_vec_'
          */
-        void DtnApp::ToTransmit(DaemonBundleHeaderInfo bh_info, bool is_retransmit = false) {
+        void DtnApp::ToTransmit(DaemonBundleHeaderInfo bh_info, bool is_retransmit) {
             bool real_send_boolean = false;
             int index = 0, j = 0;
             for (; index < daemon_transmission_bh_info_vec_.size(); index++) {
                 // find the index of the 'bundle to transmit' to 'daemon_transmission_info_vec_' using 'bh_info'
                 if (daemon_transmission_bh_info_vec_[index] == bh_info) {
-                    index_found = true;
                     break;
                 }
             }
@@ -441,10 +463,10 @@ namespace ns3 {
             for (; j < neighbor_info_vec_.size(); j++) {
                 // find the neighbor should be transmit, if this neighbor was not recently seen, schedule 'ToTransmit' later, otherwise, set real_send_boolean
                 if (neighbor_info_vec_[j].info_address_ == bh_info.info_transmit_addr_) {
-                    if (neighbor_info_vec_[j].info_last_seen_time_ > Simulator::Now().Seconds() - (NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME * 3)) {
+                    if (neighbor_info_vec_[j].info_last_seen_time_ > Simulator::Now().GetSeconds() - (NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME * 3)) {
                         real_send_boolean = true;
                     } else {
-                        Simulator::Schedule(Seconds(NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME), &DtnApp::ToTransmit, this, bh_info);
+                        Simulator::Schedule(Seconds(NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME), &DtnApp::ToTransmit, this, bh_info, false);
                         return;
                     }
                     break;
@@ -452,22 +474,22 @@ namespace ns3 {
             }
             Ptr<Packet> tran_p_pkt;
             BPHeader tran_bp_header;
+            int offset_value;
             if (real_send_boolean) {
                 do {
                     // prepare bytes
                     int need_to_bytes = daemon_transmission_info_vec_[index].info_transmission_total_send_bytes_ - daemon_transmission_info_vec_[index].info_transmission_current_sent_acked_bytes_;
-                    int offset_value;
                     tran_p_pkt = daemon_retransmission_packet_buffer_vec_[index]->Copy(); 
                     tran_p_pkt->RemoveHeader(tran_bp_header);
-                    tran_p_pkt->RemoveAtStart(daemon_transmission_info_vec_[index].info_transmission_current_sent_bytes_);
+                    tran_p_pkt->RemoveAtStart(daemon_transmission_info_vec_[index].info_transmission_current_sent_acked_bytes_);
                     if (need_to_bytes > NS3DTNBIT_HYPOTHETIC_TRANS_SIZE_FRAGMENT_MAX) {
                         tran_p_pkt->RemoveAtEnd(need_to_bytes - NS3DTNBIT_HYPOTHETIC_TRANS_SIZE_FRAGMENT_MAX);
                     }
                     tran_bp_header.set_offset(daemon_transmission_info_vec_[index].info_transmission_current_sent_acked_bytes_ + tran_p_pkt->GetSize());
-                    if (is_retransmist) {
+                    if (is_retransmit) {
                         tran_bp_header.set_retransmission_count(tran_bp_header.get_retransmission_count() + 1);
                     }
-                    offset_value = tran_p_pkt->GetSize() + daemon_transmission_info_vec_[index].info_transmission_current_sent_bytes_;
+                    offset_value = tran_p_pkt->GetSize() + daemon_transmission_info_vec_[index].info_transmission_current_sent_acked_bytes_;
                 } while (0);
                 do {
                     // update state
@@ -511,20 +533,20 @@ namespace ns3 {
                     // go through daemon_antipacket_queue_ to find whether real_send_boolean should be set true
                     int pkt_number = daemon_antipacket_queue_->GetNPackets(), n = 0;
                     while ((n++ < pkt_number) && (!real_send_boolean)) {
-                        p_pkt = daemon_antipacket_queue_->Dequeue();
+                        p_pkt = daemon_antipacket_queue_->Dequeue()->GetPacket();
                         p_pkt->RemoveHeader(bp_header);
-                        if ((Simulator::Now().GetSeconds() - bp_header.get_hop_time_stamp.GetSeconds() > 0.2)) {
+                        if ((Simulator::Now().GetSeconds() - bp_header.get_hop_time_stamp().GetSeconds() > 0.2)) {
                             real_send_boolean = BPHeaderBasedSendDecisionDetail(bp_header, decision_neighbor, check_state);
                         }
                         p_pkt->AddHeader(bp_header);
                         Ptr<Packet> p_pkt_copy = p_pkt->Copy();
-                        daemon_antipacket_queue_->Enqueu(p_pkt_copy);
+                        daemon_antipacket_queue_->Enqueue(Packet2Queueit(p_pkt_copy));
                     }
                 } else {
                     // go though daemon_bundle_queue_ to find whether real_send_boolean should be set true
                     int pkt_number = daemon_bundle_queue_->GetNPackets(), n = 0;
                     while ((n++ < pkt_number) && (!real_send_boolean)) {
-                        p_pkt = daemon_bundle_queue_->Dequeue();
+                        p_pkt = daemon_bundle_queue_->Dequeue()->GetPacket();
                         p_pkt->RemoveHeader(bp_header);
                         if (Simulator::Now().GetSeconds() - bp_header.get_src_time_stamp().GetSeconds() < NS3DTNBIT_HYPOTHETIC_BUNDLE_EXPIRED_TIME) {
                             if (Simulator::Now().GetSeconds() - bp_header.get_src_time_stamp().GetSeconds() > 0.2) {
@@ -532,13 +554,13 @@ namespace ns3 {
                             }
                             p_pkt->AddHeader(bp_header);
                             Ptr<Packet> p_pkt_copy = p_pkt->Copy();
-                            daemon_bundle_queue_->Enqueue(p_pkt_copy);
+                            daemon_bundle_queue_->Enqueue(Packet2Queueit(p_pkt_copy));
                         } else {
                             // rearrange outdate packet, do nothing about real_send_boolean 
                             if (bp_header.get_retransmission_count() < NS3DTNBIT_MAX_TRANSMISSION_TIMES) {
                                 if (bp_header.get_hop_count() == 0) {
                                     // this bundle had not been sent out, so we can reset time for it and then re-enqueue for further retransmit
-                                    bp_header.set_src_time_stamp(Simulator::Now().GetSeconds());
+                                    bp_header.set_src_time_stamp(Simulator::Now());
                                 } else {}
                                 bp_header.set_retransmission_count(bp_header.get_retransmission_count() + 1);
                                 for (int j = 0; j < neighbor_info_vec_.size(); j++) {
@@ -550,8 +572,8 @@ namespace ns3 {
                                         }
                                     }
                                 }
-                                p_pkt->AddPacket(bp_header);
-                                daemon_bundle_queue_->Enqueue(p_pkt);
+                                p_pkt->AddHeader(bp_header);
+                                daemon_bundle_queue_->Enqueue(Packet2Queueit(p_pkt));
                             }
                         }
                     }
@@ -565,19 +587,19 @@ namespace ns3 {
                     CreateSocketDetail();
                 }
                 int j = decision_neighbor;
-                DaemonBundleHeaderInfo tmp_header_info {
+                DaemonBundleHeaderInfo tmp_header_info = {
                     neighbor_info_vec_[j].info_address_,
-                        bp_header.get_source_seqno(),
-                        bp_header.get_retransmission_count()
-                }
+                    bp_header.get_source_seqno(),
+                    bp_header.get_retransmission_count()
+                };
                 daemon_transmission_bh_info_vec_.push_back(tmp_header_info);
-                DaemonTransmissionInfo tmp_transmission_info {
+                DaemonTransmissionInfo tmp_transmission_info = {
                     p_pkt->GetSize(),
-                        std::min(NS3DTNBIT_HYPOTHETIC_TRANS_SIZE_FRAGMENT_MAX, p_pkt->GetSize()),
-                        Simulator::Now().GetSeconds(),
-                        Simulator::Now().GetSeconds(),
-                        std::min(NS3DTNBIT_HYPOTHETIC_TRANS_SIZE_FRAGMENT_MAX, p_pkt->GetSize())
-                }
+                    std::min((uint32_t)NS3DTNBIT_HYPOTHETIC_TRANS_SIZE_FRAGMENT_MAX, p_pkt->GetSize()),
+                    Simulator::Now().GetSeconds(),
+                    Simulator::Now().GetSeconds(),
+                    std::min((uint32_t)NS3DTNBIT_HYPOTHETIC_TRANS_SIZE_FRAGMENT_MAX, p_pkt->GetSize())
+                };
                 daemon_transmission_info_vec_.push_back(tmp_transmission_info);
                 if (check_state != State_2) {
                     daemon_flow_count_++;
@@ -589,23 +611,23 @@ namespace ns3 {
                     //p_pkt->AddPacketTag(QosTag(4));
                 }
                 daemon_retransmission_packet_buffer_vec_.push_back(p_pkt->Copy());
-                ToTransmit(tmp_header_info);
+                ToTransmit(tmp_header_info, false);
             }
             // switch check_state and reschedule
             switch (check_state) {
                 case State_0 : {
-                                   if (real_send_boolean == 0) {Simulator::Schedule(Seconds(0.01), &DtnApp::CheckBuffer(), this, State_2);}
-                                   else {Simulator::Schedule(Seconds(0.001), &DtnApp::CheckBuffer(), this, State_2);}
+                                   if (real_send_boolean == 0) {Simulator::Schedule(Seconds(0.01), &DtnApp::CheckBuffer, this, State_2);}
+                                   else {Simulator::Schedule(Seconds(0.001), &DtnApp::CheckBuffer, this, State_2);}
                                    break;
                                }
                 case State_1 : {
                                    if (real_send_boolean == 0) {CheckBuffer(State_0);}
-                                   else {Simulator::Schedule(Seconds(0.001), &DtnApp::CheckBuffer(), this, State_2);}
+                                   else {Simulator::Schedule(Seconds(0.001), &DtnApp::CheckBuffer, this, State_2);}
                                    break;
                                }
                 case State_2 : {
                                    if (real_send_boolean == 0) {CheckBuffer(State_1);}
-                                   else {Simulator::Schedule(Seconds(0.001), &DtnApp::CheckBuffer(), this, State_2);}
+                                   else {Simulator::Schedule(Seconds(0.001), &DtnApp::CheckBuffer, this, State_2);}
                                    break;
                                }
                 default : {
@@ -617,76 +639,76 @@ namespace ns3 {
         /* refine
          * handle normal bundle and antipacket send decision
          */
-        bool DtnApp::BPHeaderBasedSendDecisionDetail(BPHeader const& ref_bp_header, int& return_index_of_neighbor, CheckState const& check_state,) {
+        bool DtnApp::BPHeaderBasedSendDecisionDetail(BPHeader& ref_bp_header, int& return_index_of_neighbor, enum CheckState check_state) {
             bool real_send_boolean = false;
             switch (ref_bp_header.get_bundle_type()) {
-                case BundleType : { 
-                                      Ipv4Address dst_ip = bp_header.get_destination_ip();
-                                      uint32_t spray_value = bp_header.get_spray();
-                                      for (int j = 0; (j < neighbor_info_vec_.size()) && (!real_send_boolean); j++) {
-                                          if (
-                                                  (((check_state == State_0) && (spray_value > 0) && ((congestion_control_method_ == 0) || (neighbor_info_vec_[j].info_daemon_baq_available_bytes_ > ref_bp_header->get_payload_size() + ref_bp_header->GetSerializedSize()))) || (dst_ip != neighbor_info_vec_[j].info_address_.GetIpv4()))
-                                                  && ((Simulator::Now().GetSeconds() - neighbor_info_vec_[j].info_last_seen_time_) < 0.1) 
-                                                  && (neighbor_info_vec_[j].info_address_.GetIpv4() != bp_header.get_source_ip()) 
-                                             ) {
-                                              // 'neighbor_has_bundle is false' maens that neighbor do not carry this bundle
-                                              // 'bundle_sent is false' means that you haven't send this bundle to this neighbor
-                                              bool neighbor_has_bundle = false, bundle_sent = false;
-                                              for (int m = 0; (!neighbor_has_bundle) && (neighbor_info_vec_[j].info_baq_seqno_vec_.size() > m); m++) {
-                                                  if (neighbor_info_vec_[j].info_baq_seqno_vec_[m] == bp_header.get_source_seqno()) {
-                                                      neighbor_has_bundle = true;
-                                                  }
-                                              }
-                                              for (int m = 0; (!neighbor_has_bundle) && (!bundle_sent) && (m < neighbor_info_vec_[j].info_sent_bp_seqno_vec_.size()); m++) {
-                                                  if (neighbor_info_vec_[j].info_sent_bp_seqno_vec_[m] == bp_header.get_source_seqno()) {
-                                                      bundle_sent = true;
-                                                  }
-                                              }
-                                              if ((!neighbor_has_bundle) && (!bundle_sent)) {
-                                                  real_send_boolean = true;
-                                                  return_index_of_neighbor = j;
-                                                  if (check_state == State_0) {
-                                                      if (routing_method_ == SprayAndWait) {
-                                                          ref_bp_header.set_spray(bp_header.get_spray() / 2);
+                case BundleType::BundlePacket : { 
+                                                    Ipv4Address dst_ip = ref_bp_header.get_destination_ip();
+                                                    uint32_t spray_value = ref_bp_header.get_spray();
+                                                    for (int j = 0; (j < neighbor_info_vec_.size()) && (!real_send_boolean); j++) {
+                                                        if (
+                                                                (((check_state == State_0) && (spray_value > 0) && ((congestion_control_method_ == 0) || (neighbor_info_vec_[j].info_daemon_baq_available_bytes_ > ref_bp_header.get_payload_size() + ref_bp_header.GetSerializedSize()))) || (dst_ip != neighbor_info_vec_[j].info_address_.GetIpv4()))
+                                                                && ((Simulator::Now().GetSeconds() - neighbor_info_vec_[j].info_last_seen_time_) < 0.1) 
+                                                                && (neighbor_info_vec_[j].info_address_.GetIpv4() != ref_bp_header.get_source_ip()) 
+                                                           ) {
+                                                            // 'neighbor_has_bundle is false' maens that neighbor do not carry this bundle
+                                                            // 'bundle_sent is false' means that you haven't send this bundle to this neighbor
+                                                            bool neighbor_has_bundle = false, bundle_sent = false;
+                                                            for (int m = 0; (!neighbor_has_bundle) && (neighbor_info_vec_[j].info_baq_seqno_vec_.size() > m); m++) {
+                                                                if (neighbor_info_vec_[j].info_baq_seqno_vec_[m] == ref_bp_header.get_source_seqno()) {
+                                                                    neighbor_has_bundle = true;
+                                                                }
+                                                            }
+                                                            for (int m = 0; (!neighbor_has_bundle) && (!bundle_sent) && (m < neighbor_info_vec_[j].info_sent_bp_seqno_vec_.size()); m++) {
+                                                                if (neighbor_info_vec_[j].info_sent_bp_seqno_vec_[m] == ref_bp_header.get_source_seqno()) {
+                                                                    bundle_sent = true;
+                                                                }
+                                                            }
+                                                            if ((!neighbor_has_bundle) && (!bundle_sent)) {
+                                                                real_send_boolean = true;
+                                                                return_index_of_neighbor = j;
+                                                                if (check_state == State_0) {
+                                                                    if (routing_method_ == SprayAndWait) {
+                                                                        ref_bp_header.set_spray(ref_bp_header.get_spray() / 2);
+                                                                    }
+                                                                    if (congestion_control_method_ != NoControl) {
+                                                                        if (ref_bp_header.get_payload_size() + ref_bp_header.GetSerializedSize()
+                                                                                >= neighbor_info_vec_[j].info_daemon_baq_available_bytes_) {
+                                                                            neighbor_info_vec_[j].info_daemon_baq_available_bytes_ = 0;
+                                                                        } else {
+                                                                            neighbor_info_vec_[j].info_daemon_baq_available_bytes_ -=
+                                                                                ref_bp_header.get_payload_size() + ref_bp_header.GetSerializedSize();
+                                                                        }
+                                                                    }
+                                                                } else {
+                                                                    ref_bp_header.set_hop_time_stamp(Simulator::Now() + Seconds(5.0));
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                    break;
+                                                }
+                case BundleType::AntiPacket : {
+                                                  for (int j = 0; (j < neighbor_info_vec_.size()) && (real_send_boolean == false); j++) {
+                                                      // neighbor already has this antipacket or this antipacket has been sent to this neighbor else
+                                                      bool neighbor_has_bundle = false, anti_pkt_sent = false; 
+                                                      for (int m = 0; (!neighbor_has_bundle) && (neighbor_info_vec_[j].info_baq_seqno_vec_.size() > m) && (m < 2 * NS3DTNBIT_HYPOTHETIC_NEIGHBOR_BAQ_NUMBER_MAX); m++) {
+                                                          if (neighbor_info_vec_[j].info_baq_seqno_vec_[m] == -(dtn_seqno_t)ref_bp_header.get_source_seqno()) {
+                                                              neighbor_has_bundle = true;
+                                                          } 
                                                       }
-                                                      if (congestion_control_method_ != NoControl) {
-                                                          if (ref_bp_header->get_payload_size() + ref_bp_header->GetSerializedSize()
-                                                                  >= neighbor_info_vec_[j].info_daemon_baq_available_bytes_) {
-                                                              neighbor_info_vec_[j].info_daemon_baq_available_bytes_ = 0;
-                                                          } else {
-                                                              neighbor_info_vec_[j].info_daemon_baq_available_bytes_ -=
-                                                                  ref_bp_header->get_payload_size() + ref_bp_header->GetSerializedSize();
+                                                      for (int m = 0; (!anti_pkt_sent) && (!neighbor_has_bundle) && (neighbor_info_vec_[j].info_sent_ap_seqno_vec_.size() > m) && m < (NS3DTNBIT_HYPOTHETIC_NEIGHBOR_BAQ_NUMBER_MAX); m++) {
+                                                          if (neighbor_info_vec_[j].info_sent_ap_seqno_vec_[m] == ref_bp_header.get_source_seqno() && (Simulator::Now().GetSeconds() - neighbor_info_vec_[j].info_sent_ap_time_vec_[m] < 1.5)) {
+                                                              anti_pkt_sent = true;
                                                           }
                                                       }
-                                                  } else {
-                                                      bp_header.set_hop_time_stamp(Simulator::Now() + Seconds(5.0));
+                                                      if (neighbor_has_bundle == false && anti_pkt_sent == false) {
+                                                          real_send_boolean = true;
+                                                          return_index_of_neighbor = j;
+                                                      }
                                                   }
+                                                  break;
                                               }
-                                          }
-                                      }
-                                      break;
-                                  }
-                case AntiPacket : {
-                                      for (int j = 0; (j < neighbor_info_vec_.size()) && (real_send_boolean == false; j++)) {
-                                          // neighbor already has this antipacket or this antipacket has been sent to this neighbor else
-                                          bool neighbor_has_bundle = false, anti_pkt_sent = false; 
-                                          for (int m = 0; (!neighbor_has_bundle) && (neighbor_info_vec_[j].info_baq_seqno_vec_.size() > m) && (m < 2 * NS3DTNBIT_HYPOTHETIC_NEIGHBOR_BAQ_NUMBER_MAX); m++) {
-                                              if (neighbor_info_vec_[j].info_baq_seqno_vec_[m] == -(dtn_seqno_t)bp_header.get_source_seqno()) {
-                                                  neighbor_has_bundle = true;
-                                              } 
-                                          }
-                                          for (int m = 0; (!anti_pkt_sent) && (!neighbor_has_bundle) && (neighbor_info_vec_[j].info_sent_ap_seqno_vec_.size() > m) && m < (NS3DTNBIT_HYPOTHETIC_NEIGHBOR_BAQ_NUMBER_MAX); m++) {
-                                              if (neighbor_info_vec_[j].info_sent_ap_seqno_vec_[m] == bp_header.get_source_seqno() && (Simulator::Now().GetSeconds() - neighbor_info_vec_[j].info_sent_ap_time_vec_[m] < 1.5)) {
-                                                  anti_pkt_sent = true;
-                                              }
-                                          }
-                                          if (neighbor_has_bundle == false && anti_pkt_sent == false) {
-                                              real_send_boolean = true;
-                                              return_index_of_neighbor = j;
-                                          }
-                                      }
-                                      break;
-                                  }
                 default :   break;
             }
             return real_send_boolean;
@@ -731,13 +753,13 @@ namespace ns3 {
             p_anti_pkt->RemoveHeader(lhs_bp_header);
             int number = daemon_bundle_queue_->GetNPackets();
             std::stringstream lhs_ss;
-            p_anti_pkt->CopyDate(lhs_ss, lhs_bp_header.get_payload_size());
+            p_anti_pkt->CopyData(dynamic_cast<std::ostream *>(&lhs_ss), lhs_bp_header.get_payload_size());
             std::string source_ip, destination_ip;
             dtn_seqno_t lhs_seqno_value;
             lhs_ss >> source_ip >> destination_ip >> lhs_seqno_value;
-            Ipv4Address lhs_source_ip(source_ip), lhs_destination_ip(destination_ip);
+            Ipv4Address lhs_source_ip(source_ip.c_str()), lhs_destination_ip(destination_ip.c_str());
             while (number--) {
-                Ptr<Packet> rhs_p_pkt = daemon_bundle_queue_->Dequeue();
+                Ptr<Packet> rhs_p_pkt = daemon_bundle_queue_->Dequeue()->GetPacket();
                 BPHeader rhs_bp_header;
                 rhs_p_pkt->RemoveHeader(rhs_bp_header);
                 if (lhs_source_ip == rhs_bp_header.get_source_ip() 
@@ -746,7 +768,7 @@ namespace ns3 {
                     break;
                 } else {
                     rhs_p_pkt->AddHeader(rhs_bp_header);
-                    daemon_bundle_queue_->Enqueue(rhs_p_pkt);
+                    daemon_bundle_queue_->Enqueue(Packet2Queueit(rhs_p_pkt));//Enqueue(rhs_p_pkt);
                 }
             }
             p_anti_pkt->AddHeader(lhs_bp_header);
@@ -755,38 +777,39 @@ namespace ns3 {
         /* refine 
          * check whether one packet is already in queue
          */
-        bool DtnApp::IsDuplicatedDetail(BPHeader bp_header) {
+        bool DtnApp::IsDuplicatedDetail(BPHeader& bp_header) {
             if (bp_header.get_bundle_type() == BundlePacket) {
                 int number = daemon_bundle_queue_->GetNPackets();
                 for (int i = 0; i < number; ++i) {
-                    Ptr<Packet> lhs_p_pkt = daemon_bundle_queue_->Dequeue();
+                    Ptr<Packet> lhs_p_pkt = daemon_bundle_queue_->Dequeue()->GetPacket();
                     BPHeader lhs_bp_header;
-                    lhs_p_pkt->Remove(lhs_bp_header);
+                    lhs_p_pkt->RemoveHeader(lhs_bp_header);
                     if (lhs_bp_header.get_source_ip() == bp_header.get_source_ip()
                             && lhs_bp_header.get_source_seqno() == bp_header.get_source_seqno()) {
                         lhs_p_pkt->AddHeader(lhs_bp_header);
-                        daemon_bundle_queue_->Enqueue(lhs_p_pkt);
+                        daemon_bundle_queue_->Enqueue(Packet2Queueit(lhs_p_pkt));//Enqueue(lhs_p_pkt);
                         return true;
                     }
                     lhs_p_pkt->AddHeader(lhs_bp_header);
-                    daemon_bundle_queue_->Enqueue(lhs_p_pkt);
+                    daemon_bundle_queue_->Enqueue(Packet2Queueit(lhs_p_pkt));//Enqueue(lhs_p_pkt);
                 }
             } else {
                 int number = daemon_antipacket_queue_->GetNPackets();
                 for (int i = 0; i < number; ++i) {
-                    Ptr<Packet> lhs_p_pkt = daemon_antipacket_queue_->Dequeue();
+                    Ptr<Packet> lhs_p_pkt = daemon_antipacket_queue_->Dequeue()->GetPacket();
                     BPHeader lhs_bp_header;
-                    lhs_p_pkt->Remove(lhs_bp_header);
+                    lhs_p_pkt->RemoveHeader(lhs_bp_header);
                     if (lhs_bp_header.get_source_ip() == bp_header.get_source_ip()
                             && lhs_bp_header.get_source_seqno() == bp_header.get_source_seqno()) {
                         lhs_p_pkt->AddHeader(lhs_bp_header);
-                        daemon_bundle_queue_->Enqueue(lhs_p_pkt);
+                        daemon_bundle_queue_->Enqueue(Packet2Queueit(lhs_p_pkt));//Enqueue(lhs_p_pkt);
                         return true;
                     }
                     lhs_p_pkt->AddHeader(lhs_bp_header);
-                    daemon_antipacket_queue_->Enqueue(lhs_p_pkt);
+                    daemon_antipacket_queue_->Enqueue(Packet2Queueit(lhs_p_pkt));//Enqueue(lhs_p_pkt);
                 }
             }
+            return false;
         }
 
         /* refine 
@@ -794,16 +817,16 @@ namespace ns3 {
          * this call handles only link layer sending, so it's called trans_addr not dst_addr
          * LOG some
          */
-        bool DtnApp::SocketSendDetail(Ptr<Packet> p_pkt, uint32_t flags, const Address& trans_addr) {
+        bool DtnApp::SocketSendDetail(Ptr<Packet> p_pkt, uint32_t flags, InetSocketAddress trans_addr) {
             // LOG
-            int result = daemon_socket_handle_.SendTo(p_pkt, flags, trans_addr);
+            int result = daemon_socket_handle_->SendTo(p_pkt, flags, trans_addr);
             return result != -1 ? true : false;
         }
 
         /* refine
         */
-        bool DtnApp::CreateSocketDetail() {
-            daemon_socket_handle_ = Socket::CreateSocket(GetNode(), TypeId::LookupByName("ns3::UdpSocketFactory"));
+        void DtnApp::CreateSocketDetail() {
+            daemon_socket_handle_ = Socket::CreateSocket(node_, TypeId::LookupByName("ns3::UdpSocketFactory"));
             Ptr<Ipv4> ipv4 = node_->GetObject<Ipv4>();
             Ipv4Address ipip = (ipv4->GetAddress(1, 0)).GetLocal();
             InetSocketAddress local = InetSocketAddress(ipip, NS3DTNBIT_PORT_NUMBER);
@@ -819,16 +842,16 @@ namespace ns3 {
             Ptr<Packet> p_pkt;
             BPHeader bp_header;
             for (int i = 0; i < bundle_number; ++i) {
-                p_pkt = daemon_bundle_queue_->Dequeue();
-                daemon_reorder_buffer_queue_->Enqueue(p_pkt);
+                p_pkt = daemon_bundle_queue_->Dequeue()->GetPacket();
+                daemon_reorder_buffer_queue_->Enqueue(Packet2Queueit(p_pkt));//Enqueue(p_pkt);
             }
             // reorder 
             for (int m = 0; m < bundle_number; m++) {
                 int min_trans_count = 1000;
                 dtn_seqno_t min_trans_seqno;
-                for (int n = 0; n < buffer_current_number; n++) {
+                for (int n = 0; n < daemon_reorder_buffer_queue_->GetNPackets(); n++) {
                     int trans_count = 0, index = 0;
-                    p_pkt = daemon_reorder_buffer_queue_->Dequeue();
+                    p_pkt = daemon_reorder_buffer_queue_->Dequeue()->GetPacket();
                     p_pkt->RemoveHeader(bp_header);
                     // find trans_min_count
                     for (; index < daemon_transmission_bh_info_vec_.size(); index++) {
@@ -841,20 +864,20 @@ namespace ns3 {
                         min_trans_seqno = bp_header.get_source_seqno();
                     }
                     p_pkt->AddHeader(bp_header);
-                    daemon_reorder_buffer_queue_->Enqueue(p_pkt);
+                    daemon_reorder_buffer_queue_->Enqueue(Packet2Queueit(p_pkt));//Enqueue(p_pkt);
                     // put the trans_min_count one into daemon_bundle_queue_
                     bool found = false;
                     while (!found) {
-                        p_pkt = daemon_reorder_buffer_queue_->Dequeue();
+                        p_pkt = daemon_reorder_buffer_queue_->Dequeue()->GetPacket();
                         BPHeader tmp_bp_header;
                         p_pkt->RemoveHeader(tmp_bp_header);
                         if (tmp_bp_header.get_source_seqno() == min_trans_seqno) {
                             found = true;
                             p_pkt->AddHeader(tmp_bp_header);
-                            daemon_bundle_queue_->Enqueue(p_pkt);
+                            daemon_bundle_queue_->Enqueue(Packet2Queueit(p_pkt));//Enqueue(p_pkt);
                         } else {
                             p_pkt->AddHeader(tmp_bp_header);
-                            daemon_reorder_buffer_queue_->Enqueue(p_pkt);
+                            daemon_reorder_buffer_queue_->Enqueue(Packet2Queueit(p_pkt));//Enqueue(p_pkt);
                         }
                     }
                 }
@@ -864,7 +887,7 @@ namespace ns3 {
         /* refine
          * create and fill up then send
          */
-        void DtnApp::CreateHelloBundleAndSendDetail(string const& msg_str, Ptr<Socket> broad_cast_skt) {
+        void DtnApp::CreateHelloBundleAndSendDetail(string msg_str, Ptr<Socket> broad_cast_skt) {
             Ptr<Packet> p_pkt = Create<Packet>(msg_str.c_str(), msg_str.size());
             BPHeader bp_header;
             do {
@@ -874,7 +897,7 @@ namespace ns3 {
                 bp_header.set_source_ip(Ipv4Address("255.255.255.255"));
                 bp_header.set_source_seqno(p_pkt->GetUid());
                 bp_header.set_payload_size(msg_str.size());
-                bp_header.set_offset(msg_str().size());
+                bp_header.set_offset(msg_str.size());
             } while (0);
             p_pkt->AddHeader(bp_header);
             //p_pkt->AddPacketTag(QosTag(6));
@@ -888,15 +911,15 @@ namespace ns3 {
             // remove expired bundle queue packets
             pkt_number = daemon_bundle_queue_->GetNPackets();
             for (int i = 0; i < pkt_number; ++i) {
-                Ptr<Packet> p_pkt = daemon_bundle_queue_->Dequeue();
-                BPHeader bp_header();
+                Ptr<Packet> p_pkt = daemon_bundle_queue_->Dequeue()->GetPacket();
+                BPHeader bp_header;
                 p_pkt->RemoveHeader(bp_header);
                 if (((Simulator::Now().GetSeconds() - bp_header.get_src_time_stamp()) < NS3DTNBIT_HYPOTHETIC_BUNDLE_EXPIRED_TIME) || (bp_header.get_hop_count() == 0)) {
                     //if not expired
                     p_pkt->AddHeader(bp_header);
-                    daemon_bundle_queue_->Enqueue(p_pkt);
+                    daemon_bundle_queue_->Enqueue(Packet2Queueit(p_pkt));//Enqueue(p_pkt);
                 } else {
-                    for (int j = 0; j < neighbor_count_; j++) {
+                    for (int j = 0; j < neighbor_info_vec_.size(); j++) {
                         int m = 0, found_expired = 0;
                         while (m < NS3DTNBIT_HYPOTHETIC_NEIGHBOR_BAQ_NUMBER_MAX && found_expired == 0) {
                             // hop count equals zero means that it came from a neighbor
@@ -915,19 +938,18 @@ namespace ns3 {
             // remove expired antipacket queue packets
             pkt_number = daemon_antipacket_queue_->GetNPackets();
             for (int i = 0; i < pkt_number; ++i) {
-                Ptr<Packet> p_pkt = daemon_antipacket_queue_->Dequeue();
-                BPHeader bp_header();
+                Ptr<Packet> p_pkt = daemon_antipacket_queue_->Dequeue()->GetPacket();
+                BPHeader bp_header;
                 p_pkt->RemoveHeader(bp_header);
-                assert(bp_header.get_bundle_type() == Antipacket);
                 // if not expired
                 if ((Simulator::Now().GetSeconds() - bp_header.get_src_time_stamp().GetSeconds() < NS3DTNBIT_ANTIPACKET_EXPIRED_TIME)) {
                     p_pkt->AddHeader(bp_header);
-                    daemon_antipacket_queue_->Enqueue(p_pkt);
+                    daemon_antipacket_queue_->Enqueue(Packet2Queueit(p_pkt));//Enqueue(p_pkt);
                 } else {
-                    for (int j = 0; j < neighbor_count_; j++) {
+                    for (int j = 0; j < neighbor_info_vec_.size(); j++) {
                         int k = 0, found_expired = 0;
                         while (k < NS3DTNBIT_HYPOTHETIC_NEIGHBOR_BAQ_NUMBER_MAX && found_expired == 0) {
-                            if (bp_header.get_source_seqno == - NeighborInfo[j].info_sent_ap_seqno_vec_[k]) {
+                            if (bp_header.get_source_seqno() == - neighbor_info_vec_[j].info_sent_ap_seqno_vec_[k]) {
                                 found_expired = 1;
                                 k++;
                             }
@@ -942,11 +964,7 @@ namespace ns3 {
         }
 
         /* refine
-         * you should fill following fields your self
-         * 'bundle type'
-         * 'dstip'
-         * 'seqno'
-         * 'payload size'
+         * you should fill following fields your self * 'bundle type' * 'dstip' * 'seqno' * 'payload size'
          */
         void DtnApp::SemiFillBPHeaderDetail(BPHeader* p_bp_header) {
             char srcstring[1024] = "";
@@ -965,7 +983,7 @@ namespace ns3 {
          */
         void DtnExample::Configure(int argc, char** argv) {
             CommandLine cmdl_parser;
-            cmdl_parser.AddValue("randmon_seed", "nothing", randmon_seed_);
+            cmdl_parser.AddValue("randmon_seed", "nothing", random_seed_);
             cmdl_parser.AddValue("node_number", "nothing", node_number_);
             cmdl_parser.AddValue("simulation_duration", "nothing", simulation_duration_);
             cmdl_parser.AddValue("pcap_boolean", "nothing", pcap_boolean_);
@@ -973,7 +991,7 @@ namespace ns3 {
             cmdl_parser.AddValue("trace_file", "nothing", trace_file_);
             cmdl_parser.AddValue("log_file", "nothing", log_file_);
             cmdl_parser.Parse(argc, argv);
-            SeedManager::SetSeed(randmon_seed_);
+            SeedManager::SetSeed(random_seed_);
             file_stream_.open(log_file_.c_str());
         }
 
@@ -982,7 +1000,7 @@ namespace ns3 {
         void DtnExample::Run() {
             Config::SetDefault("ns3::ArpCache::WaitReplyTimeout", StringValue("100000000ns"));
             // default 1.0 s, newset 0.1 s
-            Config::SetDefault("ns3::ArpCache::MaxRetries", UintegerValue("10"));
+            Config::SetDefault("ns3::ArpCache::MaxRetries", UintegerValue(10));
             // default 3, newset 10
             Config::SetDefault("ns3::ArpCache::AliveTimeout", StringValue("5000000000000ns"));
             // default 120 s, newset 5000s
@@ -997,12 +1015,14 @@ namespace ns3 {
             std::cout << "******************** populate arpcache ******************" << std::endl;
             PopulateArpCache();
             std::cout << "********************* Simulate **************" << std::endl;
-            std::cout << "simulator began, simulate time = " << simulation_duration_ << "randmon seed = " << randmon_seed_ << std::endl;
+            std::cout << "simulator began, simulate time = " << simulation_duration_ << "randmon seed = " << random_seed_ << std::endl;
             Simulator::Stop(Seconds(simulation_duration_));
             Simulator::Run();
             file_stream_.close();
             Simulator::Destroy();
         }
+
+
 
         /* refine 
         */
@@ -1018,20 +1038,24 @@ namespace ns3 {
             }
             ns2_mobi.Install();
             // what does Config::Connect("",) means ? TODO
+            Config::Connect("/NodeList/*/$ns3::MobilityModel/CourseChange", 
+                    MakeBoundCallback(&CourseChange, &file_stream_));
         }
 
-        /* refine
-        */
+        /* refactory, API Change
+         * the API is different, check is and refactory
+         */
         void DtnExample::CreateDevices() {
             Config::SetDefault("ns3::WifiRemoteStationManager::NonUnicastMode", StringValue("ErpOfdmRate6Mbps"));
             Config::SetDefault("ns3::WifiRemoteStationManager::RtsCtsThreshold", StringValue("0"));
             WifiHelper wifi_helper;
             wifi_helper.SetStandard(WIFI_PHY_STANDARD_80211g);
             YansWifiPhyHelper yans_phy_wifi_helper = YansWifiPhyHelper::Default();
-            YansWifiChannel yans_wifi_chnnel;
-            yans_wifi_chnnel.SetPropagationDelay("ns3::ConstantSpeedPropagationDelayModel");
-            yans_wifi_chnnel.AddPropagationLoss("ns3::FriisPropagationLossModel");
-            yans_phy_wifi_helper.SetChannel(yans_wifi_chnnel.Create());
+            YansWifiChannelHelper yans_wifi_chnnel_helper;
+            //YansWifiChannel yans_wifi_chnnel;
+            yans_wifi_chnnel_helper.SetPropagationDelay("ns3::ConstantSpeedPropagationDelayModel");
+            yans_wifi_chnnel_helper.AddPropagationLoss("ns3::FriisPropagationLossModel");
+            yans_phy_wifi_helper.SetChannel(yans_wifi_chnnel_helper.Create());
             QosWifiMacHelper wifi_mac = QosWifiMacHelper::Default();
             wifi_helper.SetRemoteStationManager("ns3::IdealWifiManager");
             yans_phy_wifi_helper.Set("TxPowerLevels", UintegerValue(1));    // default 1
@@ -1072,73 +1096,80 @@ namespace ns3 {
             TypeId udp_tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
             Ptr<DtnApp> app[node_number_];
             for (uint32_t i = 0; i < node_number_; ++i) { 
-                app[i] = CreateObject<DtnApp> ();
-                app[i]->Setup (nodes.Get (i));
-                nodes.Get (i)->AddApplication (app[i]);
-                app[i]->SetStartTime (Seconds (0.5 + 0.00001*i));
-                app[i]->SetStopTime (Seconds (5000.0));
+                app[i] = CreateObject<DtnApp>();
+                app[i]->SetUp(nodes_container_.Get(i));
+                nodes_container_.Get(i)->AddApplication(app[i]);
+                //app[i]->SetStartTime (Seconds (0.5 + 0.00001*i));
+                //app[i]->SetStopTime (Seconds (5000.0));
 
-                Ptr<Socket> dst = Socket::CreateSocket (nodes.Get (i), udp_tid);
+                Ptr<Socket> dst = Socket::CreateSocket(nodes_container_.Get(i), udp_tid);
                 char dststring[1024]="";
                 sprintf(dststring,"10.0.0.%d",(i + 1));
                 InetSocketAddress dstlocaladdr (Ipv4Address(dststring), 50000);
                 dst->Bind(dstlocaladdr);
-                dst->SetRecvCallback (MakeCallback (&DtnApp::ReceiveBundle, app[i]));
+                dst->SetRecvCallback(MakeCallback(&DtnApp::ReceiveBundle, app[i]));
 
-                Ptr<Socket> source = Socket::CreateSocket (nodes.Get (i), udp_tid);
-                InetSocketAddress remote (Ipv4Address ("255.255.255.255"), 80);
-                source->SetAllowBroadcast (true);
-                source->Connect (remote);
-                app[i]->ToSendHello (source, simulation_duration_, Seconds (0.1 + 0.00085*i), 1);
+                Ptr<Socket> source = Socket::CreateSocket(nodes_container_.Get (i), udp_tid);
+                InetSocketAddress remote(Ipv4Address("255.255.255.255"), 80);
+                source->SetAllowBroadcast(true);
+                source->Connect(remote);
+                app[i]->ToSendHello(source, simulation_duration_, Seconds(0.1 + 0.00085*i), 1);
 
-                Ptr<Socket> recvSink = Socket::CreateSocket (nodes.Get (i), udp_tid);
-                InetSocketAddress local (Ipv4Address::GetAny (), 80);
-                recvSink->Bind (local);
-                recvSink->SetRecvCallback (MakeCallback (&DtnApp::ReceiveHello, app[i]));
+                Ptr<Socket> recvSink = Socket::CreateSocket(nodes_container_.Get(i), udp_tid);
+                InetSocketAddress local(Ipv4Address::GetAny(), 80);
+                recvSink->Bind(local);
+                recvSink->SetRecvCallback(MakeCallback(&DtnApp::ReceiveHello, app[i]));
             }
             Ptr<UniformRandomVariable> x = CreateObject<UniformRandomVariable> ();
             for (uint32_t i = 0; i < node_number_; ++i) { 
                 for (uint32_t j = 0; j < 8; ++j) { 
                     uint32_t dstnode = i;
                     while (dstnode == i)
-                        dstnode = x->GetInteger(0, nodeNum-1);
-                    app[i]->ScheduleTx (dstnode, Seconds (200.0*j + x->GetValue (0.0, 200.0)), 10000*(x->GetInteger(1, 10)));
+                        dstnode = x->GetInteger(0, node_number_-1);
+                    app[i]->ScheduleTx(dstnode, Seconds(200.0*j + x->GetValue(0.0, 200.0)), 10000*(x->GetInteger(1, 10)));
                 }
             }
         }
 
-        /* refine
+        /* refactory
         */
-        void DtnExample::PopulateArpCache () { 
-            Ptr<ArpCache> arp = CreateObject<ArpCache> (); 
-            arp->SetAliveTimeout (Seconds(3600 * 24 * 365)); 
+        void DtnExample::PopulateArpCache() { 
+            Ptr<ArpCache> arp = CreateObject<ArpCache>(); 
+            arp->SetAliveTimeout(Seconds(3600 * 24 * 365)); 
+            // Populates ARP Cache with information from all nodes
             for (NodeList::Iterator i = NodeList::Begin(); i != NodeList::End(); ++i) { 
                 Ptr<Ipv4L3Protocol> ip = (*i)->GetObject<Ipv4L3Protocol> (); 
                 NS_ASSERT(ip !=0); 
                 ObjectVectorValue interfaces; 
                 ip->GetAttribute("InterfaceList", interfaces); 
-                for(uint32_t j = 0; j != ip->GetNInterfaces (); j ++) {
-                    Ptr<Ipv4Interface> ipIface = ip->GetInterface (j);
+                for (uint32_t j = 0; j != ip->GetNInterfaces(); j ++) {
+                    Ptr<Ipv4Interface> ipIface = ip->GetInterface(j);
                     NS_ASSERT(ipIface != 0); 
                     Ptr<NetDevice> device = ipIface->GetDevice(); 
                     NS_ASSERT(device != 0); 
-                    Mac48Address addr = Mac48Address::ConvertFrom(device->GetAddress ()); 
-                    for(uint32_t k = 0; k < ipIface->GetNAddresses (); k ++) { 
-                        Ipv4Address ipAddr = ipIface->GetAddress (k).GetLocal(); 
-                        if(ipAddr == Ipv4Address::GetLoopback()) 
+                    Mac48Address addr = Mac48Address::ConvertFrom(device->GetAddress()); 
+                    for (uint32_t k = 0; k < ipIface->GetNAddresses(); k ++) { 
+                        Ipv4Address ipAddr = ipIface->GetAddress(k).GetLocal(); 
+                        // GetLocal() get the local address, which is used only in a private network, and the routers won't
+                        // routes the traffic, you can routes whatever you want.
+                        if(ipAddr == Ipv4Address::GetLoopback()) {
                             continue; 
+                        }
                         ArpCache::Entry * entry = arp->Add(ipAddr); 
-                        entry->MarkWaitReply(0); 
+                        // the author means intend to call MarkWaitReply() with NULL
+                        // MarkAlive() checks NS_ASSERT(m_state == WAIT_REPLY) and the m_state is set to WAIT_REPLY by MarkWaitReply().
+                        // what's this ? and how to fix ?
+                        entry->MarkWaitReply(ns3::ArpCache::Ipv4PayloadHeaderPair()); 
                         entry->MarkAlive(addr); 
                     } 
                 } 
             } 
             for (NodeList::Iterator i = NodeList::Begin(); i != NodeList::End(); ++i) { 
-                Ptr<Ipv4L3Protocol> ip = (*i)->GetObject<Ipv4L3Protocol> (); 
+                Ptr<Ipv4L3Protocol> ip = (*i)->GetObject<Ipv4L3Protocol>(); 
                 NS_ASSERT(ip !=0); 
                 ObjectVectorValue interfaces; 
                 ip->GetAttribute("InterfaceList", interfaces);
-                for(uint32_t j = 0; j != ip->GetNInterfaces (); j ++) {
+                for (uint32_t j = 0; j != ip->GetNInterfaces(); j ++) {
                     Ptr<Ipv4Interface> ipIface = ip->GetInterface (j);
                     ipIface->SetAttribute("ArpCache", PointerValue(arp)); 
                 } 
@@ -1154,3 +1185,4 @@ namespace ns3 {
     } /* ns3dtnbit */ 
     /* ... */
 }
+

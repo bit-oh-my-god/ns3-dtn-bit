@@ -22,7 +22,7 @@
 namespace ns3 {
     namespace ns3dtnbit {
 
-        class DtnApp {
+        class DtnApp : public Application {
 
             public :
                 enum RoutingMethod {
@@ -61,9 +61,9 @@ namespace ns3 {
 
                 struct DaemonBundleHeaderInfo {
                     InetSocketAddress info_transmit_addr_;
-                    uint32_t info_retransmission_count_ = 0;
+                    uint32_t info_retransmission_count_;
                     dtn_seqno_t info_source_seqno_;
-                    bool operator==(struct DaemonBundleHeaderInfo const& rhs) {
+                    bool operator==(struct DaemonBundleHeaderInfo& rhs) {
                         return (info_transmit_addr_ == rhs.info_transmit_addr_ && info_retransmission_count_ == rhs.info_retransmission_count_ && info_source_seqno_ == rhs.info_source_seqno_);
                     }
                 };
@@ -89,11 +89,11 @@ namespace ns3 {
                 DtnApp ();
                 virtual ~DtnApp ();
                 void SetUp(Ptr<Node> node);
-                void SchedultTx( uint32_t dstnode, Time tNext, uint32_t payload_size);
+                void ScheduleTx( uint32_t dstnode, Time tNext, uint32_t payload_size);
                 /* create a bundle and enqueue, waitting for CheckBuffer() to call SendBundleDetail
                  */
                 void ToSendBundle(uint32_t dstnode_number, uint32_t payload_size);
-                void ToSendAck(BPHeader const& ref_bp_header, Ipv4Address response_ip);
+                void ToSendAck(BPHeader& ref_bp_header, Ipv4Address response_ip);
 
                 /* receive bundle from a socket
                  * should check the 'packet type' : 'acknowledge in one connection' 'bundle you should receive' 'antipacket'
@@ -126,24 +126,25 @@ namespace ns3 {
                 /* the interface of bp cancellation functionality
                  * send anti
                  */
-                void ToSendAntipacketBundle(BPHeader const& ref_bp_header);
+                void ToSendAntipacketBundle(BPHeader& ref_bp_header);
                 
             private :
                 void RemoveBundleFromAntiDetail(Ptr<Packet> p_pkt);
                 void PeriodReorderDaemonBundleQueueDetail();
-                void CreateHelloBundleAndSendDetail(string msg_str);
+                void CreateHelloBundleAndSendDetail(string msg_str, Ptr<Socket> broad_cast_skt);
+                void BundleReceptionTailWorkDetail();
                 void SemiFillBPHeaderDetail(BPHeader* p_bp_header);
                 void FragmentReassembleDetail(int k);
-                bool BPHeaderBasedSendDecisionDetail(BPHeader const& ref_bp_header, int& return_index_of_neighbor, CheckState check_state);
+                bool BPHeaderBasedSendDecisionDetail(BPHeader& ref_bp_header, int& return_index_of_neighbor, enum CheckState check_state);
                 void CreateSocketDetail();
-                void UpdateNeighborInfo(int which_info, int which_neighbor, int which_pkt_index);
+                void UpdateNeighborInfoDetail(int which_info, int which_neighbor, int which_pkt_index);
                 void RemoveExpiredBAQDetail();
                 void ReceiveHelloBundleDetail(Ptr<Packet> p_pkt, std::string msg);
-                void SocketSendDetail(Ptr<Packet> p_pkt, uint32_t flags, const Address& dst_addr);
-                void IsDuplicatedDetail(Ptr<Packet> pkt, Ptr<Queue> queue);
+                bool SocketSendDetail(Ptr<Packet> p_pkt, uint32_t flags, InetSocketAddress trans_addr);
+                bool IsDuplicatedDetail(BPHeader& bp_header);
                 bool IsAntipacketExistDetail();
                 void CheckBuffer(enum CheckState check_state);
-                void ToTransmit(DaemonBundleHeaderInfo bh_info);
+                void ToTransmit(DaemonBundleHeaderInfo bh_info, bool is_retransmit);
                 
                 // data
                 // uint32_t bundles_count_; // bundles you can use daemon_reception_info_vec_.size()
@@ -220,7 +221,7 @@ namespace ns3 {
         class DtnExample {
             public :
                 DtnExample();
-                bool Configure(int argc, char** argv);
+                void Configure(int argc, char** argv);
                 void Run();
                 void Report(std::ostream& os);
 
@@ -231,7 +232,7 @@ namespace ns3 {
                 bool pcap_boolean_, print_route_boolean_;
                 std::string trace_file_;
                 std::string log_file_;
-                std::fstream file_stream_;
+                std::ofstream file_stream_;
                 NodeContainer nodes_container_;
                 NetDeviceContainer net_devices_container_;
                 Ipv4InterfaceContainer ip_interface_container_;

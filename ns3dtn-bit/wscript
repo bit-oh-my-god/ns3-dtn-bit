@@ -14,7 +14,8 @@ def build(bld):
         'model/ns3dtn-bit.cc',
         'helper/ns3dtn-bit-helper.cc',
         ]
-    module.cxxflags = ['-std=c++11', '-Wall']
+    module.cxxflags = ['-std=c++11', '-Wall', '-Wextra', '-fpermissive', '-w']
+    #module.cxxflags = ['-std=c++11', '-Wall']
     headers = bld(features='ns3header')
     headers.module = 'ns3dtn-bit'
     headers.source = [

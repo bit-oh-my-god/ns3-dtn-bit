@@ -12,6 +12,7 @@
 #include <cmath>
 #include <vector>
 #include <sstream>
+#include <algorithm>
 #include <string>
 #include <map>
 #include <tuple>
