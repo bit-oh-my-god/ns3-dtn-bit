@@ -6,32 +6,85 @@ namespace ns3 {
 
     namespace ns3dtnbit {
 
-        static void CourseChange (std::ostream *myos, std::string foo, Ptr<const MobilityModel> mobility)
+        /* we define this would rewrite ( you can say shade ) the dufault CourseChange
+         * and this rewrite is supposed in tutorial
+         */
+        static void CourseChanged(std::ostream *myos, Ptr<const MobilityModel> mobility)
         {
             Ptr<Node> node = mobility->GetObject<Node> ();
             Vector pos = mobility->GetPosition (); // Get position
             Vector vel = mobility->GetVelocity (); // Get velocity
 
             std::cout.precision(5);
-            *myos << Simulator::Now () << "; NODE: " << node->GetId() << "; POS: x=" << pos.x << ", y=" << pos.y
-                << ", z=" << pos.z << "; VEL: x=" << vel.x << ", y=" << vel.y
-                << ", z=" << vel.z << std::endl;
+            *myos << "Simulation Time : " << Simulator::Now () 
+                << "; NODE: " << node->GetId() 
+                << "; POS: x=" << pos.x << ", y=" << pos.y << ", z=" << pos.z 
+                << "; VEL: x=" << vel.x << ", y=" << vel.y << ", z=" << vel.z 
+                << std::endl;
         }
 
+        /*
+         * Can't use CreateObject<>, so do it myself
+         */
         static Ptr<QueueItem> Packet2Queueit(Ptr<Packet> p_pkt) {
             QueueItem* p = new QueueItem(p_pkt);
             return Ptr<QueueItem>(p);
         }
 
-        using std::vector;
-        using std::string;
+        string getCallStack(int i = 2) {
+            int nptrs;
+            void *buffer[200];
+            char **strings;
+            char* return_str = nullptr;
+
+            nptrs = backtrace(buffer, 200);
+            sprintf(return_str, "backtrace() returned %d addresses\n", nptrs);
+            /* The call backtrace_symbols_fd(buffer, nptrs, STDOUT_FILENO)
+             *               would produce similar output to the following: */
+
+            strings = backtrace_symbols(buffer, nptrs);
+            if (strings == NULL || nptrs < 3) {
+                perror("backtrace_symbols");
+                exit(EXIT_FAILURE);
+            }
+            sprintf(return_str, "%s\n", strings[i]);
+            free(strings);
+            return return_str;
+        }
+
+#ifdef DEBUG
+        void DebugPrint(string str) {
+            std::stringstream ss;
+            char* cs = nullptr;
+            std::sprintf(cs, "file : %s, line : %d, ", __FILE__, __LINE__);
+            ss << "====== DebugPrint ===== " << cs << "content : " << str << endl;
+            std::ofstream of("./debuglog.txt");
+            of << &ss;
+            of.close();
+        }
+#endif
+
+        static void LogWork(std::ostream& os, string str) {
+            os << "===== LogWork ==== " << str << endl;
+        }
 
         DtnApp::DtnApp() {
 
         }
 
-        DtnExample::DtnExample() {
+        DtnApp::~DtnApp() {
 
+        }
+
+        DtnExample::DtnExample() {
+            // add some default value for settings in Configure() call
+            random_seed_ = 214127;
+            node_number_ = 20 ;
+            simulation_duration_ = 600;
+            pcap_boolean_ = false;
+            print_route_boolean_ = false;
+            trace_file_ = "~/ns-3_build/ns3-dtn-bit/box/current_trace/current_trace.ns_movements";
+            log_file_ = "~/ns-3_build/ns3-dtn-bit/box/dtnlog.txt";
         }
 
         /* refine
@@ -66,7 +119,7 @@ namespace ns3 {
                     do {
                         // prepare 'msg' to write into hello bundle
                         char tmp_msg_00[1024] = "";
-                        if (congestion_control_method_ == DynamicControl) {
+                        if (congestion_control_method_ == CongestionControlMethod::DynamicControl) {
                             if ((drops_count_ == 0) && (congestion_control_parameter_ < 0.9)) {
                                 congestion_control_parameter_ += 0.01;
                             } else {
@@ -513,7 +566,7 @@ namespace ns3 {
         /* refine 
          * check your 'bundle queue' buffer and other related buffer periodly
          * make code refactory to this 
-         * do check_state == state_2 means that it was an Antipacket? and != 2 means that it was bundlepacket? yes, you can say.
+         * do check_state == CheckState::State_2 means that it was an Antipacket? and != 2 means that it was bundlepacket? yes, you can say.
          */
         void DtnApp::CheckBuffer(CheckState check_state) {
             // one time one pkt would be sent
@@ -523,13 +576,13 @@ namespace ns3 {
             Ptr<Packet> p_pkt;
             BPHeader bp_header;
             // remove expired antipackets and bundles
-            if (check_state == State_2) {
+            if (check_state == CheckState::State_2) {
                 RemoveExpiredBAQDetail();
             }
             // prepare and set real_send_boolean
             // being less than 2 means, wifi mac layer is not busy
             if (daemon_mac_queue_->GetNBytes() < 2) {
-                if (check_state == State_2) {
+                if (check_state == CheckState::State_2) {
                     // go through daemon_antipacket_queue_ to find whether real_send_boolean should be set true
                     int pkt_number = daemon_antipacket_queue_->GetNPackets(), n = 0;
                     while ((n++ < pkt_number) && (!real_send_boolean)) {
@@ -579,7 +632,7 @@ namespace ns3 {
                     }
                 }
             } else {
-                check_state = State_0;
+                check_state = CheckState::State_0;
             }
             // do real send stuff
             if (real_send_boolean) {
@@ -601,7 +654,7 @@ namespace ns3 {
                     std::min((uint32_t)NS3DTNBIT_HYPOTHETIC_TRANS_SIZE_FRAGMENT_MAX, p_pkt->GetSize())
                 };
                 daemon_transmission_info_vec_.push_back(tmp_transmission_info);
-                if (check_state != State_2) {
+                if (check_state != CheckState::State_2) {
                     daemon_flow_count_++;
                     //p_pkt->AddPacketTag(FlowIdTag(bp_header.get_source_seqno()));
                     //p_pkt->AddPacketTag(QosTag(bp_header.get_retransmission_count()));
@@ -615,21 +668,21 @@ namespace ns3 {
             }
             // switch check_state and reschedule
             switch (check_state) {
-                case State_0 : {
-                                   if (real_send_boolean == 0) {Simulator::Schedule(Seconds(0.01), &DtnApp::CheckBuffer, this, State_2);}
-                                   else {Simulator::Schedule(Seconds(0.001), &DtnApp::CheckBuffer, this, State_2);}
-                                   break;
-                               }
-                case State_1 : {
-                                   if (real_send_boolean == 0) {CheckBuffer(State_0);}
-                                   else {Simulator::Schedule(Seconds(0.001), &DtnApp::CheckBuffer, this, State_2);}
-                                   break;
-                               }
-                case State_2 : {
-                                   if (real_send_boolean == 0) {CheckBuffer(State_1);}
-                                   else {Simulator::Schedule(Seconds(0.001), &DtnApp::CheckBuffer, this, State_2);}
-                                   break;
-                               }
+                case CheckState::State_0 : {
+                                               if (real_send_boolean == 0) {Simulator::Schedule(Seconds(0.01), &DtnApp::CheckBuffer, this, CheckState::State_2);}
+                                               else {Simulator::Schedule(Seconds(0.001), &DtnApp::CheckBuffer, this, CheckState::State_2);}
+                                               break;
+                                           }
+                case CheckState::State_1 : {
+                                               if (real_send_boolean == 0) {CheckBuffer(CheckState::State_0);}
+                                               else {Simulator::Schedule(Seconds(0.001), &DtnApp::CheckBuffer, this, CheckState::State_2);}
+                                               break;
+                                           }
+                case CheckState::State_2 : {
+                                               if (real_send_boolean == 0) {CheckBuffer(CheckState::State_1);}
+                                               else {Simulator::Schedule(Seconds(0.001), &DtnApp::CheckBuffer, this, CheckState::State_2);}
+                                               break;
+                                           }
                 default : {
                               break;
                           }
@@ -647,7 +700,7 @@ namespace ns3 {
                                                     uint32_t spray_value = ref_bp_header.get_spray();
                                                     for (int j = 0; (j < neighbor_info_vec_.size()) && (!real_send_boolean); j++) {
                                                         if (
-                                                                (((check_state == State_0) && (spray_value > 0) && ((congestion_control_method_ == 0) || (neighbor_info_vec_[j].info_daemon_baq_available_bytes_ > ref_bp_header.get_payload_size() + ref_bp_header.GetSerializedSize()))) || (dst_ip != neighbor_info_vec_[j].info_address_.GetIpv4()))
+                                                                (((check_state == CheckState::State_0) && (spray_value > 0) && ((congestion_control_method_ == CongestionControlMethod::NoControl) || (neighbor_info_vec_[j].info_daemon_baq_available_bytes_ > ref_bp_header.get_payload_size() + ref_bp_header.GetSerializedSize()))) || (dst_ip != neighbor_info_vec_[j].info_address_.GetIpv4()))
                                                                 && ((Simulator::Now().GetSeconds() - neighbor_info_vec_[j].info_last_seen_time_) < 0.1) 
                                                                 && (neighbor_info_vec_[j].info_address_.GetIpv4() != ref_bp_header.get_source_ip()) 
                                                            ) {
@@ -667,11 +720,11 @@ namespace ns3 {
                                                             if ((!neighbor_has_bundle) && (!bundle_sent)) {
                                                                 real_send_boolean = true;
                                                                 return_index_of_neighbor = j;
-                                                                if (check_state == State_0) {
-                                                                    if (routing_method_ == SprayAndWait) {
+                                                                if (check_state == CheckState::State_0) {
+                                                                    if (routing_method_ == RoutingMethod::SprayAndWait) {
                                                                         ref_bp_header.set_spray(ref_bp_header.get_spray() / 2);
                                                                     }
-                                                                    if (congestion_control_method_ != NoControl) {
+                                                                    if (congestion_control_method_ != CongestionControlMethod::NoControl) {
                                                                         if (ref_bp_header.get_payload_size() + ref_bp_header.GetSerializedSize()
                                                                                 >= neighbor_info_vec_[j].info_daemon_baq_available_bytes_) {
                                                                             neighbor_info_vec_[j].info_daemon_baq_available_bytes_ = 0;
@@ -742,7 +795,7 @@ namespace ns3 {
             }
         }
 
-        /* implement 
+        /* refine 
          * this func would be invoked only in ReceiveBundle()
          * it would find the pkt in daemon_bundle_queue_, then dequeue it 
          * and update neighbor_sent_bp_seqno_vec_ & daemon_transmission_bh_info_vec_
@@ -983,13 +1036,21 @@ namespace ns3 {
          */
         void DtnExample::Configure(int argc, char** argv) {
             CommandLine cmdl_parser;
-            cmdl_parser.AddValue("randmon_seed", "nothing", random_seed_);
-            cmdl_parser.AddValue("node_number", "nothing", node_number_);
-            cmdl_parser.AddValue("simulation_duration", "nothing", simulation_duration_);
-            cmdl_parser.AddValue("pcap_boolean", "nothing", pcap_boolean_);
-            cmdl_parser.AddValue("print_route_boolean", "nothing", print_route_boolean_);
-            cmdl_parser.AddValue("trace_file", "nothing", trace_file_);
-            cmdl_parser.AddValue("log_file", "nothing", log_file_);
+            cmdl_parser.AddValue("randmon_seed", "help:just random", random_seed_);
+            cmdl_parser.AddValue("node_number", "nothing help", node_number_);
+            cmdl_parser.AddValue("simulation_duration", "nothing help", simulation_duration_);
+            cmdl_parser.AddValue("pcap_boolean", "nothing help", pcap_boolean_);
+            cmdl_parser.AddValue("print_route_boolean", "nothing help", print_route_boolean_);
+            // TODO install java, get the bonmobility work!!!
+            cmdl_parser.AddValue("trace_file", "nothing help", trace_file_);
+            if(trace_file_.empty()) {
+                std::cout << "traceFile is empty!!!! Usage of " 
+                    << "xxxx --traceFile=/path/to/tracefile\n"
+                    << "or"
+                    << "Run ns-3 ./waf --run scratch/ns3movement --traceFile=/path/to/example/example.ns_movements"
+                    << std::endl;
+            }
+            cmdl_parser.AddValue("log_file", "nothing help", log_file_);
             cmdl_parser.Parse(argc, argv);
             SeedManager::SetSeed(random_seed_);
             file_stream_.open(log_file_.c_str());
@@ -1037,9 +1098,9 @@ namespace ns3 {
                 Names::Add(ss.str(), nodes_container_.Get(i));
             }
             ns2_mobi.Install();
-            // what does Config::Connect("",) means ? TODO
+            // what does Config::Connect("",) means nothing ,just how API works
             Config::Connect("/NodeList/*/$ns3::MobilityModel/CourseChange", 
-                    MakeBoundCallback(&CourseChange, &file_stream_));
+                    MakeBoundCallback(CourseChanged, &file_stream_));
         }
 
         /* refactory, API Change
@@ -1129,6 +1190,13 @@ namespace ns3 {
                     app[i]->ScheduleTx(dstnode, Seconds(200.0*j + x->GetValue(0.0, 200.0)), 10000*(x->GetInteger(1, 10)));
                 }
             }
+        }
+
+        /* TODO
+         * 
+         */
+        void DtnExample::Report(std::ostream& os) {
+            os << "Here In DtnExample::Report" << endl;
         }
 
         /* refactory

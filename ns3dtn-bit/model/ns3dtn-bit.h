@@ -2,6 +2,8 @@
 #ifndef NS3DTN_BIT_H
 #define NS3DTN_BIT_H
 
+// this implementation is highly inspired by https://www.netlab.tkk.fi/tutkimus/dtn/ns/
+
 #include "ns3/core-module.h"
 #include "ns3/mobility-module.h"
 #include "ns3/wifi-module.h" 
@@ -18,30 +20,29 @@
 #include "dtn_package.h"
 #include "common_header.h"
 
-
 namespace ns3 {
     namespace ns3dtnbit {
 
         class DtnApp : public Application {
 
             public :
-                enum RoutingMethod {
+                enum class RoutingMethod {
                     Epidemic,
                     SprayAndWait 
                 };
 
-                enum RunningFlag {
+                enum class RunningFlag {
                     PowerOn,
                     PowerOff
                 };
 
-                enum CongestionControlMethod {
+                enum class CongestionControlMethod {
                     NoControl,
                     StaticControl,
                     DynamicControl
                 };
 
-                enum CheckState {
+                enum class CheckState {
                     State_0,
                     State_1,
                     State_2
@@ -114,7 +115,7 @@ namespace ns3 {
                  * reorder the packet sequence with daemon_reorder_buffer_queue_ then
                  * notify msg : how many bundle you already have
                  * notyfy msg : the source unique seqno of all pkt in queue and all in antiqueue
-                 * then use this msg to send 'socket raw packet' without header really ? // TODO
+                 * then use this msg to send 'socket raw packet' without header really ? // used todo, now done
                  */
                 void ToSendHello(Ptr<Socket> socket, double simulation_end_time, Time hello_interval, bool hello_right_now_boolean);
 

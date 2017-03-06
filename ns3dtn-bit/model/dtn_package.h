@@ -31,7 +31,7 @@ namespace ns3 {
                 // own stuff *********
                 bool operator==(BPHeader const& rh) const;
 
-                // assuming that different BundleType has different payload size, and payload size themselves could be different TODO
+                // assuming that different BundleType has different payload size, and payload size themselves could be different , used to be todo, now done
                 enum BundleType get_bundle_type() {return bundle_type_;}
                 void set_bundle_type(enum BundleType arg) {bundle_type_ = arg;}
                 // bool is_valid() {return is_valid_;}

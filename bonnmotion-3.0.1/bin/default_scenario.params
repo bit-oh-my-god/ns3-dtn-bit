@@ -1,0 +1,14 @@
+model=RandomWaypoint
+ignore=3600.0
+randomSeed=2231
+x=9999.0
+y=9999.0
+z=9999.0
+duration=600.0
+nn=20
+circular=false
+J=3D
+dim=5
+minspeed=10.0
+maxspeed=100.0
+maxpause=20.0
