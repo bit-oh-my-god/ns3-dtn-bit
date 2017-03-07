@@ -1,4 +1,5 @@
 # Preface
+This Project is a simulate kit for dtn on ns-3 environment, easy to use for research purples.
 This project is highly inspirited by [Lakkakorpi](https://www.netlab.tkk.fi/tutkimus/dtn/ns/), we would call him "the author or Lakkakorpi"
 
 # structure of this project
@@ -40,7 +41,7 @@ you would need to install miniconda first, and install full-package from minicon
                         this is called "transmition & retransmition"
                         note : "store and forward" is just semantic
                 
-* the post it note while write code, not useful for you.
+* the post-it-note while writting code, not useful for you.
 
             a. it's a very good practice to use p_pkt->Copy(), Ptr<> is boost::instrusive_ptr, 
                 which is similar to shared_ptr, which canbe used under some situation like one object to multi-pointers. 
@@ -70,5 +71,15 @@ you would need to install miniconda first, and install full-package from minicon
 
     * First edition, ns3dtnbit-1.0, we are going to read [this](https://www.netlab.tkk.fi/tutkimus/dtn/ns/), then rename variables methods and do code refactoring.
     * Second edition, run a real example, and parse the log.
-        * get trace file done 2.29
-        * get jupyter to have an animation 3.5
+        * get trace file done 29 Feb
+        * get jupyter to have an animation 5 Mar
+
+# Develop Pitfall
+
+### Record the pitfalls I have been encountered with, this might be usefull if you want a secondary development
+
+    > msg="Could not open trace file ~/ns-3_build/ns3-dtn-bit/box/current_trace/current_trace.ns_movements for reading, aborting here 
+", file=../src/mobility/helper/ns2-mobility-helper.cc, line=189
+
+            std::string full_path_str = CreateTempDirFilename (trace_file_);
+            Ns2MobilityHelper ns2_mobi = Ns2MobilityHelper(full_path_str); 

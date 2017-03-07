@@ -46,38 +46,6 @@ namespace ns3 {
         using dtn_seqnof_t = int32_t;
         using dtn_seqno_t = uint32_t;
 
-        string getCallStack(int i = 2) {
-            int nptrs;
-            void *buffer[200];
-            char **strings;
-            char* return_str = nullptr;
-
-            nptrs = backtrace(buffer, 200);
-            sprintf(return_str, "backtrace() returned %d addresses\n", nptrs);
-            /* The call backtrace_symbols_fd(buffer, nptrs, STDOUT_FILENO)
-             *               would produce similar output to the following: */
-
-            strings = backtrace_symbols(buffer, nptrs);
-            if (strings == NULL || nptrs < 3) {
-                perror("backtrace_symbols");
-                exit(EXIT_FAILURE);
-            }
-            sprintf(return_str, "%s\n", strings[i]);
-            free(strings);
-            return return_str;
-        }
-
-#ifdef DEBUG
-        void DebugPrint(string str) {
-            std::stringstream ss;
-            char* cs = nullptr;
-            std::sprintf(cs, "file : %s, line : %d, ", __FILE__, __LINE__);
-            ss << "====== DebugPrint ===== " << cs << "content : " << str << endl;
-            std::ofstream of("./debuglog.txt");
-            of << &ss;
-            of.close();
-        }
-#endif
     } /* ns3dtnbit */ 
 } /* ns3  */ 
 #endif /* ifndef COMMON_HEADER_H */
