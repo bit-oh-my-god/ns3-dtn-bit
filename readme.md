@@ -19,6 +19,7 @@ so I have the setdest in my "/usr/bin/setdest"
 * ns3 and ns3-dtn-bit module
 
 * jupyter and python-matplotlib
+there is one tutorial that I think may help you [ref](https://www.youtube.com/watch?v=HW29067qVWk&t=1568s)
 This combo is used to make graph and paper, check /box/jupyter
 if you want use jupyter yourself, install it on org-web, in China, you may not be able to download 0.5 G big file from the web.
 you would need to install miniconda first, and install full-package from miniconda, that's the way I did.
@@ -69,3 +70,5 @@ you would need to install miniconda first, and install full-package from minicon
 
     * First edition, ns3dtnbit-1.0, we are going to read [this](https://www.netlab.tkk.fi/tutkimus/dtn/ns/), then rename variables methods and do code refactoring.
     * Second edition, run a real example, and parse the log.
+        * get trace file done 2.29
+        * get jupyter to have an animation 3.5

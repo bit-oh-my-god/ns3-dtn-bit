@@ -3,9 +3,10 @@
 function function1 {
 ./bm -hm RandomWaypoint
 echo '
-./bm -f default_scenario RandomWaypoint -n 20 -d 600 -R 2231 -x 9999 -y 9999 -z 9999 -J 5 -h 100 -l 10 -p 20 -o 5 > /dev/null
+./bm -f default_scenario RandomWaypoint -n 20 -d 600 -i 3600 -x 9999 -y 9999 -z 9999 -h 400 -l 100 -o 5 > /dev/null
 '
-./bm -f default_scenario RandomWaypoint -n 20 -d 600 -R 2231 -x 9999 -y 9999 -z 9999 -J 5 -h 100 -l 10 -p 20 -o 5 > /dev/null
+# what the hell the bonnmotion have bugs?? TODO, speed is not the number -h dedicate
+./bm -f default_scenario RandomWaypoint -n 20 -d 600 -i 3600 -x 9999 -y 9999 -z 9999 -h 400 -l 100 -o 5 > /dev/null
 ./bm NSFile -f default_scenario > /dev/null
 mv *.ns_movements ~/ns-3_build/ns3-dtn-bit/box/current_trace/
 cd ~/ns-3_build/ns3-dtn-bit/box/current_trace

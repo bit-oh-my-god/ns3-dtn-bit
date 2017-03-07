@@ -1,6 +1,6 @@
 model=RandomWaypoint
 ignore=3600.0
-randomSeed=2231
+randomSeed=1488888775314
 x=9999.0
 y=9999.0
 z=9999.0
@@ -9,6 +9,6 @@ nn=20
 circular=false
 J=3D
 dim=5
-minspeed=10.0
-maxspeed=100.0
-maxpause=20.0
+minspeed=100.0
+maxspeed=400.0
+maxpause=60.0
