@@ -15,7 +15,7 @@ function deletefuncion {
 
 while true; do
     echo 'do you want to clean ns3 folder, it will not be commit by git since the .gitignore file ?'
-    read -p "yes or no :" yn
+    read -p "yes or no, most of time you should say no :" yn
     case $yn in
         [Yy]* ) deletefuncion "${DIR2}"; break;;
         [Nn]* ) break;;
