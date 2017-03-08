@@ -1,21 +1,25 @@
 Waf: Entering directory `/home/dtn-012345/ns-3_build/ns3-dtn-bit/ns-allinone-3.26/ns-3.26/build'
-[ 82/467] Compiling src/ns3dtn-bit/model/ns3dtn-bit.cc
 Waf: Leaving directory `/home/dtn-012345/ns-3_build/ns3-dtn-bit/ns-allinone-3.26/ns-3.26/build'
-NS3_ENABLED_MODULES == ['ns3-antenna', 'ns3-aodv', 'ns3-applications', 'ns3-bridge', 'ns3-buildings', 'ns3-config-store', 'ns3-core', 'ns3-csma', 'ns3-csma-layout', 'ns3-dsdv', 'ns3-dsr', 'ns3-energy', 'ns3-fd-net-device', 'ns3-flow-monitor', 'ns3-internet', 'ns3-internet-apps', 'ns3-lr-wpan', 'ns3-lte', 'ns3-mesh', 'ns3-mobility', 'ns3-mpi', 'ns3-netanim', 'ns3-network', 'ns3-nix-vector-routing', 'ns3-ns3dtn-bit', 'ns3-olsr', 'ns3-point-to-point', 'ns3-point-to-point-layout', 'ns3-propagation', 'ns3-sixlowpan', 'ns3-spectrum', 'ns3-stats', 'ns3-tap-bridge', 'ns3-test', 'ns3-topology-read', 'ns3-traffic-control', 'ns3-uan', 'ns3-virtual-net-device', 'ns3-wave', 'ns3-wifi', 'ns3-wimax']
-NS3_MODULE_PATH == ['/usr/lib/gcc/x86_64-linux-gnu/5', '/home/dtn-012345/ns-3_build/ns3-dtn-bit/ns-allinone-3.26/ns-3.26/build']
-NSC_ENABLED == False
-ENABLE_REAL_TIME == True
-ENABLE_THREADING == True
-ENABLE_EXAMPLES == True
-ENABLE_TESTS == True
-EXAMPLE_DIRECTORIES == ['naming', 'error-model', 'tutorial', 'wireless', 'routing', 'ipv6', 'traffic-control', 'udp', 'matrix-topology', 'energy', 'udp-client-server', 'socket', 'tcp', 'realtime', 'stats']
-ENABLE_PYTHON_BINDINGS == True
-NSCLICK == False
-ENABLE_BRITE == False
-ENABLE_OPENFLOW == False
-APPNAME == ns
-BUILD_PROFILE == debug
-VERSION == 3.26
-PYTHON == ['/home/dtn-012345/miniconda3/bin/python']
-VALGRIND_FOUND == True
-Building: /home/dtn-012345/miniconda3/bin/python waf --target=ns3dtn-bit-example
+Build commands will be stored in build/compile_commands.json
+'build' finished successfully (0.215s)
+
+Modules built:
+antenna                   aodv                      applications              
+bridge                    buildings                 config-store              
+core                      csma                      csma-layout               
+dsdv                      dsr                       energy                    
+fd-net-device             flow-monitor              internet                  
+internet-apps             lr-wpan                   lte                       
+mesh                      mobility                  mpi                       
+netanim (no Python)       network                   nix-vector-routing        
+ns3dtn-bit (no Python)    olsr                      point-to-point            
+point-to-point-layout     propagation               sixlowpan                 
+spectrum                  stats                     tap-bridge                
+test (no Python)          topology-read             traffic-control           
+uan                       virtual-net-device        wave                      
+wifi                      wimax                     
+
+Modules not built (see ns-3 tutorial for explanation):
+brite                     click                     openflow                  
+visualizer                
+

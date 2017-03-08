@@ -9,13 +9,14 @@
 #include "ns3/ipv4-address.h"
 #include "ns3/nstime.h"
 #include "ns3/packet.h"
+#include "ns3/log.h"
 #include "ns3/address-utils.h"
 #include "common_header.h"
 
 namespace ns3 {
     namespace ns3dtnbit {
         
-        enum BundleType {BundlePacket, AntiPacket, HelloPacket, TransmissionAck};
+        enum BundleType {BundlePacket = 0, AntiPacket = 1, HelloPacket = 2, TransmissionAck = 3};
 
         class BPHeader : public Header {
             public :
@@ -60,6 +61,7 @@ namespace ns3 {
             private :
 
                 // bool is_valid_;
+                //TODO// this may not be a good design
                 enum BundleType bundle_type_;
                 uint32_t hop_count_;
                 uint32_t spray_;

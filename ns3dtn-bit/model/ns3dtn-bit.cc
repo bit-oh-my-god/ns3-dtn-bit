@@ -39,7 +39,8 @@ namespace ns3 {
             return Ptr<QueueItem>(p);
         }
 #ifdef DEBUG
-        // Important !! use NS_LOG for app, use our log for example and script
+        // Important !! use std::cerr std::cout for app, example and script
+        // NS_LOG is not easy to use.
         /*
          * by default, get the function name called the logfunc which called this
          */
@@ -67,15 +68,15 @@ namespace ns3 {
         string FilePrint(string str) {
             std::stringstream ss;
             char* cs = new char[200];
-            std::sprintf(cs, "file : %s, line : %d, ", __FILE__, __LINE__);
-            ss << "====== FilePrint ===== " << cs << "|" << str << endl;
+            std::sprintf(cs, "file : %s, line : %d,", __FILE__, __LINE__);
+            ss << "====== FilePrint ===== " << cs << "--->>" << str << endl;
             return ss.str();
         }
 
         string GetLogStr(string str) {
             std::stringstream ss;
             string caller = GetCallStack();
-            ss << "==== Caller ====" << caller << "|" << str << endl;
+            ss << "==== Caller ====" << caller << "\n---->>" << str << endl;
             string Filep = FilePrint(ss.str());
             return Filep;
         }
@@ -98,7 +99,7 @@ namespace ns3 {
             pcap_boolean_ = false;
             print_route_boolean_ = false;
             // TODO, make trace_file_ to be relative path
-            trace_file_ = "/home/dtn-012345/ns-3_build/ns3-dtn-bit/box/current_trace/current_trace.ns_movements";
+            trace_file_ = "/home/dtn-012345/ns-3_build/ns3-dtn-bit/box/current_trace/current_trace.tcl";
             log_file_ = "~/ns-3_build/ns3-dtn-bit/box/dtn_simulation_result/dtn_trace_log.txt";
         }
 
@@ -167,8 +168,9 @@ namespace ns3 {
                                 msg << tmp_msg_02;
                                 p_pkt->AddHeader(bp_header);
                             } else {
-                                // ERROR LOG TODO
+                                // ERROR LOG
                                 // 'at time, too big hello bundle'
+                                std::cerr << GetLogStr("ERROR") << "\n ====== too big hello, time: " << Simulator::Now().GetSeconds() << endl;
                             }
                             daemon_bundle_queue_->Enqueue(Packet2Queueit(p_pkt));
                         }
@@ -182,7 +184,8 @@ namespace ns3 {
                                 msg << tmp_msg_03;
                                 p_pkt->AddHeader(bp_header);
                             } else {
-                                // ERROR LOG TODO
+                                // ERROR LOG
+                                std::cerr << GetLogStr("ERROR") << "\n ====== too big hello, time: " << Simulator::Now().GetSeconds() << endl;
                             }
                             daemon_antipacket_queue_->Enqueue(Packet2Queueit(p_pkt));
                         }
@@ -314,9 +317,11 @@ namespace ns3 {
             p_pkt->AddHeader(bp_header);
             if ((daemon_antipacket_queue_->GetNBytes() + daemon_bundle_queue_->GetNBytes() + p_pkt->GetSize() <= daemon_baq_bytes_max_)) {
                 daemon_bundle_queue_->Enqueue(Packet2Queueit(p_pkt));
-                // NORMAL LOG TODO
+                // NORMAL LOG
+                std::cout << GetLogStr("LOG") << "\n====== to send bundle";
             } else {
-                // ERROR LOG TODO
+                // ERROR LOG
+                std::cerr << GetLogStr("ERROR") << "\n======  bundle to be sent is too bit" << std::endl;
             }
         }
 
@@ -350,7 +355,8 @@ namespace ns3 {
             p_pkt->AddHeader(bp_header);
             daemon_antipacket_queue_->Enqueue(Packet2Queueit(p_pkt));
             do {
-                // LOG TODO
+                // LOG 
+                std::cout << GetLogStr("LOG") << "\n====== send anti pckt bundle";
             } while (0);
         }
 
@@ -1056,7 +1062,6 @@ namespace ns3 {
             cmdl_parser.AddValue("simulation_duration", "nothing help", simulation_duration_);
             cmdl_parser.AddValue("pcap_boolean", "nothing help", pcap_boolean_);
             cmdl_parser.AddValue("print_route_boolean", "nothing help", print_route_boolean_);
-            // TODO install java, get the bonmobility work!!!
             cmdl_parser.AddValue("trace_file", "nothing help", trace_file_);
             if(trace_file_.empty()) {
                 std::cout << "traceFile is empty!!!! Usage of " 
@@ -1088,10 +1093,11 @@ namespace ns3 {
             InstallInternetStack();
             std::cout << "******************** install app ******************" << std::endl;
             InstallApplications();
-            std::cout << "******************** populate arpcache ******************" << std::endl;
-            PopulateArpCache();
+            // TODO do I really need arpchche populated???
+            //std::cout << "******************** populate arpcache ******************" << std::endl;
+            //PopulateArpCache();
             std::cout << "********************* Simulate **************" << std::endl;
-            std::cout << "simulator began, simulate time = " << simulation_duration_ << "randmon seed = " << random_seed_ << std::endl;
+            std::cout << "simulator began, simulate time = " << simulation_duration_ << ", randmon seed = " << random_seed_ << std::endl;
             Simulator::Stop(Seconds(simulation_duration_));
             Simulator::Run();
             file_stream_.close();
@@ -1170,7 +1176,7 @@ namespace ns3 {
         /* refine
         */
         void DtnExample::InstallApplications() {
-            std::cout << GetLogStr("In InstallApplication") << std::endl;
+            //std::cout << GetLogStr("In InstallApplication") << std::endl;
             TypeId udp_tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
             Ptr<DtnApp> app[node_number_];
             for (uint32_t i = 0; i < node_number_; ++i) { 
@@ -1201,16 +1207,18 @@ namespace ns3 {
             }
             Ptr<UniformRandomVariable> x = CreateObject<UniformRandomVariable> ();
             for (uint32_t i = 0; i < node_number_; ++i) { 
-                for (uint32_t j = 0; j < 8; ++j) { 
+                for (uint32_t j = 0; j < 4; ++j) { 
                     uint32_t dstnode = i;
-                    while (dstnode == i)
+                    while (dstnode == i) {
                         dstnode = x->GetInteger(0, node_number_-1);
-                    app[i]->ScheduleTx(dstnode, Seconds(200.0*j + x->GetValue(0.0, 200.0)), 10000*(x->GetInteger(1, 10)));
+                    }
+                    double xinterval = simulation_duration_ / (2 * node_number_);
+                    app[i]->ScheduleTx(dstnode, Seconds(xinterval * j + x->GetValue(0.0, 200.0)), 200*(x->GetInteger(1, 10)));
                 }
             }
         }
 
-        /* TODO
+        /* TODO write Report method, this should write total report to one file
          * 
          */
         void DtnExample::Report(std::ostream& os) {
@@ -1221,6 +1229,7 @@ namespace ns3 {
         */
         void DtnExample::PopulateArpCache() { 
             std::cout << GetLogStr("In PopulateArpCache") << std::endl;
+            // create a long last arp cache
             Ptr<ArpCache> arp = CreateObject<ArpCache>(); 
             arp->SetAliveTimeout(Seconds(3600 * 24 * 365)); 
             // Populates ARP Cache with information from all nodes
@@ -1228,6 +1237,7 @@ namespace ns3 {
                 Ptr<Ipv4L3Protocol> ip = (*i)->GetObject<Ipv4L3Protocol> (); 
                 NS_ASSERT(ip !=0); 
                 ObjectVectorValue interfaces; 
+                // in one ipv4 protocol of one node, there might be multiply ip interfaces(ip address and mask)
                 ip->GetAttribute("InterfaceList", interfaces); 
                 for (uint32_t j = 0; j != ip->GetNInterfaces(); j ++) {
                     Ptr<Ipv4Interface> ipIface = ip->GetInterface(j);
@@ -1242,13 +1252,11 @@ namespace ns3 {
                         if(ipAddr == Ipv4Address::GetLoopback()) {
                             continue; 
                         }
-                        ArpCache::Entry * entry = arp->Add(ipAddr); 
-                        // TODO
-                        // the author intend to call MarkWaitReply() with NULL
-                        // MarkAlive() checks NS_ASSERT(m_state == WAIT_REPLY) and the m_state is set to WAIT_REPLY by MarkWaitReply().
-                        // what's this ? and how to fix ?
-                        entry->MarkWaitReply(NULL);
-                        //entry->MarkWaitReply(ns3::ArpCache::Ipv4PayloadHeaderPair()); 
+                        ArpCache::Entry* entry = arp->Add(ipAddr); 
+                        // TODO bug fix, for now, we don't need to fix it because that we don't use it anymore.
+                        // this would cause compile error
+                        //entry->MarkWaitReply(0); 
+                        entry->MarkWaitReply(ns3::ArpCache::Ipv4PayloadHeaderPair()); 
                         entry->MarkAlive(addr); 
                     } 
                 } 

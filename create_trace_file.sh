@@ -5,19 +5,20 @@ function function1 {
 echo '
 ./bm -f default_scenario RandomWaypoint -n 20 -d 600 -i 3600 -x 9999 -y 9999 -z 9999 -h 400 -l 100 -o 5 > /dev/null
 '
-# what the hell the bonnmotion have bugs?? TODO, speed is not the number -h dedicate
+# what the hell the bonnmotion have bugs?? TODO, speed is higher than the number -h dedicate
 ./bm -f default_scenario RandomWaypoint -n 20 -d 600 -i 3600 -x 9999 -y 9999 -z 9999 -h 400 -l 100 -o 5 > /dev/null
 ./bm NSFile -f default_scenario > /dev/null
 mv *.ns_movements ~/ns-3_build/ns3-dtn-bit/box/current_trace/
 cd ~/ns-3_build/ns3-dtn-bit/box/current_trace
-count=1;
-for mov in `find ./ -name 'default_scenario.ns_movements' -type f`
-do
-    new=current_trace.${mov##*.}
-    echo "Renaming $mov to $new"
-    mv "$mov" "$new"
-    let count++
-done
+#count=1;
+#for mov in `find ./ -name 'default_scenario.ns_movements' -type f`
+#do
+#    new=current_trace.${mov##*.}
+#    echo "Renaming $mov to $new"
+#    mv "$mov" "$new"
+#    let count++
+#done
+mv default_scenario.ns_movements current_trace.tcl
 }
 
 function function2 {

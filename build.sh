@@ -24,7 +24,8 @@ echo "This script would write running log into ${LOG_FILE}---${DATE}"
 echo '***************** gonna to test' 
 # this command can show you all the 'test-project name'
 #./test.py --list
-./test.py --example=ns3dtn-bit-example --text=results.txt --verbose 2>&1 >${LOG_FILE}
+#./test.py --example=ns3dtn-bit-example --text=results.txt --verbose 2>&1 >${LOG_FILE}
+./test.py --example=ns3dtn-bit-example --text=results.txt
 
 while true; do
     echo 'do you want gdb ?'
