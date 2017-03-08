@@ -2,14 +2,22 @@
 
 #include "ns3dtn-bit.h"
 
-namespace ns3 {
 
+namespace ns3 {
+// https://groups.google.com/forum/#!topic/ns-3-users/NyrxsLGzBxw
+#define NS_LOG_APPEND_CONTEXT \
+      Ptr<Node> node = GetObject<Node> (); \
+  if ( node  )      { std::clog << Simulator::Now ().GetSeconds () << " [node " << node->GetId () << "] "; \
+      } \
+  else { std::clog << Simulator::Now ().GetSeconds () << " [node -] ";  }
+
+    NS_LOG_COMPONENT_DEFINE ("DtnRunningLog");
     namespace ns3dtnbit {
 
         /* we define this would rewrite ( you can say shade ) the dufault CourseChange
          * and this rewrite is supposed in tutorial
          */
-        static void CourseChanged(std::ostream *myos, Ptr<const MobilityModel> mobility)
+        static void CourseChanged(std::ostream *myos, std::string somethingImusthavetobecallableinthistracefunctionwhichisnotuseful_fuck_, Ptr<const MobilityModel> mobility)
         {
             Ptr<Node> node = mobility->GetObject<Node> ();
             Vector pos = mobility->GetPosition (); // Get position
@@ -30,46 +38,52 @@ namespace ns3 {
             QueueItem* p = new QueueItem(p_pkt);
             return Ptr<QueueItem>(p);
         }
-
-        string getCallStack(int i = 2) {
+#ifdef DEBUG
+        // Important !! use NS_LOG for app, use our log for example and script
+        /*
+         * by default, get the function name called the logfunc which called this
+         */
+        string GetCallStack(int i = 2) {
             int nptrs;
             void *buffer[200];
-            char **strings;
-            char* return_str = nullptr;
+            char **cstrings;
+            char* return_str = new char[200];
 
             nptrs = backtrace(buffer, 200);
             sprintf(return_str, "backtrace() returned %d addresses\n", nptrs);
             /* The call backtrace_symbols_fd(buffer, nptrs, STDOUT_FILENO)
              *               would produce similar output to the following: */
 
-            strings = backtrace_symbols(buffer, nptrs);
-            if (strings == NULL || nptrs < 3) {
+            cstrings = backtrace_symbols(buffer, nptrs);
+            if (cstrings == NULL || nptrs < 3) {
                 perror("backtrace_symbols");
                 exit(EXIT_FAILURE);
             }
-            sprintf(return_str, "%s\n", strings[i]);
-            free(strings);
+            sprintf(return_str, "%s\n", cstrings[i]);
+            free(cstrings);
             return return_str;
         }
 
-#ifdef DEBUG
-        void DebugPrint(string str) {
+        string FilePrint(string str) {
             std::stringstream ss;
-            char* cs = nullptr;
+            char* cs = new char[200];
             std::sprintf(cs, "file : %s, line : %d, ", __FILE__, __LINE__);
-            ss << "====== DebugPrint ===== " << cs << "content : " << str << endl;
-            std::ofstream of("./debuglog.txt");
-            of << &ss;
-            of.close();
+            ss << "====== FilePrint ===== " << cs << "|" << str << endl;
+            return ss.str();
         }
+
+        string GetLogStr(string str) {
+            std::stringstream ss;
+            string caller = GetCallStack();
+            ss << "==== Caller ====" << caller << "|" << str << endl;
+            string Filep = FilePrint(ss.str());
+            return Filep;
+        }
+
 #endif
 
-        static void LogWork(std::ostream& os, string str) {
-            os << "===== LogWork ==== " << str << endl;
-        }
-
         DtnApp::DtnApp() {
-
+            
         }
 
         DtnApp::~DtnApp() {
@@ -83,8 +97,9 @@ namespace ns3 {
             simulation_duration_ = 600;
             pcap_boolean_ = false;
             print_route_boolean_ = false;
-            trace_file_ = "~/ns-3_build/ns3-dtn-bit/box/current_trace/current_trace.ns_movements";
-            log_file_ = "~/ns-3_build/ns3-dtn-bit/box/dtnlog.txt";
+            // TODO, make trace_file_ to be relative path
+            trace_file_ = "/home/dtn-012345/ns-3_build/ns3-dtn-bit/box/current_trace/current_trace.ns_movements";
+            log_file_ = "~/ns-3_build/ns3-dtn-bit/box/dtn_simulation_result/dtn_trace_log.txt";
         }
 
         /* refine
@@ -1088,7 +1103,8 @@ namespace ns3 {
         /* refine 
         */
         void DtnExample::CreateNodes() {
-            Ns2MobilityHelper ns2_mobi = Ns2MobilityHelper(trace_file_);
+            std::string full_path_str = trace_file_;
+            Ns2MobilityHelper ns2_mobi = Ns2MobilityHelper(full_path_str);
             std::cout << "Create " << node_number_ << "nodes." << std::endl;
             nodes_container_.Create(node_number_);
             // name nodes
@@ -1100,7 +1116,7 @@ namespace ns3 {
             ns2_mobi.Install();
             // what does Config::Connect("",) means nothing ,just how API works
             Config::Connect("/NodeList/*/$ns3::MobilityModel/CourseChange", 
-                    MakeBoundCallback(CourseChanged, &file_stream_));
+                    MakeBoundCallback(&CourseChanged, &file_stream_));
         }
 
         /* refactory, API Change
@@ -1154,6 +1170,7 @@ namespace ns3 {
         /* refine
         */
         void DtnExample::InstallApplications() {
+            std::cout << GetLogStr("In InstallApplication") << std::endl;
             TypeId udp_tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
             Ptr<DtnApp> app[node_number_];
             for (uint32_t i = 0; i < node_number_; ++i) { 
@@ -1174,7 +1191,8 @@ namespace ns3 {
                 InetSocketAddress remote(Ipv4Address("255.255.255.255"), 80);
                 source->SetAllowBroadcast(true);
                 source->Connect(remote);
-                app[i]->ToSendHello(source, simulation_duration_, Seconds(0.1 + 0.00085*i), 1);
+                Time tmpt = Seconds(0.1 + 0.01*i);
+                app[i]->ToSendHello(source, simulation_duration_, tmpt, false);
 
                 Ptr<Socket> recvSink = Socket::CreateSocket(nodes_container_.Get(i), udp_tid);
                 InetSocketAddress local(Ipv4Address::GetAny(), 80);
@@ -1202,6 +1220,7 @@ namespace ns3 {
         /* refactory
         */
         void DtnExample::PopulateArpCache() { 
+            std::cout << GetLogStr("In PopulateArpCache") << std::endl;
             Ptr<ArpCache> arp = CreateObject<ArpCache>(); 
             arp->SetAliveTimeout(Seconds(3600 * 24 * 365)); 
             // Populates ARP Cache with information from all nodes
@@ -1224,10 +1243,12 @@ namespace ns3 {
                             continue; 
                         }
                         ArpCache::Entry * entry = arp->Add(ipAddr); 
-                        // the author means intend to call MarkWaitReply() with NULL
+                        // TODO
+                        // the author intend to call MarkWaitReply() with NULL
                         // MarkAlive() checks NS_ASSERT(m_state == WAIT_REPLY) and the m_state is set to WAIT_REPLY by MarkWaitReply().
                         // what's this ? and how to fix ?
-                        entry->MarkWaitReply(ns3::ArpCache::Ipv4PayloadHeaderPair()); 
+                        entry->MarkWaitReply(NULL);
+                        //entry->MarkWaitReply(ns3::ArpCache::Ipv4PayloadHeaderPair()); 
                         entry->MarkAlive(addr); 
                     } 
                 } 

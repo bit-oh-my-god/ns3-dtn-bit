@@ -14,6 +14,9 @@ int main (int argc, char *argv[]) {
     std::cout << "==========================================" << std::endl;
 #else
 #endif
+    LogComponentEnable ("DtnRunningLog",LOG_LEVEL_DEBUG);
+    LogComponentEnableAll (LOG_PREFIX_TIME);
+    LogComponentEnableAll(LOG_PREFIX_NODE); 
     ns3dtnbit::DtnExample test = ns3dtnbit::DtnExample();
     test.Configure(argc, argv);
     test.Run();

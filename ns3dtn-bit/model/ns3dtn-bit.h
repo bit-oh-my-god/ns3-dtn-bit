@@ -14,9 +14,11 @@
 #include "ns3/double.h"
 #include "ns3/random-variable-stream.h"
 #include "ns3/rng-seed-manager.h"
+// #include "ns3/test.h"
 #include "ns3/ipv4-static-routing-helper.h"
 #include "ns3/ns2-mobility-helper.h"
 #include "ns3/qos-utils.h"
+#include "ns3/log.h"
 #include "dtn_package.h"
 #include "common_header.h"
 
@@ -154,8 +156,8 @@ namespace ns3 {
                 Ipv4Address own_ip_;
                 uint32_t daemon_flow_count_; // NumFlows
                 enum RunningFlag running_flag_; // m_running
-                enum RoutingMethod routing_method_; // rp
-                enum CongestionControlMethod congestion_control_method_; // cc
+                enum RoutingMethod routing_method_ = RoutingMethod::SprayAndWait; // rp
+                enum CongestionControlMethod congestion_control_method_ = CongestionControlMethod::NoControl; // cc
                 double congestion_control_parameter_ = 1.0; //t_c     // will only works when enable Dynamic congestion control
                 dtn_time_t retransmission_interval_ = 15.0;
                 EventId send_event_id_; // m_sendEvent

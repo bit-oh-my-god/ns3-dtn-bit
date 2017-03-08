@@ -73,13 +73,3 @@ you would need to install miniconda first, and install full-package from minicon
     * Second edition, run a real example, and parse the log.
         * get trace file done 29 Feb
         * get jupyter to have an animation 5 Mar
-
-# Develop Pitfall
-
-### Record the pitfalls I have been encountered with, this might be usefull if you want a secondary development
-
-    > msg="Could not open trace file ~/ns-3_build/ns3-dtn-bit/box/current_trace/current_trace.ns_movements for reading, aborting here 
-", file=../src/mobility/helper/ns2-mobility-helper.cc, line=189
-
-            std::string full_path_str = CreateTempDirFilename (trace_file_);
-            Ns2MobilityHelper ns2_mobi = Ns2MobilityHelper(full_path_str); 
