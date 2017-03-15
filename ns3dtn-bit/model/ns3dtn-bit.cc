@@ -4,12 +4,12 @@
 
 
 namespace ns3 {
-// https://groups.google.com/forum/#!topic/ns-3-users/NyrxsLGzBxw
+    // https://groups.google.com/forum/#!topic/ns-3-users/NyrxsLGzBxw
 #define NS_LOG_APPEND_CONTEXT \
-      Ptr<Node> node = GetObject<Node> (); \
-  if ( node  )      { std::clog << Simulator::Now ().GetSeconds () << " [node " << node->GetId () << "] "; \
-      } \
-  else { std::clog << Simulator::Now ().GetSeconds () << " [node -] ";  }
+    Ptr<Node> node = GetObject<Node> (); \
+    if ( node  )      { std::clog << Simulator::Now ().GetSeconds () << " [node " << node->GetId () << "] "; \
+    } \
+    else { std::clog << Simulator::Now ().GetSeconds () << " [node -] ";  }
 
     NS_LOG_COMPONENT_DEFINE ("DtnRunningLog");
     namespace ns3dtnbit {
@@ -84,12 +84,30 @@ namespace ns3 {
 #endif
 
         DtnApp::DtnApp() {
-            
+
         }
 
         DtnApp::~DtnApp() {
 
         }
+
+        DtnExampleInterface::DtnExampleInterface() {
+            // add some default value for settings in Configure() call
+            random_seed_ = 214127;
+            node_number_ = 20 ;
+            simulation_duration_ = 600;
+            pcap_boolean_ = false;
+            print_route_boolean_ = false;
+            // TODO, make trace_file_ to be relative path
+            trace_file_ = "/home/dtn-012345/ns-3_build/ns3-dtn-bit/box/current_trace/current_trace.tcl";
+            log_file_ = "~/ns-3_build/ns3-dtn-bit/box/dtn_simulation_result/dtn_trace_log.txt";
+        }
+
+        DtnExampleInterface::DtnExampleInterface(DtnExampleInterface&& rh) {
+
+        }
+
+        
 
         DtnExample::DtnExample() {
             // add some default value for settings in Configure() call
@@ -170,7 +188,7 @@ namespace ns3 {
                             } else {
                                 // ERROR LOG
                                 // 'at time, too big hello bundle'
-                                std::cerr << GetLogStr("ERROR") << "\n ====== too big hello, time: " << Simulator::Now().GetSeconds() << endl;
+                                std::cerr << GetLogStr("ERROR") << " ====== too big hello, time: " << Simulator::Now().GetSeconds() << endl;
                             }
                             daemon_bundle_queue_->Enqueue(Packet2Queueit(p_pkt));
                         }
@@ -185,7 +203,7 @@ namespace ns3 {
                                 p_pkt->AddHeader(bp_header);
                             } else {
                                 // ERROR LOG
-                                std::cerr << GetLogStr("ERROR") << "\n ====== too big hello, time: " << Simulator::Now().GetSeconds() << endl;
+                                std::cerr << GetLogStr("ERROR") << " ====== too big hello, time: " << Simulator::Now().GetSeconds() << endl;
                             }
                             daemon_antipacket_queue_->Enqueue(Packet2Queueit(p_pkt));
                         }
@@ -318,10 +336,10 @@ namespace ns3 {
             if ((daemon_antipacket_queue_->GetNBytes() + daemon_bundle_queue_->GetNBytes() + p_pkt->GetSize() <= daemon_baq_bytes_max_)) {
                 daemon_bundle_queue_->Enqueue(Packet2Queueit(p_pkt));
                 // NORMAL LOG
-                std::cout << GetLogStr("LOG") << "\n====== to send bundle";
+                std::cout << GetLogStr("LOG") << "====== to send bundle" << std::endl;
             } else {
                 // ERROR LOG
-                std::cerr << GetLogStr("ERROR") << "\n======  bundle to be sent is too bit" << std::endl;
+                std::cerr << GetLogStr("ERROR") << "======  bundle to be sent is too bit" << std::endl;
             }
         }
 
@@ -356,7 +374,7 @@ namespace ns3 {
             daemon_antipacket_queue_->Enqueue(Packet2Queueit(p_pkt));
             do {
                 // LOG 
-                std::cout << GetLogStr("LOG") << "\n====== send anti pckt bundle";
+                std::cout << GetLogStr("LOG") << "====== send anti pckt bundle";
             } while (0);
         }
 
@@ -893,6 +911,7 @@ namespace ns3 {
          */
         bool DtnApp::SocketSendDetail(Ptr<Packet> p_pkt, uint32_t flags, InetSocketAddress trans_addr) {
             // LOG
+            std::cout << "Simulation time " << Simulator::Now().GetSeconds() << ", in SocketSendDetail" << std::endl;
             int result = daemon_socket_handle_->SendTo(p_pkt, flags, trans_addr);
             return result != -1 ? true : false;
         }
@@ -1053,6 +1072,31 @@ namespace ns3 {
 
         /* refine
          *
+         */
+        void DtnExampleInterface::Configure(int argc, char** argv) {
+            CommandLine cmdl_parser;
+            cmdl_parser.AddValue("randmon_seed", "help:just random", random_seed_);
+            cmdl_parser.AddValue("node_number", "nothing help", node_number_);
+            cmdl_parser.AddValue("simulation_duration", "nothing help", simulation_duration_);
+            cmdl_parser.AddValue("pcap_boolean", "nothing help", pcap_boolean_);
+            cmdl_parser.AddValue("print_route_boolean", "nothing help", print_route_boolean_);
+            cmdl_parser.AddValue("trace_file", "nothing help", trace_file_);
+            if(trace_file_.empty()) {
+                std::cout << "traceFile is empty!!!! Usage of " 
+                    << "xxxx --traceFile=/path/to/tracefile\n"
+                    << "or"
+                    << "Run ns-3 ./waf --run scratch/ns3movement --traceFile=/path/to/example/example.ns_movements"
+                    << std::endl;
+            }
+            cmdl_parser.AddValue("log_file", "nothing help", log_file_);
+            cmdl_parser.Parse(argc, argv);
+            SeedManager::SetSeed(random_seed_);
+            file_stream_.open(log_file_.c_str());
+        }
+
+
+        /* refine
+         *
          * this would be invoked first when program was running
          */
         void DtnExample::Configure(int argc, char** argv) {
@@ -1075,6 +1119,32 @@ namespace ns3 {
             SeedManager::SetSeed(random_seed_);
             file_stream_.open(log_file_.c_str());
         }
+
+        /* refine
+        */
+        void DtnExampleInterface::Run() {
+            Config::SetDefault("ns3::ArpCache::WaitReplyTimeout", StringValue("100000000ns"));
+            // default 1.0 s, newset 0.1 s
+            Config::SetDefault("ns3::ArpCache::MaxRetries", UintegerValue(10));
+            // default 3, newset 10
+            Config::SetDefault("ns3::ArpCache::AliveTimeout", StringValue("5000000000000ns"));
+            // default 120 s, newset 5000s
+            std::cout << "******************** create nodes ******************" << std::endl;
+            CreateNodes();
+            std::cout << "******************** create devices ******************" << std::endl;
+            CreateDevices();
+            std::cout << "******************** install stack ******************" << std::endl;
+            InstallInternetStack();
+            std::cout << "******************** install app ******************" << std::endl;
+            InstallApplications();
+            std::cout << "********************* Simulate **************" << std::endl;
+            std::cout << "simulator began, simulate time = " << simulation_duration_ << ", randmon seed = " << random_seed_ << std::endl;
+            Simulator::Stop(Seconds(simulation_duration_));
+            Simulator::Run();
+            file_stream_.close();
+            Simulator::Destroy();
+        }
+
 
         /* refine
         */
@@ -1103,8 +1173,6 @@ namespace ns3 {
             file_stream_.close();
             Simulator::Destroy();
         }
-
-
 
         /* refine 
         */
@@ -1216,6 +1284,24 @@ namespace ns3 {
                     app[i]->ScheduleTx(dstnode, Seconds(xinterval * j + x->GetValue(0.0, 200.0)), 200*(x->GetInteger(1, 10)));
                 }
             }
+            Simulator::Schedule(Seconds(1), &DtnExample::LogCounter, this, 0);
+        }
+
+        /*
+         * 
+         */
+        void DtnExample::LogCounter(int n) {
+            std::cout << "counter===> simulation time : " << n << "\n" << std::endl;
+            if (n < simulation_duration_) {
+                Simulator::Schedule(Seconds(1), &DtnExample::LogCounter, this, n + 1);
+            }
+        }
+
+        /* TODO write Report method, this should write total report to one file
+         * 
+         */
+        void DtnExampleInterface::Report(std::ostream& os) {
+            os << "Here In DtnExampleInterface::Report" << endl;
         }
 
         /* TODO write Report method, this should write total report to one file

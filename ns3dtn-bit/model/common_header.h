@@ -13,7 +13,9 @@
 #include <cmath>
 #include <vector>
 #include <cstdio>
+#include <type_traits>
 #include <sstream>
+#include <memory>
 #include <algorithm>
 #include <string>
 #include <map>

@@ -8,7 +8,7 @@
 
 def build(bld):
 # append user defined flags after all our ones
-    module = bld.create_ns3_module('ns3dtn-bit', ['core', 'wifi', 'internet'])
+    module = bld.create_ns3_module('ns3dtn-bit', ['core', 'wifi', 'internet', 'mobility', 'applications'])
     module.source = [
         'model/dtn_package.cpp',
         'model/ns3dtn-bit.cc',

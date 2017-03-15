@@ -51,7 +51,7 @@ namespace ns3 {
             hop_time_stamp_ = i.ReadU32();
 
             uint32_t dist = i.GetDistanceFrom(start);
-            std::cerr << "dist = " << dist << ", GetSeri = " << GetSerializedSize();
+            //std::cerr << "dist = " << dist << ", GetSeri = " << GetSerializedSize();
             NS_ASSERT(dist == GetSerializedSize());
             return dist;
         }

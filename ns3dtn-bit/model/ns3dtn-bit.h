@@ -14,11 +14,11 @@
 #include "ns3/double.h"
 #include "ns3/random-variable-stream.h"
 #include "ns3/rng-seed-manager.h"
-// #include "ns3/test.h"
 #include "ns3/ipv4-static-routing-helper.h"
 #include "ns3/ns2-mobility-helper.h"
 #include "ns3/qos-utils.h"
 #include "ns3/log.h"
+#include "ns3/test.h"
 #include "dtn_package.h"
 #include "common_header.h"
 
@@ -94,7 +94,7 @@ namespace ns3 {
                 void SetUp(Ptr<Node> node);
                 void ScheduleTx( uint32_t dstnode, Time tNext, uint32_t payload_size);
                 /* create a bundle and enqueue, waitting for CheckBuffer() to call SendBundleDetail
-                 */
+                */
                 void ToSendBundle(uint32_t dstnode_number, uint32_t payload_size);
                 void ToSendAck(BPHeader& ref_bp_header, Ipv4Address response_ip);
 
@@ -130,7 +130,7 @@ namespace ns3 {
                  * send anti
                  */
                 void ToSendAntipacketBundle(BPHeader& ref_bp_header);
-                
+
             private :
                 void RemoveBundleFromAntiDetail(Ptr<Packet> p_pkt);
                 void PeriodReorderDaemonBundleQueueDetail();
@@ -148,7 +148,7 @@ namespace ns3 {
                 bool IsAntipacketExistDetail();
                 void CheckBuffer(enum CheckState check_state);
                 void ToTransmit(DaemonBundleHeaderInfo bh_info, bool is_retransmit);
-                
+
                 // data
                 // uint32_t bundles_count_; // bundles you can use daemon_reception_info_vec_.size()
                 uint32_t drops_count_; // drops
@@ -163,7 +163,7 @@ namespace ns3 {
                 EventId send_event_id_; // m_sendEvent
 
                 /* daemon
-                 */
+                */
                 Ptr<Socket> daemon_socket_handle_; // m_socket, note that hello socket is another socket
                 uint32_t daemon_baq_bytes_max_; // b_s   
                 Ptr<Queue> daemon_antipacket_queue_; //m_antipacket_queue
@@ -227,6 +227,7 @@ namespace ns3 {
                 void Configure(int argc, char** argv);
                 void Run();
                 void Report(std::ostream& os);
+                //void Report(std::ostream& os);
 
             private :
                 uint32_t random_seed_;
@@ -245,6 +246,40 @@ namespace ns3 {
                 void InstallInternetStack();
                 void InstallApplications();
                 void PopulateArpCache();
+                void LogCounter(int);
+        };
+
+        class DtnExampleInterface {
+            public :
+                DtnExampleInterface();
+                DtnExampleInterface(DtnExampleInterface&& rh);
+                void Configure(int argc, char** argv);
+                void Run();
+                void Report(std::ostream& os);
+                DtnExampleInterface& operator=(DtnExampleInterface&& rh) {
+                    if (this!=&rh) {
+
+                    }
+                    return *this;
+                }
+            private :
+                uint32_t random_seed_;
+                uint32_t node_number_;
+                dtn_time_t simulation_duration_;
+                bool pcap_boolean_, print_route_boolean_;
+                std::string trace_file_;
+                std::string log_file_;
+                std::ofstream file_stream_;
+                NodeContainer nodes_container_;
+                NetDeviceContainer net_devices_container_;
+                Ipv4InterfaceContainer ip_interface_container_;
+
+                virtual void CreateNodes() = 0;
+                virtual void CreateDevices() = 0;
+                virtual void InstallInternetStack() = 0;
+                virtual void InstallApplications() = 0;
+                // call LogCounter to counter for simulation time
+                void LogCounter(int);
         };
     } /* ns3dtnbit */ 
 }

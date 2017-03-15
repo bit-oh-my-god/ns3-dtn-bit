@@ -1,9 +1,7 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 
-#include "ns3/core-module.h"
-#include "ns3/ns3dtn-bit-module.h"
 #include "ns3/ns3dtn-bit-helper.h"
-#include "../model/common_header.h"
+#include "ns3/ns3dtn-bit.h"
 
 using namespace ns3;
 
