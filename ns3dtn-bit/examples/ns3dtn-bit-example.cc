@@ -1,6 +1,7 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 
 #include "ns3/ns3dtn-bit-helper.h"
+#include "ns3/ns3dtn-bit-example-interface.h"
 #include "ns3/ns3dtn-bit.h"
 
 using namespace ns3;

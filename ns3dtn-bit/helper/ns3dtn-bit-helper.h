@@ -4,6 +4,7 @@
 
 #include <memory>
 #include "ns3/ns3dtn-bit.h"
+#include "ns3/ns3dtn-bit-example-interface.h"
 
 using std::unique_ptr;
 

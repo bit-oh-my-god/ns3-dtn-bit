@@ -16,9 +16,9 @@ namespace ns3 {
         }
 
         void DtnExampleRunner::RunIt(int argc, char** argv) {
-            hold_ex_p->Configure(argc, argv);
-            hold_ex_p->Run();
-            hold_ex_p->Report(std::cout);
+            hold_ex_p->ConfigureEx(argc, argv);
+            hold_ex_p->RunEx();
+            hold_ex_p->ReportEx(std::cout);
         }
     } /* ns3dtnbit */ 
 /* ... */

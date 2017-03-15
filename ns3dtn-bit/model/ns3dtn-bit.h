@@ -22,6 +22,13 @@
 #include "dtn_package.h"
 #include "common_header.h"
 
+#ifdef DEBUG
+std::string GetCallStack(int);
+std::string FilePrint(std::string);
+std::string GetLogStr(std::string);
+
+#endif /* ifndef DEBUG */
+
 namespace ns3 {
     namespace ns3dtnbit {
 
@@ -221,66 +228,7 @@ namespace ns3 {
 
         };
 
-        class DtnExample {
-            public :
-                DtnExample();
-                void Configure(int argc, char** argv);
-                void Run();
-                void Report(std::ostream& os);
-                //void Report(std::ostream& os);
-
-            private :
-                uint32_t random_seed_;
-                uint32_t node_number_;
-                double simulation_duration_;
-                bool pcap_boolean_, print_route_boolean_;
-                std::string trace_file_;
-                std::string log_file_;
-                std::ofstream file_stream_;
-                NodeContainer nodes_container_;
-                NetDeviceContainer net_devices_container_;
-                Ipv4InterfaceContainer ip_interface_container_;
-
-                void CreateNodes();
-                void CreateDevices();
-                void InstallInternetStack();
-                void InstallApplications();
-                void PopulateArpCache();
-                void LogCounter(int);
-        };
-
-        class DtnExampleInterface {
-            public :
-                DtnExampleInterface();
-                DtnExampleInterface(DtnExampleInterface&& rh);
-                void Configure(int argc, char** argv);
-                void Run();
-                void Report(std::ostream& os);
-                DtnExampleInterface& operator=(DtnExampleInterface&& rh) {
-                    if (this!=&rh) {
-
-                    }
-                    return *this;
-                }
-            private :
-                uint32_t random_seed_;
-                uint32_t node_number_;
-                dtn_time_t simulation_duration_;
-                bool pcap_boolean_, print_route_boolean_;
-                std::string trace_file_;
-                std::string log_file_;
-                std::ofstream file_stream_;
-                NodeContainer nodes_container_;
-                NetDeviceContainer net_devices_container_;
-                Ipv4InterfaceContainer ip_interface_container_;
-
-                virtual void CreateNodes() = 0;
-                virtual void CreateDevices() = 0;
-                virtual void InstallInternetStack() = 0;
-                virtual void InstallApplications() = 0;
-                // call LogCounter to counter for simulation time
-                void LogCounter(int);
-        };
+        
     } /* ns3dtnbit */ 
 }
 

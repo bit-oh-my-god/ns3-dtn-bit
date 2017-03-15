@@ -1,12 +1,11 @@
 #!/bin/bash
+set -x
 
 function function1 {
 ./bm -hm RandomWaypoint
-echo '
-./bm -f default_scenario RandomWaypoint -n 20 -d 600 -i 3600 -x 9999 -y 9999 -z 9999 -h 400 -l 100 -o 5 > /dev/null
-'
 # what the hell the bonnmotion have bugs?? TODO, speed is higher than the number -h dedicate
-./bm -f default_scenario RandomWaypoint -n 20 -d 600 -i 3600 -x 9999 -y 9999 -z 9999 -h 400 -l 100 -o 5 > /dev/null
+echo '========================= Important command ============='
+./bm -f default_scenario RandomWaypoint -n 5 -d 3600 -i 3600 -x 9999 -y 9999 -z 9999 -h 80 -l 20 -o 5 > /dev/null
 ./bm NSFile -f default_scenario > /dev/null
 mv *.ns_movements ~/ns-3_build/ns3-dtn-bit/box/current_trace/
 cd ~/ns-3_build/ns3-dtn-bit/box/current_trace
