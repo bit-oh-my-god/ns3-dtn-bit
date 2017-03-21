@@ -97,7 +97,7 @@ namespace ns3dtnbit {
                 throw std::runtime_error(ss.str());
             }
         } catch (const std::exception& r_e) {
-            NS_LOG_WARN("warning:" << r_e.what()); 
+            NS_LOG_WARN("WARN:" << r_e.what()); 
         }
         Ptr<WifiNetDevice> wifi_d = DynamicCast<WifiNetDevice> (node_->GetDevice(0));
         wifi_ph_p = wifi_d->GetPhy();
@@ -142,6 +142,7 @@ namespace ns3dtnbit {
                     // tmp_msg_01 ---------- number of pkt seqno
                     // tmp_msg_02 ---------- list of pkt seqno
                     // tmp_msg_03 ---------- list of anti seqno
+                    // tmp_msg_00
                     char tmp_msg_00[1024] = "";
                     if (congestion_control_method_ == CongestionControlMethod::DynamicControl) {
                         if ((drops_count_ == 0) && (congestion_control_parameter_ < 0.9)) {
@@ -161,43 +162,47 @@ namespace ns3dtnbit {
                     }
                     msg << tmp_msg_00;
                     PeriodReorderDaemonBundleQueueDetail();
+                    // tmp_msg_01
                     char tmp_msg_01[1024] = "";
                     int pkts = daemon_bundle_queue_->GetNPackets();
                     int anti_pkts = daemon_antipacket_queue_->GetNPackets();
                     sprintf(tmp_msg_01, "%d ", pkts);
                     msg << tmp_msg_01;
+                    // tmp_msg_02
+                    char tmp_msg_02[1024] = "";
                     for (int i = 0; i < pkts; i++) {
                         p_pkt = daemon_bundle_queue_->Dequeue()->GetPacket();
                         if (msg.str().length() < NS3DTNBIT_HELLO_BUNDLE_SIZE_MAX) {
                             BPHeader bp_header;
                             p_pkt->RemoveHeader(bp_header);
                             dtn_seqno_t tmp_seqno = bp_header.get_source_seqno();
-                            char tmp_msg_02[1024] = "";
                             sprintf(tmp_msg_02, "%d ", tmp_seqno);
-                            msg << tmp_msg_02;
                             p_pkt->AddHeader(bp_header);
                         } else {
                             // ERROR LOG
                             NS_LOG_ERROR("Error : too big hello");
+                            std::abort();
                         }
                         daemon_bundle_queue_->Enqueue(Packet2Queueit(p_pkt));
                     }
+                    msg << tmp_msg_02;
+                    // tmp_msg_03
+                    char tmp_msg_03[1024] = "";
                     for (int i = 0; i < anti_pkts; i++) {
                         p_pkt = daemon_antipacket_queue_->Dequeue()->GetPacket();
                         if (msg.str().length() < NS3DTNBIT_HELLO_BUNDLE_SIZE_MAX) {
                             p_pkt->RemoveHeader(bp_header);
                             dtn_seqno_t tmp_seqno = bp_header.get_source_seqno();
-                            char tmp_msg_03[1024] = "";
                             sprintf(tmp_msg_03, "%d ", tmp_seqno);
-                            msg << tmp_msg_03;
                             p_pkt->AddHeader(bp_header);
                         } else {
                             // ERROR LOG
                             NS_LOG_ERROR("too big hello");
-                            //std::cerr << GetLogStr("ERROR") << " ====== too big hello, time: " << Simulator::Now().GetSeconds() << endl;
+                            std::abort();
                         }
                         daemon_antipacket_queue_->Enqueue(Packet2Queueit(p_pkt));
                     }
+                    msg << tmp_msg_03;
                 }
                 // this call would use msg.str() as the 'hello content'
                 CreateHelloBundleAndSendDetail(msg.str(), socket);
@@ -243,6 +248,8 @@ namespace ns3dtnbit {
             neighbor_info_vec_[j].info_last_seen_time_ = Simulator::Now().GetSeconds();
             std::stringstream pkt_str_stream;
             p_pkt->RemoveHeader(bp_header);
+            int hello_packet_size = p_pkt->GetSize();
+            assert(hello_packet_size == bp_header.get_payload_size());
             p_pkt->CopyData(&pkt_str_stream, bp_header.get_payload_size());
             // parse raw content of pkt and update 'neighbor_info_vec_'
             pkt_str_stream >> avli_s;
@@ -250,45 +257,56 @@ namespace ns3dtnbit {
             int pkt_seqno_number;
             // the rest seqno is the seqno for antipacket
             pkt_str_stream >> pkt_seqno_number;
-            int m = 0;
             NS_LOG_LOGIC(LogPrefixMacro << "receive hello, ip=" << ip_from << ";found =" << neighbor_found << ";j=" << j << ";pkt_seqno_number=" << pkt_seqno_number << ";Available_bytes_=" << neighbor_info_vec_[j].info_daemon_baq_available_bytes_ << ";avli_s=" << avli_s << ";size()=" << bp_header.get_payload_size());
-            // check whether 'stringstream' has sth to read
-            int tmppp = pkt_str_stream.rdbuf()->in_avail();
-            auto tmpbaq_vec = vector<dtn_seqno_t>();
-            // fill up baq with 'b' pkt
-            if (pkt_seqno_number > 0) {
-                NS_LOG_INFO(LogPrefixMacro << "string stream has sth to read, hello bundle seqno, pkt_seqno_number=" << pkt_seqno_number);
-                assert(pkt_seqno_number < 100);
-                for (; m < pkt_seqno_number; m++) {
-                    dtn_seqno_t tttmp;
-                    pkt_str_stream >> tttmp;
-                    tmpbaq_vec.push_back(tttmp);
-                }
-            }
-            // fill up baq with 'a' pkt
-            while (tmppp > 1) {
-                NS_LOG_INFO(LogPrefixMacro << "string stream has sth to read, hello anti seqno, tmppp=" << tmppp);
-                dtn_seqno_t tmp_antipacket_seqno;
-                pkt_str_stream >> tmp_antipacket_seqno;
-                // we need negative to indicate this seqno is from antipacket
-                tmpbaq_vec.push_back(tmp_antipacket_seqno);
-                NS_LOG_DEBUG(LogPrefixMacro << "here, seqno=" << tmp_antipacket_seqno);
-                bool anti_found = false;
-                int sentapseqno_size = neighbor_info_vec_[j].info_sent_ap_seqno_vec_.size();
-                assert(sentapseqno_size <= NS3DTNBIT_HYPOTHETIC_NEIGHBOR_BAQ_NUMBER_MAX);
-                for (int k = 0; ((k < sentapseqno_size) && (!anti_found)); k++) {
-                NS_LOG_DEBUG(LogPrefixMacro << "HERE");
-                    anti_found = neighbor_info_vec_[j].info_sent_ap_seqno_vec_[k] == tmp_antipacket_seqno ? true : false;
-                NS_LOG_DEBUG(LogPrefixMacro << "HERE");
-                    if (anti_found) {
-                NS_LOG_DEBUG(LogPrefixMacro << "HERE");
-                        UpdateNeighborInfoDetail(3, j, k);
-                        UpdateNeighborInfoDetail(2, j, k);
+            {
+                // going to fill baq
+                auto tmpbaq_vec = vector<dtn_seqno_t>();
+                // fill up baq with 'b' pkt
+                if (pkt_seqno_number > 0) {
+                    NS_LOG_INFO(LogPrefixMacro << "string stream has sth to read, for hello bundle-seqno, pkt_seqno_number=" << pkt_seqno_number);
+                    if (pkt_seqno_number > 100) {
+                        NS_LOG_ERROR(LogPrefixMacro << "Error: pkt_seqno_number > 100"
+                                << ",hello packet it receive is " << hello_packet_size
+                                << " bytes,follow info may help you know what happened");
+                        for (int i = 0; i < pkt_seqno_number; ++i) {
+                            dtn_seqno_t iv;
+                            pkt_str_stream >> iv;
+                            NS_LOG_ERROR(LogPrefixMacro << "error, seqno of " << i << "-th = " << iv);
+                        }
+                        std::abort();
+                    }
+                    for (int m = 0; m < pkt_seqno_number; m++) {
+                        dtn_seqno_t tttmp;
+                        pkt_str_stream >> tttmp;
+                        tmpbaq_vec.push_back(tttmp);
                     }
                 }
+                // fill up baq with 'a' pkt
+                // check whether 'stringstream' has sth to read
+                for (int tmppp = pkt_str_stream.rdbuf()->in_avail(); tmppp > 1; tmppp = pkt_str_stream.rdbuf()->in_avail()) {
+                    NS_LOG_INFO(LogPrefixMacro << "string stream has sth to read, hello anti seqno, tmppp=" << tmppp);
+                    assert(tmppp < 100);
+                    dtn_seqno_t tmp_antipacket_seqno;
+                    pkt_str_stream >> tmp_antipacket_seqno;
+                    // we need negative to indicate this seqno is from antipacket
+                    tmpbaq_vec.push_back(tmp_antipacket_seqno);
+                    NS_LOG_DEBUG(LogPrefixMacro << "here, seqno=" << tmp_antipacket_seqno);
+                    bool anti_found = false;
+                    int sentapseqno_size = neighbor_info_vec_[j].info_sent_ap_seqno_vec_.size();
+                    assert(sentapseqno_size <= NS3DTNBIT_HYPOTHETIC_NEIGHBOR_BAQ_NUMBER_MAX);
+                    for (int k = 0; ((k < sentapseqno_size) && (!anti_found)); k++) {
+                        NS_LOG_DEBUG(LogPrefixMacro << "HERE");
+                        anti_found = neighbor_info_vec_[j].info_sent_ap_seqno_vec_[k] == tmp_antipacket_seqno ? true : false;
+                        NS_LOG_DEBUG(LogPrefixMacro << "HERE");
+                        if (anti_found) {
+                            NS_LOG_DEBUG(LogPrefixMacro << "HERE");
+                            UpdateNeighborInfoDetail(3, j, k);
+                            UpdateNeighborInfoDetail(2, j, k);
+                        }
+                    }
+                }
+                neighbor_info_vec_[j].info_baq_seqno_vec_ = tmpbaq_vec;
             }
-            neighbor_info_vec_[j].info_baq_seqno_vec_ = tmpbaq_vec;
-            NS_LOG_DEBUG(LogPrefixMacro << "HERE");
         }
         NS_LOG_LOGIC(LogPrefixMacro << "out of receive hello");
     }
@@ -327,6 +345,7 @@ namespace ns3dtnbit {
         InetSocketAddress response_addr = InetSocketAddress(response_ip, NS3DTNBIT_PORT_NUMBER);
         if (!SocketSendDetail(p_pkt, 0, response_addr)) {
             NS_LOG_ERROR("SOCKET send error");
+            std::abort();
         }
         NS_LOG_INFO("out of ToSendAck()");
     };
@@ -362,6 +381,7 @@ namespace ns3dtnbit {
         } else {
             // ERROR LOG
             NS_LOG_ERROR("Error : bundle is too big");
+            std::abort();
         }
     }
 
@@ -446,6 +466,7 @@ namespace ns3dtnbit {
                     daemon_transmission_info_vec_[k].info_transmission_bundle_last_sent_bytes_;
                 NS_LOG_DEBUG(LogPrefixMacro << "here, before ToTransmit(), to transmit more");
                 ToTransmit(tmp_bh_info, false);
+                return;
             } else {
                 // if not, send 'transmission ack'
                 NS_LOG_DEBUG(LogPrefixMacro << "here, before ToSendAck" << ";ip=" << from_ip 
@@ -478,16 +499,20 @@ namespace ns3dtnbit {
                 } else if (tmp_recept_info.info_bundle_type_ == BundlePacket) {
                     bool reception_info_found = false;
                     int k = 0;
-                    for (; k < daemon_reception_info_vec_.size(); k++) {
-                        if (tmp_recept_info.info_bundle_source_ip_.IsEqual(daemon_reception_info_vec_[k].info_bundle_source_ip_)
-                                && tmp_recept_info.info_bundle_seqno_ == daemon_reception_info_vec_[k].info_bundle_seqno_
-                                && tmp_recept_info.info_trasmission_receive_from_ip_.IsEqual(daemon_reception_info_vec_[k].info_trasmission_receive_from_ip_)) {
+                    // if one bundle is fragment, it should be searched in 'daemon_reception_info_vec_'
+                    for (int i = 0; i < daemon_reception_info_vec_.size(); i++) {
+                        if (tmp_recept_info.info_bundle_source_ip_.IsEqual(daemon_reception_info_vec_[i].info_bundle_source_ip_)
+                                && tmp_recept_info.info_bundle_seqno_ == daemon_reception_info_vec_[i].info_bundle_seqno_
+                                && tmp_recept_info.info_trasmission_receive_from_ip_.IsEqual(daemon_reception_info_vec_[i].info_trasmission_receive_from_ip_)) {
                             reception_info_found = true;
+                            k = i;
                             break;
                         }
                     }
+                    // is recorded, keep receiving and check order of fragment, 
+                    // add new fragment to 'daemon_reception_packet_buffer_vec_' 
+                    // when all fragment received, parse this packet, deal with it
                     if (reception_info_found) {
-                        // is recorded, keep receiving and check order of fragment, add new fragment to 'daemon_reception_packet_buffer_vec_' when all fragment received, parse this packet, deal with it
                         p_pkt->AddHeader(bp_header);
                         daemon_reception_info_vec_[k].info_fragment_pkt_pointer_vec_.push_back(p_pkt);
                         FragmentReassembleDetail(k);
@@ -558,9 +583,17 @@ namespace ns3dtnbit {
                 tmp_p_pkt->AddHeader(bp_header);
                 daemon_consume_bundle_queue_->Enqueue(Packet2Queueit(tmp_p_pkt->Copy()));
             } else {
+                // check Duplicates here TODO
+                if (IsDuplicatedDetail(bp_header)) {
+                    NS_LOG_WARN(LogPrefixMacro << "WARN: receive a duplicated bundle, this may happen");
+                    return;
+                }
                 tmp_p_pkt->AddHeader(bp_header);
                 daemon_bundle_queue_->Enqueue(Packet2Queueit(tmp_p_pkt->Copy()));
             }
+        } else {
+            NS_LOG_ERROR(LogPrefixMacro << "fragment not solved!");
+            std::abort();
         }
     }
 
@@ -593,7 +626,7 @@ namespace ns3dtnbit {
                     real_send_boolean = true;
                 } else {
                     Simulator::Schedule(Seconds(NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME * 10), &DtnApp::ToTransmit, this, bh_info, false);
-                    NS_LOG_WARN(__LINE__ << "warnning:" << "j=" << j << ",last seen time=" << (double)neighbor_info_vec_[j].info_last_seen_time_ << ";base time=" << Simulator::Now().GetSeconds() - (NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME * 3));
+                    NS_LOG_WARN(LogPrefixMacro << "WARN:" << "j=" << j << ",last seen time=" << (double)neighbor_info_vec_[j].info_last_seen_time_ << ";base time=" << Simulator::Now().GetSeconds() - (NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME * 3));
                     return;
                 }
                 break;
@@ -638,8 +671,22 @@ namespace ns3dtnbit {
             tran_p_pkt->AddHeader(tran_bp_header);
             if (!SocketSendDetail(tran_p_pkt, 0, neighbor_info_vec_[j].info_address_)) {
                 NS_LOG_ERROR("SocketSendDetail fail");
+                std::abort();
             }
             // Simulator::Schedule(Seconds(retransmission_interval_), &DtnApp::ToTransmit, this, bh_info, true);
+        }
+    }
+
+    /*
+     * TODO
+     * define your decision method
+     */
+    bool DtnApp::FindTheNeighborThisBPHeaderTo(BPHeader& ref_bp_header, int& return_index_of_neighbor_you_dedicate, DtnApp::CheckState check_state) {
+        if (routing_method_ == RoutingMethod::SprayAndWait && routingassister.IsSet()) {
+            return BPHeaderBasedSendDecisionDetail(ref_bp_header, return_index_of_neighbor_you_dedicate, check_state);
+        } else {
+            NS_LOG_ERROR("can't fine the routing method or method not assigned, routingassister is set=" << routingassister.IsSet());
+            std::abort();
         }
     }
 
@@ -651,20 +698,18 @@ namespace ns3dtnbit {
     void DtnApp::CheckBuffer(CheckState check_state) {
         NS_LOG_INFO(LogPrefixMacro << "enter check buffer()");
         if (!daemon_socket_handle_) {
-            NS_LOG_WARN(LogPrefixMacro << "deamon_socket_handle init");
+            NS_LOG_WARN(LogPrefixMacro << "WARN:deamon_socket_handle init");
             CreateSocketDetail();
         }
         // one time one pkt would be sent
-        bool real_send_boolean = false;
-        int decision_neighbor = 0;
+        int decision_neighbor = -1;
         std::pair<int, int> real_send_info;
         Ptr<Packet> p_pkt;
         BPHeader bp_header;
         // remove expired antipackets and bundles
-        if (check_state == CheckState::State_2) {
-            RemoveExpiredBAQDetail();
-        }
+        RemoveExpiredBAQDetail();
         // check and set real_send_boolean
+        bool real_send_boolean = false;
         if (wifi_ph_p->IsStateIdle()) {
             NS_LOG_LOGIC(LogPrefix() << "is stateidle");
             if (check_state == CheckState::State_2) {
@@ -674,13 +719,14 @@ namespace ns3dtnbit {
                     p_pkt = daemon_antipacket_queue_->Dequeue()->GetPacket();
                     p_pkt->RemoveHeader(bp_header);
                     if ((Simulator::Now().GetSeconds() - bp_header.get_hop_time_stamp().GetSeconds() > 0.2)) {
-                        real_send_boolean = BPHeaderBasedSendDecisionDetail(bp_header, decision_neighbor, check_state);
+                        //real_send_boolean = BPHeaderBasedSendDecisionDetail(bp_header, decision_neighbor, check_state);
+                        real_send_boolean = FindTheNeighborThisBPHeaderTo(bp_header, decision_neighbor, check_state);
                     }
                     p_pkt->AddHeader(bp_header);
                     Ptr<Packet> p_pkt_copy = p_pkt->Copy();
                     daemon_antipacket_queue_->Enqueue(Packet2Queueit(p_pkt_copy));
                 }
-            } else {
+            } else if (check_state == CheckState::State_1){
                 // go though daemon_bundle_queue_ to find whether real_send_boolean should be set true
                 int pkt_number = daemon_bundle_queue_->GetNPackets(), n = 0;
                 while ((n++ < pkt_number) && (!real_send_boolean)) {
@@ -688,7 +734,8 @@ namespace ns3dtnbit {
                     p_pkt->RemoveHeader(bp_header);
                     if (Simulator::Now().GetSeconds() - bp_header.get_src_time_stamp().GetSeconds() < NS3DTNBIT_HYPOTHETIC_BUNDLE_EXPIRED_TIME) {
                         if (Simulator::Now().GetSeconds() - bp_header.get_src_time_stamp().GetSeconds() > 0.2) {
-                            real_send_boolean = BPHeaderBasedSendDecisionDetail(bp_header, decision_neighbor, check_state);
+                            //real_send_boolean = BPHeaderBasedSendDecisionDetail(bp_header, decision_neighbor, check_state);
+                            real_send_boolean = FindTheNeighborThisBPHeaderTo(bp_header, decision_neighbor, check_state);
                         }
                         p_pkt->AddHeader(bp_header);
                         Ptr<Packet> p_pkt_copy = p_pkt->Copy();
@@ -737,7 +784,7 @@ namespace ns3dtnbit {
                 0
             };
             daemon_transmission_info_vec_.push_back(tmp_transmission_info);
-            if (check_state != CheckState::State_2) {
+            if (check_state != CheckState::State_1) {
                 daemon_flow_count_++;
                 //p_pkt->AddPacketTag(FlowIdTag(bp_header.get_source_seqno()));
                 //p_pkt->AddPacketTag(QosTag(bp_header.get_retransmission_count()));
@@ -749,26 +796,64 @@ namespace ns3dtnbit {
             daemon_retransmission_packet_buffer_vec_.push_back(p_pkt->Copy());
             ToTransmit(tmp_header_info, false);
         }
-        // switch check_state and reschedule
+        CheckBufferSwitchStateDetail(real_send_boolean, check_state);
+    }
+
+    void DtnApp::CheckBufferSwitchStateDetail(bool real_send_boolean, DtnApp::CheckState check_state) {
+        // refine switch schedule
         switch (check_state) {
+            // switch check_state and reschedule
             case CheckState::State_0 : {
-                                           if (!real_send_boolean) {Simulator::Schedule(Seconds(0.1), &DtnApp::CheckBuffer, this, CheckState::State_2);}
-                                           else {Simulator::Schedule(Seconds(0.01), &DtnApp::CheckBuffer, this, CheckState::State_2);}
+                                           if (real_send_boolean) {
+                                               NS_LOG_ERROR(LogPrefixMacro << "error, check state can't be state_0 when real_send_boolean is set true");
+                                               std::abort();
+                                           } else {
+                                               Simulator::Schedule(Seconds(NS3DTNBIT_BUFFER_CHECK_INTERVAL), &DtnApp::CheckBuffer, this, CheckState::State_1);
+                                           }
                                            break;
                                        }
             case CheckState::State_1 : {
-                                           if (!real_send_boolean) {CheckBuffer(CheckState::State_0);}
-                                           else {Simulator::Schedule(Seconds(0.01), &DtnApp::CheckBuffer, this, CheckState::State_2);}
+                                           if (real_send_boolean) {
+                                               Simulator::Schedule(Seconds(NS3DTNBIT_BUFFER_CHECK_INTERVAL), &DtnApp::CheckBuffer, this, CheckState::State_1);
+                                           } else {
+                                               Simulator::Schedule(Seconds(NS3DTNBIT_BUFFER_CHECK_INTERVAL), &DtnApp::CheckBuffer, this, CheckState::State_2);
+                                           }
                                            break;
                                        }
             case CheckState::State_2 : {
-                                           if (!real_send_boolean) {CheckBuffer(CheckState::State_1);}
-                                           else {Simulator::Schedule(Seconds(0.01), &DtnApp::CheckBuffer, this, CheckState::State_2);}
+                                           if (real_send_boolean) {
+                                               Simulator::Schedule(Seconds(NS3DTNBIT_BUFFER_CHECK_INTERVAL), &DtnApp::CheckBuffer, this, CheckState::State_2);
+                                           } else {
+                                               Simulator::Schedule(Seconds(NS3DTNBIT_BUFFER_CHECK_INTERVAL), &DtnApp::CheckBuffer, this, CheckState::State_1);
+                                           }
                                            break;
                                        }
-            default : {
-                          break;
-                      }
+            default : {break;}
+        }
+        {
+            /*
+             * this is how Lakkakorpi do this
+             switch (check_state) {
+             case CheckState::State_0 : {
+             if (!real_send_boolean) {Simulator::Schedule(Seconds(NS3DTNBIT_BUFFER_CHECK_INTERVAL * 5), &DtnApp::CheckBuffer, this, CheckState::State_2);}
+             else {Simulator::Schedule(Seconds(NS3DTNBIT_BUFFER_CHECK_INTERVAL), &DtnApp::CheckBuffer, this, CheckState::State_2);}
+             break;
+             }
+             case CheckState::State_1 : {
+             if (!real_send_boolean) {CheckBuffer(CheckState::State_0);}
+             else {Simulator::Schedule(Seconds(NS3DTNBIT_BUFFER_CHECK_INTERVAL), &DtnApp::CheckBuffer, this, CheckState::State_2);}
+             break;
+             }
+             case CheckState::State_2 : {
+             if (!real_send_boolean) {CheckBuffer(CheckState::State_1);}
+             else {Simulator::Schedule(Seconds(NS3DTNBIT_BUFFER_CHECK_INTERVAL), &DtnApp::CheckBuffer, this, CheckState::State_2);}
+             break;
+             }
+             default : {
+             break;
+             }
+             }
+             */
         }
     }
 
@@ -917,6 +1002,7 @@ namespace ns3dtnbit {
 
     /* refine 
      * check whether one packet is already in queue
+     * true is duplicated
      */
     bool DtnApp::IsDuplicatedDetail(BPHeader& bp_header) {
         NS_LOG_INFO(LogPrefixMacro << "enter IsDuplicatedDetail()");
@@ -974,7 +1060,7 @@ namespace ns3dtnbit {
             return result != -1 ? true : false;
         } else {
             NS_LOG_ERROR("socket_handle not initialized");
-            return false;
+            std::abort();
         }
     }
 
@@ -1114,7 +1200,7 @@ namespace ns3dtnbit {
                     bool found_expired = false;
                     while (k < NS3DTNBIT_HYPOTHETIC_NEIGHBOR_BAQ_NUMBER_MAX && found_expired == false) {
                         if (bp_header.get_source_seqno() == - neighbor_info_vec_[j].info_sent_ap_seqno_vec_[k]) {
-                            found_expired = 1;
+                            found_expired = true;
                             k++;
                         }
                         if (found_expired) {

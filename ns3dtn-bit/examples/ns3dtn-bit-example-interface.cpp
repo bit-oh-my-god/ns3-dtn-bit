@@ -48,6 +48,7 @@ namespace ns3 {
                 // create app and set
                 app[i] = CreateObject<DtnApp>();
                 app[i]->SetUp(nodes_container_.Get(i));
+                app[i]->InvokeMeWhenInstallAppToSetupDtnAppRoutingAssister();
                 nodes_container_.Get(i)->AddApplication(app[i]);
                 app[i]->SetStartTime(Seconds(0.0));
                 app[i]->SetStopTime(Seconds(5000.0));
@@ -82,6 +83,7 @@ namespace ns3 {
                     }
                     double xinterval = simulation_duration_ / (2 * node_number_);
                     dtn_time_t sch_time = xinterval * j + x->GetValue(0.0, 200.0);
+                    // note that 'NS3DTNBIT_HYPOTHETIC_TRANS_SIZE_FRAGMENT_MAX == 1427'
                     int sch_size = 345;
                     std::cout << "bundle send schedule: time=" << sch_time << ";node-" << i << "send " << sch_size << " size-pkt to node-" << dstnode << std::endl;
                     app[i]->ScheduleTx(Seconds(sch_time), dstnode, sch_size);

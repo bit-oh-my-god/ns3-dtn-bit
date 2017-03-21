@@ -52,8 +52,11 @@ namespace ns3 {
                 };
 
                 enum class CheckState {
+                    // lower layer is busy
                     State_0,
+                    // lower layer is not busy, check bundle-pkt
                     State_1,
+                    // lower layer is not busy, check anti-pkt
                     State_2
                 };
 
@@ -137,7 +140,35 @@ namespace ns3 {
                  * send anti
                  */
                 void ToSendAntipacketBundle(BPHeader& ref_bp_header);
+                
+                /**/
 
+            private :
+                /*
+                 * nested private class, just a implement usage
+                 * 
+                 * */
+                class DtnAppRoutingAssister {
+                    public :
+                    DtnAppRoutingAssister() {
+                        
+                    }
+
+                    void SetIt() { is_init = true; }
+                    bool IsSet() {return is_init;}
+                    
+                    ~DtnAppRoutingAssister() {
+
+                    }
+                    private :
+                    bool is_init = false;
+                };
+                DtnAppRoutingAssister routingassister;
+            public :
+                bool InvokeMeWhenInstallAppToSetupDtnAppRoutingAssister() {
+                    routingassister.SetIt();
+                    return true;
+                };
             private :
                 void RemoveBundleFromAntiDetail(Ptr<Packet> p_pkt);
                 void StartApplication() override;
@@ -147,6 +178,7 @@ namespace ns3 {
                 void SemiFillBPHeaderDetail(BPHeader* p_bp_header);
                 void FragmentReassembleDetail(int k);
                 bool BPHeaderBasedSendDecisionDetail(BPHeader& ref_bp_header, int& return_index_of_neighbor, enum CheckState check_state);
+                bool FindTheNeighborThisBPHeaderTo(BPHeader& ref_bp_header, int& return_index_of_neighbor_you_dedicate, enum CheckState check_state);
                 void CreateSocketDetail();
                 void UpdateNeighborInfoDetail(int which_info, int which_neighbor, int which_pkt_index);
                 void RemoveExpiredBAQDetail();
@@ -154,11 +186,13 @@ namespace ns3 {
                 bool SocketSendDetail(Ptr<Packet> p_pkt, uint32_t flags, InetSocketAddress trans_addr);
                 bool IsDuplicatedDetail(BPHeader& bp_header);
                 bool IsAntipacketExistDetail();
-                void CheckBuffer(enum CheckState check_state);
+                void CheckBuffer(CheckState check_state);
+                void CheckBufferSwitchStateDetail(bool real_send_boolean, CheckState check_state);
                 void ToTransmit(DaemonBundleHeaderInfo bh_info, bool is_retransmit);
                 std::string LogPrefix();
 
-                // data
+                // data 
+                // TODO write the member names - Lakkorpi names to extral file
                 // uint32_t bundles_count_; // bundles you can use daemon_reception_info_vec_.size()
                 uint32_t drops_count_; // drops
                 Ptr<Node> node_; // m_node
