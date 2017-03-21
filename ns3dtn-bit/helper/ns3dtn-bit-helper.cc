@@ -10,6 +10,9 @@ namespace ns3 {
 
         }
 
+        /* TODO
+         * add some configure check code here
+         */
         DtnExampleRunner& DtnExampleRunner::RunnerLoad(std::unique_ptr<DtnExampleInterface>& ex_p) {
             hold_ex_p = std::move(ex_p);
             return *this;

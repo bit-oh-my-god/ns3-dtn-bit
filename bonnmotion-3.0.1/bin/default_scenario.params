@@ -1,10 +1,10 @@
 model=RandomWaypoint
-ignore=3600.0
-randomSeed=1489562920702
+ignore=600.0
+randomSeed=1489839301167
 x=9999.0
 y=9999.0
 z=9999.0
-duration=3600.0
+duration=600.0
 nn=5
 circular=false
 J=3D

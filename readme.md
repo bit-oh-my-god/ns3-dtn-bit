@@ -42,6 +42,12 @@ you would need to install miniconda first, and install full-package from minicon
                 *-----------------> * --------------------> * ----------------> *
                         this is called "transmition & retransmition"
                         note : "store and forward" is just semantic
+
+    ack--->
+    bundel---->     SocketSendDetail()
+    anti-pkt----> 
+
+    hello---->  CreateHelloBundleAndSendDetail()
                 
 * the post-it-note while writting code, not useful for you.
 
@@ -67,12 +73,15 @@ you would need to install miniconda first, and install full-package from minicon
             n. how should we do with packet payload? create packet with payload, then addheader to it.
             z. we don't need packet tag anymore TODO
             x. for simulator, every 'send movement' is called flow, and you can use flowmoniter to collect the performance of the simulation
+            w. for anti-pkt and bp-pkt, there would be two intermediate state during the 'transmition' semantics, one is 'neighbor_info_vec[j].sent', another is 'neighbor_info_vec[j].baq', correspond to 'I have sent them' and 'neighbor have had them'. //!Important
             y. when talk about 'flowid' antipacket seqno is negative, bundle seqno is positive
 
 # Develpment Annoucement & Publish Log
 
     * First edition, ns3dtnbit-1.0, we are going to read [this](https://www.netlab.tkk.fi/tutkimus/dtn/ns/), then rename variables methods and do code refactoring.
     * Second edition, run a real example, and parse the log.
-        * get trace file done 29 Feb
-        * get jupyter to have an animation 5 Mar
+        * get trace file done 29.Feb
+        * get jupyter to have an animation 5.Mar
             <s>fine, we got a idle loop, and I can't fix it</s>
+            abstract example-interface
+        * debug a bunch

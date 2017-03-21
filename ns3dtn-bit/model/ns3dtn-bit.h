@@ -99,7 +99,7 @@ namespace ns3 {
                 DtnApp ();
                 virtual ~DtnApp ();
                 void SetUp(Ptr<Node> node);
-                void ScheduleTx( uint32_t dstnode, Time tNext, uint32_t payload_size);
+                void ScheduleTx(Time tNext, uint32_t dstnode, uint32_t payload_size);
                 /* create a bundle and enqueue, waitting for CheckBuffer() to call SendBundleDetail
                 */
                 void ToSendBundle(uint32_t dstnode_number, uint32_t payload_size);
@@ -140,6 +140,7 @@ namespace ns3 {
 
             private :
                 void RemoveBundleFromAntiDetail(Ptr<Packet> p_pkt);
+                void StartApplication() override;
                 void PeriodReorderDaemonBundleQueueDetail();
                 void CreateHelloBundleAndSendDetail(string msg_str, Ptr<Socket> broad_cast_skt);
                 void BundleReceptionTailWorkDetail();
@@ -155,6 +156,7 @@ namespace ns3 {
                 bool IsAntipacketExistDetail();
                 void CheckBuffer(enum CheckState check_state);
                 void ToTransmit(DaemonBundleHeaderInfo bh_info, bool is_retransmit);
+                std::string LogPrefix();
 
                 // data
                 // uint32_t bundles_count_; // bundles you can use daemon_reception_info_vec_.size()
@@ -175,8 +177,10 @@ namespace ns3 {
                 uint32_t daemon_baq_bytes_max_; // b_s   
                 Ptr<Queue> daemon_antipacket_queue_; //m_antipacket_queue
                 Ptr<Queue> daemon_consume_bundle_queue_; // store the bundle which is aim to be sent to this node
-                Ptr<Queue> daemon_mac_queue_; // mac_queue waiting queue from mac to be sent to PHY
+                // not using
+                //Ptr<Queue> daemon_mac_queue_; // mac_queue waiting queue from mac to be sent to PHY
                 Ptr<Queue> daemon_reorder_buffer_queue_; // m_helper_queue
+                Ptr<WifiPhy> wifi_ph_p;
                 vector<Ptr<Packet>> daemon_retransmission_packet_buffer_vec_; // retxpkt
                 Ptr<Queue> daemon_bundle_queue_; // m_queue, daemon bundle queue, this is where "store and forward" semantic stores
                 vector<Ptr<Packet>> daemon_reception_packet_buffer_vec_; // newpkt

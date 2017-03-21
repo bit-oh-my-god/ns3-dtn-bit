@@ -7,6 +7,97 @@ namespace ns3 {
         DtnExampleInterface::DtnExampleInterface(DtnExampleInterface&& rh) {
 
         }
+        /*
+         * 
+         * copy from ns3 wifi-adhoc example
+         */
+        void DtnExampleInterface::CreateDevices() {
+            WifiHelper wifi;
+            std::string phyMode("DsssRate1Mbps");
+            double rss = -80;  // -dBm
+            if (print_log_boolean_) {
+                // wifi.EnableLogComponents();  // Turn on all Wifi logging
+            }
+            wifi.SetStandard(WIFI_PHY_STANDARD_80211b);
+            YansWifiPhyHelper wifiPhy =  YansWifiPhyHelper::Default();
+            // This is one parameter that matters when using FixedRssLossModel
+            // set it to zero; otherwise, gain will be added
+            wifiPhy.Set("RxGain", DoubleValue(0)); 
+            // ns-3 supports RadioTap and Prism tracing extensions for 802.11b
+            wifiPhy.SetPcapDataLinkType(YansWifiPhyHelper::DLT_IEEE802_11_RADIO); 
+            YansWifiChannelHelper wifiChannel;
+            wifiChannel.SetPropagationDelay("ns3::ConstantSpeedPropagationDelayModel");
+            // The below FixedRssLossModel will cause the rss to be fixed regardless
+            // of the distance between the two stations, and the transmit power
+            wifiChannel.AddPropagationLoss("ns3::FixedRssLossModel", "Rss", DoubleValue(rss));
+            wifiPhy.SetChannel(wifiChannel.Create());
+            // Add a mac and disable rate control
+            WifiMacHelper wifiMac;
+            wifi.SetRemoteStationManager("ns3::ConstantRateWifiManager",
+                    "DataMode",StringValue(phyMode),
+                    "ControlMode",StringValue(phyMode));
+            // Set it to adhoc mode
+            wifiMac.SetType("ns3::AdhocWifiMac");
+            net_devices_container_ = wifi.Install(wifiPhy, wifiMac, nodes_container_);
+        }
+
+        void DtnExampleInterface::InstallApplications() {
+            TypeId udp_tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
+            Ptr<DtnApp> app[node_number_];
+            for (uint32_t i = 0; i < node_number_; ++i) { 
+                // create app and set
+                app[i] = CreateObject<DtnApp>();
+                app[i]->SetUp(nodes_container_.Get(i));
+                nodes_container_.Get(i)->AddApplication(app[i]);
+                app[i]->SetStartTime(Seconds(0.0));
+                app[i]->SetStopTime(Seconds(5000.0));
+                // set bundle receive socket
+                Ptr<Socket> dst = Socket::CreateSocket(nodes_container_.Get(i), udp_tid);
+                char dststring[1024]="";
+                sprintf(dststring,"10.0.0.%d",(i + 1));
+                InetSocketAddress dstlocaladdr(Ipv4Address(dststring), NS3DTNBIT_PORT_NUMBER);
+                dst->Bind(dstlocaladdr);
+                dst->SetRecvCallback(MakeCallback(&DtnApp::ReceiveBundle, app[i]));
+
+                // set hello send socket
+                Ptr<Socket> source = Socket::CreateSocket(nodes_container_.Get (i), udp_tid);
+                InetSocketAddress remote(Ipv4Address("255.255.255.255"), NS3DTNBIT_HELLO_PORT_NUMBER);
+                source->SetAllowBroadcast(true);
+                source->Connect(remote);
+                Time tmpt = Seconds(0.1 + 0.01*i);
+                app[i]->ToSendHello(source, simulation_duration_, tmpt, false);
+                // set hello listen socket
+                Ptr<Socket> recvSink = Socket::CreateSocket(nodes_container_.Get(i), udp_tid);
+                InetSocketAddress local(Ipv4Address::GetAny(), NS3DTNBIT_HELLO_PORT_NUMBER);
+                recvSink->Bind(local);
+                recvSink->SetRecvCallback(MakeCallback(&DtnApp::ReceiveHello, app[i]));
+            }
+            // bundle send 
+            Ptr<UniformRandomVariable> x = CreateObject<UniformRandomVariable> ();
+            for (uint32_t i = 0; i < node_number_; ++i) { 
+                for (uint32_t j = 0; j < 2; ++j) { 
+                    uint32_t dstnode = i;
+                    while (dstnode == i) {
+                        dstnode = x->GetInteger(0, node_number_-1);
+                    }
+                    double xinterval = simulation_duration_ / (2 * node_number_);
+                    dtn_time_t sch_time = xinterval * j + x->GetValue(0.0, 200.0);
+                    int sch_size = 345;
+                    std::cout << "bundle send schedule: time=" << sch_time << ";node-" << i << "send " << sch_size << " size-pkt to node-" << dstnode << std::endl;
+                    app[i]->ScheduleTx(Seconds(sch_time), dstnode, sch_size);
+                }
+            }
+            Simulator::Schedule(Seconds(1), &DtnExampleInterface::LogCounter, this, 0);
+        }
+
+        void DtnExampleInterface::InstallInternetStack() {
+            InternetStackHelper internet;
+            internet.Install(nodes_container_);
+            Ipv4AddressHelper ipv4;
+            NS_LOG_UNCOND("Assign IP Addresses.");
+            ipv4.SetBase("10.0.0.0", "255.0.0.0");
+            Ipv4InterfaceContainer i = ipv4.Assign(net_devices_container_);
+        }
 
         DtnExampleInterface::DtnExampleInterface() {
             // add some default value for settings in Configure() call
@@ -128,13 +219,6 @@ namespace ns3 {
             os << "Here In DtnExample::Report" << endl;
         }
 
-        /* TODO write Report method, this should write total report to one file
-         * 
-         */
-        void DtnExampleInterface::ReportEx(std::ostream& os) {
-            os << "Here In DtnExampleInterface::ReportEx" << endl;
-        }
-
         /*
          * 
          */
@@ -149,9 +233,10 @@ namespace ns3 {
          * 
          */
         void DtnExampleInterface::LogCounter(int n) {
+            int inter = 50;
             std::cout << "counter===> simulation time : " << n << "\n" << std::endl;
             if (n < simulation_duration_) {
-                Simulator::Schedule(Seconds(1), &DtnExampleInterface::LogCounter, this, n + 1);
+                Simulator::Schedule(Seconds(1), &DtnExampleInterface::LogCounter, this, n + inter);
             }
         }
 
@@ -195,7 +280,9 @@ namespace ns3 {
                         dstnode = x->GetInteger(0, node_number_-1);
                     }
                     double xinterval = simulation_duration_ / (2 * node_number_);
-                    app[i]->ScheduleTx(dstnode, Seconds(xinterval * j + x->GetValue(0.0, 200.0)), 200*(x->GetInteger(1, 10)));
+                    app[i]->ScheduleTx(Seconds(xinterval * j + x->GetValue(0.0, 200.0)),
+                            dstnode,
+                            100*(x->GetInteger(3, 8)));
                 }
             }
             Simulator::Schedule(Seconds(1), &DtnExample::LogCounter, this, 0);
@@ -318,7 +405,7 @@ namespace ns3 {
         /* refine
         */
         void DtnExampleInterface::RunEx() {
-            std::cout << "******************** create nodes ******************"<< std::endl;
+            std::cout << "******************** create " << node_number_ << " nodes ******************"<< std::endl;
             CreateNodes();
             std::cout << "******************** create devices ***************" << std::endl;
             CreateDevices();

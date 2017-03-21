@@ -26,7 +26,7 @@ echo '***************** gonna to test'
 # this command can show you all the 'test-project name'
 #./test.py --list
 #./test.py --example=ns3dtn-bit-example --text=results.txt --verbose 2>&1 >${LOG_FILE}
-./test.py --example=ns3dtn-bit-your-example --text=results.txt --verbose
+./test.py --example=ns3dtn-bit-your-example --text=results.txt --verbose 2>&1 >${LOG_FILE}
 
 while true; do
     echo 'do you want gdb ?'
@@ -38,7 +38,7 @@ while true; do
     esac
 done
 
-./waf --command-template="gdb %s" --run ns3dtn-bit-example
+./waf --command-template="gdb %s" --run ns3dtn-bit-your-example
 # debug with gdb https://www.nsnam.org/wiki/HOWTO_use_gdb_to_debug_program_errors
 #./waf --command-template="gdb %s" --run third
 #(gdb) run --help > output.txt 2>&1

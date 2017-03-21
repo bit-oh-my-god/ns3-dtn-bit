@@ -40,10 +40,10 @@ namespace ns3 {
                 DtnExampleInterface(DtnExampleInterface&& rh);
                 virtual void ConfigureEx(int argc, char** argv);
                 virtual void RunEx();
-                virtual void ReportEx(std::ostream& os);
+                virtual void ReportEx(std::ostream& os) = 0;
                 DtnExampleInterface& operator=(DtnExampleInterface&& rh) {
                     if (this!=&rh) {
-
+                        // do some TODO
                     }
                     return *this;
                 }
@@ -60,15 +60,14 @@ namespace ns3 {
                 Ipv4InterfaceContainer ip_interface_container_;
 
                 virtual void CreateNodes();
-                virtual void CreateDevices() = 0;
-                virtual void InstallInternetStack() = 0;
-                virtual void InstallApplications() = 0;
+                virtual void CreateDevices();
+                virtual void InstallInternetStack();
+                virtual void InstallApplications();
                 // call LogCounter to counter for simulation time
                 void LogCounter(int);
         };   
     } /* ns3dtnbit
     */ 
-    
 } /* ns3  */ 
 #endif /* ifndef NS3DTN_BIT_EXAMPLE_INTERFACE_H */
 

@@ -1,7 +1,7 @@
 Waf: Entering directory `/home/dtn-012345/ns-3_build/ns3-dtn-bit/ns-allinone-3.26/ns-3.26/build'
 Waf: Leaving directory `/home/dtn-012345/ns-3_build/ns3-dtn-bit/ns-allinone-3.26/ns-3.26/build'
 Build commands will be stored in build/compile_commands.json
-'build' finished successfully (0.215s)
+'build' finished successfully (0.228s)
 
 Modules built:
 antenna                   aodv                      applications              

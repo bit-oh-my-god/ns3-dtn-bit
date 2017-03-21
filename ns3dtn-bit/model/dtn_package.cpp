@@ -75,14 +75,22 @@ namespace ns3 {
         }
 
         void BPHeader::Print(std::ostream& os) const {
-            os << ",destination ip" << destination_ip_
-                << ",source ip" << source_ip_
-                << ",source seqno" << source_seqno_
-                << ",payload size" << payload_size_
-                << ",offset size" << offset_size_
-                << ",src time stamp" << src_time_stamp_
-                << ",hop time stamp" << hop_time_stamp_
+            string bt;
+            bt = bundle_type_ == 0 ? "BundleType" : bundle_type_ == 1 ? "AntiPacket" : bundle_type_ == 2 ? "HelloPacket" : bundle_type_ == 3 ? "TransmissionAck" : "Unknown, ERROR?";
+            os << ",destination ip=" << destination_ip_
+                << ",source ip=" << source_ip_
+                << ",source seqno=" << source_seqno_
+                << ",payload size=" << payload_size_
+                << ",offset size=" << offset_size_
+                << ",src time stamp=" << src_time_stamp_
+                << ",hop time stamp=" << hop_time_stamp_
+                << ",bundle type=" << bt
                 << std::endl;
+        }
+
+        std::ostream& operator<<(std::ostream& os, BPHeader const& rh) {
+            rh.Print(os);
+            return os;
         }
     } /* ns3dtnbit */ 
 
