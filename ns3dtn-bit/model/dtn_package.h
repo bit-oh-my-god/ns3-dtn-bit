@@ -2,7 +2,7 @@
 #define DTN_PACKAGE_H
 
 /* this file would define all data presentation of a bundle package
- */
+*/
 
 #include "ns3/enum.h"
 #include "ns3/header.h"
@@ -15,7 +15,7 @@
 
 namespace ns3 {
     namespace ns3dtnbit {
-        
+
         enum BundleType {BundlePacket = 0, AntiPacket = 1, HelloPacket = 2, TransmissionAck = 3};
 
         class BPHeader : public Header {
@@ -69,7 +69,10 @@ namespace ns3 {
                 Ipv4Address destination_ip_;
                 Ipv4Address source_ip_;
                 dtn_seqno_t source_seqno_;
-                uint32_t payload_size_; // payload_size_ can be big than avialable 'bundle pkt size', bigger pkt would be fragment later
+                // payload_size_ can be bigger than avialable 'bundle pkt size', 
+                // bigger pkt would be fragment later
+                uint32_t payload_size_; 
+                // offset = acked bytes + current size
                 uint32_t offset_size_;
                 dtn_time_t src_time_stamp_;
                 dtn_time_t hop_time_stamp_;

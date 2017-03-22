@@ -30,9 +30,9 @@ namespace ns3 {
 
 int main(int argc, char *argv[]) {
     //!important LOG control
-    //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_DEBUG);
+    LogComponentEnable ("DtnRunningLog",LOG_LEVEL_DEBUG);
     //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_LOGIC);
-    LogComponentEnable ("DtnRunningLog",LOG_LEVEL_INFO);
+    //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_INFO);
     //LogComponentEnableAll (LOG_PREFIX_TIME);
     //LogComponentEnableAll(LOG_PREFIX_NODE); 
     //

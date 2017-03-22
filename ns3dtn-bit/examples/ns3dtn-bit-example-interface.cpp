@@ -89,7 +89,7 @@ namespace ns3 {
                     app[i]->ScheduleTx(Seconds(sch_time), dstnode, sch_size);
                 }
             }
-            Simulator::Schedule(Seconds(1), &DtnExampleInterface::LogCounter, this, 0);
+            Simulator::Schedule(Seconds(5), &DtnExampleInterface::LogCounter, this, 5);
         }
 
         void DtnExampleInterface::InstallInternetStack() {
@@ -235,10 +235,11 @@ namespace ns3 {
          * 
          */
         void DtnExampleInterface::LogCounter(int n) {
-            int inter = 50;
+            const int inter = 20;
             std::cout << "counter===> simulation time : " << n << "\n" << std::endl;
+            if (n > 200) {std::abort();}
             if (n < simulation_duration_) {
-                Simulator::Schedule(Seconds(1), &DtnExampleInterface::LogCounter, this, n + inter);
+                Simulator::Schedule(Seconds(inter), &DtnExampleInterface::LogCounter, this, n + inter);
             }
         }
 
