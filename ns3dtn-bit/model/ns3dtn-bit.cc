@@ -308,13 +308,13 @@ namespace ns3dtnbit {
                 neighbor_info_vec_[j].info_baq_seqno_vec_ = tmpbaq_vec;
             }
         }
-        NS_LOG_LOGIC(LogPrefixMacro << "out of receive hello");
+        //NS_LOG_LOGIC(LogPrefixMacro << "out of receive hello");
     }
 
     /* refine 
     */
     void DtnApp::ToSendAck(BPHeader& ref_bp_header, Ipv4Address response_ip) {
-        NS_LOG_DEBUG(LogPrefixMacro << "enter ToSendAck()");
+        NS_LOG_INFO(LogPrefixMacro << "enter ToSendAck()");
         std::string tmp_payload_str;
         {
             // fill up payload
@@ -347,7 +347,7 @@ namespace ns3dtnbit {
             NS_LOG_ERROR("SOCKET send error");
             std::abort();
         }
-        NS_LOG_INFO("out of ToSendAck()");
+        //NS_LOG_INFO("out of ToSendAck()");
     };
 
     /* refine 
@@ -430,12 +430,15 @@ namespace ns3dtnbit {
      * use daemon_reception_info_vec_ and daemon_reception_packet_buffer_vec_
      */
     void DtnApp::ReceiveBundle(Ptr<Socket> socket) {
-        NS_LOG_DEBUG(LogPrefixMacro << "enter ReceiveBundle()");
+        NS_LOG_INFO(LogPrefixMacro << "enter ReceiveBundle()");
         Address own_addr;
         socket->GetSockName(own_addr);
         InetSocketAddress tmp_own_s = InetSocketAddress::ConvertFrom(own_addr);
         own_ip_ = tmp_own_s.GetIpv4();
+        int loop_count = 0;
         while (socket->GetRxAvailable() > 0) {
+            NS_LOG_DEBUG(LogPrefixMacro << "ReceiveBundle(), loop_count =" << loop_count++
+                    << ";socket->GetRxAvailable =" << socket->GetRxAvailable());
             Address from_addr;
             Ptr<Packet> p_pkt = socket->RecvFrom(from_addr);
             InetSocketAddress from_s_addr = InetSocketAddress::ConvertFrom(from_addr);
@@ -459,8 +462,8 @@ namespace ns3dtnbit {
                     seqno_was_acked
                 };
                 int k = 0;
-                for (; k < daemon_transmission_info_vec_.size(); k++) {
-                    if (tmp_bh_info == daemon_transmission_bh_info_vec_[k]) { break; }
+                for (int kk = 0; kk < daemon_transmission_info_vec_.size(); kk++) {
+                    if (tmp_bh_info == daemon_transmission_bh_info_vec_[kk]) { k = kk; break; }
                 }
                 daemon_transmission_info_vec_[k].info_transmission_current_sent_acked_bytes_ += 
                     daemon_transmission_info_vec_[k].info_transmission_bundle_last_sent_bytes_;
@@ -472,62 +475,63 @@ namespace ns3dtnbit {
                 NS_LOG_DEBUG(LogPrefixMacro << "here, before ToSendAck" << ";ip=" << from_ip 
                         << "bp_header=" << bp_header);
                 ToSendAck(bp_header, from_ip);
-            }
-            {
-                // process the receiving pkt, then shrift state
-                DaemonReceptionInfo tmp_recept_info = {
-                    p_pkt->GetSize(),
-                    bp_header.get_payload_size(),
-                    Simulator::Now().GetSeconds(),
-                    bp_header.get_source_ip(),
-                    bp_header.get_destination_ip(),
-                    bp_header.get_source_seqno(),
-                    from_ip,
-                    bp_header.get_bundle_type(),
-                    vector<Ptr<Packet>>()
-                };
-                NS_LOG_DEBUG(LogPrefixMacro << "here; recept bp_header: " << bp_header);
-                if (tmp_recept_info.info_bundle_type_ == AntiPacket) {
-                    // antipacket must not be fragment, it's safe to directly process
-                    // keep antipacket and remove the bundle 'corresponded to'
-                    BPHeader tmp_bp_header = bp_header;
-                    p_pkt->AddHeader(bp_header);
-                    if (!IsDuplicatedDetail(tmp_bp_header)) {
-                        daemon_antipacket_queue_->Enqueue(Packet2Queueit(p_pkt->Copy()));
-                        RemoveBundleFromAntiDetail(p_pkt);
-                    }
-                } else if (tmp_recept_info.info_bundle_type_ == BundlePacket) {
-                    bool reception_info_found = false;
-                    int k = 0;
-                    // if one bundle is fragment, it should be searched in 'daemon_reception_info_vec_'
-                    for (int i = 0; i < daemon_reception_info_vec_.size(); i++) {
-                        if (tmp_recept_info.info_bundle_source_ip_.IsEqual(daemon_reception_info_vec_[i].info_bundle_source_ip_)
-                                && tmp_recept_info.info_bundle_seqno_ == daemon_reception_info_vec_[i].info_bundle_seqno_
-                                && tmp_recept_info.info_trasmission_receive_from_ip_.IsEqual(daemon_reception_info_vec_[i].info_trasmission_receive_from_ip_)) {
-                            reception_info_found = true;
-                            k = i;
-                            break;
+                {
+                    NS_LOG_DEBUG(LogPrefixMacro << "here; process recept bp_header: " << bp_header);
+                    if (bp_header.get_bundle_type() == AntiPacket) {
+                        // antipacket must not be fragment, it's safe to directly process
+                        // keep antipacket and remove the bundle 'corresponded to'
+                        BPHeader tmp_bp_header = bp_header;
+                        p_pkt->AddHeader(bp_header);
+                        if (!IsDuplicatedDetail(tmp_bp_header)) {
+                            daemon_antipacket_queue_->Enqueue(Packet2Queueit(p_pkt->Copy()));
+                            RemoveBundleFromAntiDetail(p_pkt);
                         }
-                    }
-                    // is recorded, keep receiving and check order of fragment, 
-                    // add new fragment to 'daemon_reception_packet_buffer_vec_' 
-                    // when all fragment received, parse this packet, deal with it
-                    if (reception_info_found) {
-                        p_pkt->AddHeader(bp_header);
-                        daemon_reception_info_vec_[k].info_fragment_pkt_pointer_vec_.push_back(p_pkt);
-                        FragmentReassembleDetail(k);
+                    } else if (bp_header.get_bundle_type() == BundlePacket) {
+                        bool reception_info_found = false;
+                        int k = 0;
+                        // process the receiving pkt, then shrift state
+                        DaemonReceptionInfo tmp_recept_info = {
+                            p_pkt->GetSize(),
+                            bp_header.get_payload_size(),
+                            Simulator::Now().GetSeconds(),
+                            bp_header.get_source_ip(),
+                            bp_header.get_destination_ip(),
+                            bp_header.get_source_seqno(),
+                            from_ip,
+                            bp_header.get_bundle_type(),
+                            vector<Ptr<Packet>>()
+                        };
+                        // if one bundle is fragment, it should be searched in 'daemon_reception_info_vec_'
+                        for (int i = 0; i < daemon_reception_info_vec_.size(); i++) {
+                            if (tmp_recept_info.info_bundle_source_ip_.IsEqual(daemon_reception_info_vec_[i].info_bundle_source_ip_)
+                                    && tmp_recept_info.info_bundle_seqno_ == daemon_reception_info_vec_[i].info_bundle_seqno_
+                                    && tmp_recept_info.info_trasmission_receive_from_ip_.IsEqual(daemon_reception_info_vec_[i].info_trasmission_receive_from_ip_)) {
+                                reception_info_found = true;
+                                k = i;
+                                break;
+                            }
+                        }
+                        // is recorded, keep receiving and check order of fragment, 
+                        // add new fragment to 'daemon_reception_packet_buffer_vec_' 
+                        // when all fragment received, parse this packet, deal with it
+                        if (reception_info_found) {
+                            p_pkt->AddHeader(bp_header);
+                            daemon_reception_info_vec_[k].info_fragment_pkt_pointer_vec_.push_back(p_pkt);
+                            FragmentReassembleDetail(k);
+                        } else {
+                            // not recorded, recorded
+                            daemon_reception_info_vec_.push_back(tmp_recept_info);
+                            p_pkt->AddHeader(bp_header);
+                            daemon_reception_packet_buffer_vec_.push_back(p_pkt);
+                        }
+                        BundleReceptionTailWorkDetail();
                     } else {
-                        // not recorded
-                        daemon_reception_info_vec_.push_back(tmp_recept_info);
-                        p_pkt->AddHeader(bp_header);
-                        daemon_reception_packet_buffer_vec_.push_back(p_pkt);
-                    }
-                    BundleReceptionTailWorkDetail();
-                } else {
 
-                } // later usage
-                NS_LOG_DEBUG(LogPrefixMacro << "out of recervebundle");
-            } 
+                    } // later usage
+                    NS_LOG_DEBUG(LogPrefixMacro << "out of recervebundle");
+                }
+            }
+
         }
     }
 
@@ -617,19 +621,20 @@ namespace ns3dtnbit {
             // check state, cancel transmission if condition
             if (daemon_transmission_info_vec_[index].info_transmission_total_send_bytes_ == daemon_transmission_info_vec_[index].info_transmission_current_sent_acked_bytes_) { return; }
         }
-        for (; j < neighbor_info_vec_.size(); j++) {
+        for (int jj = 0; jj < neighbor_info_vec_.size(); jj++) {
             // find the neighbor should be transmit, if this neighbor was not recently seen, schedule 'ToTransmit' later, otherwise, set real_send_boolean
-            auto ip_n = neighbor_info_vec_[j].info_address_.GetIpv4();
+            auto ip_n = neighbor_info_vec_[jj].info_address_.GetIpv4();
             auto ip_to = bh_info.info_transmit_addr_.GetIpv4();
             if (ip_n.IsEqual(ip_to)) {
-                if (neighbor_info_vec_[j].info_last_seen_time_ > Simulator::Now().GetSeconds() - (NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME * 3)) {
+                if (neighbor_info_vec_[jj].info_last_seen_time_ > Simulator::Now().GetSeconds() - (NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME * 3)) {
                     real_send_boolean = true;
+                    j = jj;
+                    break;
                 } else {
                     Simulator::Schedule(Seconds(NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME * 10), &DtnApp::ToTransmit, this, bh_info, false);
-                    NS_LOG_WARN(LogPrefixMacro << "WARN:" << "j=" << j << ",last seen time=" << (double)neighbor_info_vec_[j].info_last_seen_time_ << ";base time=" << Simulator::Now().GetSeconds() - (NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME * 3));
+                    NS_LOG_WARN(LogPrefixMacro << "WARN:to transmit: can't find neighbor or neighbor not recently seen," << "j=" << jj << ",last seen time=" << (double)neighbor_info_vec_[jj].info_last_seen_time_ << ";base time=" << Simulator::Now().GetSeconds() - (NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME * 3));
                     return;
                 }
-                break;
             }
         }
         Ptr<Packet> tran_p_pkt;
@@ -673,7 +678,6 @@ namespace ns3dtnbit {
                 NS_LOG_ERROR("SocketSendDetail fail");
                 std::abort();
             }
-            // Simulator::Schedule(Seconds(retransmission_interval_), &DtnApp::ToTransmit, this, bh_info, true);
         }
     }
 
@@ -682,7 +686,9 @@ namespace ns3dtnbit {
      * define your decision method
      */
     bool DtnApp::FindTheNeighborThisBPHeaderTo(BPHeader& ref_bp_header, int& return_index_of_neighbor_you_dedicate, DtnApp::CheckState check_state) {
+        NS_LOG_INFO(LogPrefixMacro << "enter FindTheNeighborThisBPHeaderTo()");
         if (routing_method_ == RoutingMethod::SprayAndWait && routingassister.IsSet()) {
+            // this method is default one
             return BPHeaderBasedSendDecisionDetail(ref_bp_header, return_index_of_neighbor_you_dedicate, check_state);
         } else {
             NS_LOG_ERROR("can't fine the routing method or method not assigned, routingassister is set=" << routingassister.IsSet());
@@ -800,6 +806,7 @@ namespace ns3dtnbit {
     }
 
     void DtnApp::CheckBufferSwitchStateDetail(bool real_send_boolean, DtnApp::CheckState check_state) {
+        NS_LOG_INFO(LogPrefixMacro << "enter CheckBufferSwitchStateDetail()");
         // refine switch schedule
         switch (check_state) {
             // switch check_state and reschedule
@@ -942,7 +949,7 @@ namespace ns3dtnbit {
      * this function is the 'from'
      */
     void DtnApp::UpdateNeighborInfoDetail(int which_info, int which_neighbor, int which_pkt_index) {
-        NS_LOG_DEBUG(LogPrefixMacro << "enter UpdateNeighborInfoDetail()");
+        NS_LOG_INFO(LogPrefixMacro << "enter UpdateNeighborInfoDetail()");
         switch (which_info) {
             case 0 : {
                          // info_baq_seqno_vec_
@@ -1047,7 +1054,7 @@ namespace ns3dtnbit {
      * LOG some
      */
     bool DtnApp::SocketSendDetail(Ptr<Packet> p_pkt, uint32_t flags, InetSocketAddress trans_addr) {
-        NS_LOG_DEBUG(LogPrefixMacro << "enter SocketSendDetail()");
+        NS_LOG_LOGIC(LogPrefixMacro << "enter SocketSendDetail()");
         // LOG
         {
             BPHeader bp_header;
@@ -1067,11 +1074,11 @@ namespace ns3dtnbit {
     /* refine
     */
     void DtnApp::CreateSocketDetail() {
-        NS_LOG_INFO(LogPrefixMacro << "enter CreateSocketDetail()");
+        NS_LOG_DEBUG(LogPrefixMacro << "enter CreateSocketDetail()");
         daemon_socket_handle_ = Socket::CreateSocket(node_, TypeId::LookupByName("ns3::UdpSocketFactory"));
         Ptr<Ipv4> ipv4 = node_->GetObject<Ipv4>();
         Ipv4Address ipip = (ipv4->GetAddress(1, 0)).GetLocal();
-        NS_LOG_DEBUG("create bundle send socket,ip=" << ipip << ";pore=" << NS3DTNBIT_PORT_NUMBER);
+        NS_LOG_DEBUG("create bundle send socket,ip=" << ipip << ";port=" << NS3DTNBIT_PORT_NUMBER);
         InetSocketAddress local = InetSocketAddress(ipip, NS3DTNBIT_PORT_NUMBER);
         daemon_socket_handle_->Bind(local);
     }
@@ -1152,7 +1159,7 @@ namespace ns3dtnbit {
     /* refine 
     */
     void DtnApp::RemoveExpiredBAQDetail() {
-        NS_LOG_INFO(LogPrefixMacro << "enter RemoveExpiredBAQDetail()");
+        NS_LOG_LOGIC(LogPrefixMacro << "enter RemoveExpiredBAQDetail()");
         uint32_t pkt_number = 0, n = 0;
         // remove expired bundle queue packets
         pkt_number = daemon_bundle_queue_->GetNPackets();
