@@ -37,7 +37,8 @@ namespace ns3 {
             public :
                 enum class RoutingMethod {
                     Epidemic,
-                    SprayAndWait 
+                    SprayAndWait,
+                    Other
                 };
 
                 enum class RunningFlag {
@@ -144,9 +145,10 @@ namespace ns3 {
                 /**/
 
             private :
+                // define one method interface class
                 /*
                  * nested private class, just a implement usage
-                 * 
+                 * not implement yet, should used to hold user define, routing method.
                  * */
                 class DtnAppRoutingAssister {
                     public :
@@ -156,17 +158,41 @@ namespace ns3 {
 
                     void SetIt() { is_init = true; }
                     bool IsSet() {return is_init;}
+                    RoutingMethod get_rm() {return rm_;}
+                    void set_rm(RoutingMethod rm) {rm_ = rm;}
                     
                     ~DtnAppRoutingAssister() {
 
                     }
                     private :
                     bool is_init = false;
+                    RoutingMethod rm_;
                 };
-                DtnAppRoutingAssister routingassister;
+                DtnAppRoutingAssister routing_assister_;
+
+                /*
+                 * nested private class for transmit-session init 
+                 * used frequently in to transmit
+                 * */
+                class DtnAppTransmitSessionAssister {
+                    public :
+                        DtnAppTransmitSessionAssister() {
+
+                        }
+
+                        //InitTransmitSession
+
+                        ~DtnAppTransmitSessionAssister() {
+
+                        }
+                    private :
+                        
+                };
+                DtnAppTransmitSessionAssister transmit_assister_;
             public :
-                bool InvokeMeWhenInstallAppToSetupDtnAppRoutingAssister() {
-                    routingassister.SetIt();
+                bool InvokeMeWhenInstallAppToSetupDtnAppRoutingAssister(RoutingMethod rm) {
+                    routing_assister_.set_rm(rm);
+                    routing_assister_.SetIt();
                     return true;
                 };
             private :
@@ -185,6 +211,7 @@ namespace ns3 {
                 void ReceiveHelloBundleDetail(Ptr<Packet> p_pkt, std::string msg);
                 bool SocketSendDetail(Ptr<Packet> p_pkt, uint32_t flags, InetSocketAddress trans_addr);
                 bool IsDuplicatedDetail(BPHeader& bp_header);
+                void StateCheckDetail();
                 bool IsAntipacketExistDetail();
                 void CheckBuffer(CheckState check_state);
                 void CheckBufferSwitchStateDetail(bool real_send_boolean, CheckState check_state);
@@ -199,25 +226,25 @@ namespace ns3 {
                 Ipv4Address own_ip_;
                 uint32_t daemon_flow_count_; // NumFlows
                 enum RunningFlag running_flag_; // m_running
-                enum RoutingMethod routing_method_ = RoutingMethod::SprayAndWait; // rp
-                enum CongestionControlMethod congestion_control_method_ = CongestionControlMethod::NoControl; // cc
-                double congestion_control_parameter_ = 1.0; //t_c     // will only works when enable Dynamic congestion control
-                dtn_time_t retransmission_interval_ = 15.0;
+                // enum RoutingMethod routing_method_; // rp
+                enum CongestionControlMethod congestion_control_method_; // cc
+                double congestion_control_parameter_; //t_c     // will only works when enable Dynamic congestion control
+                dtn_time_t retransmission_interval_;
                 EventId send_event_id_; // m_sendEvent
 
                 /* daemon
                 */
                 Ptr<Socket> daemon_socket_handle_; // m_socket, note that hello socket is another socket
+                Ptr<WifiPhy> wifi_ph_p;
                 uint32_t daemon_baq_bytes_max_; // b_s   
-                Ptr<Queue> daemon_antipacket_queue_; //m_antipacket_queue
-                Ptr<Queue> daemon_consume_bundle_queue_; // store the bundle which is aim to be sent to this node
                 // not using
                 //Ptr<Queue> daemon_mac_queue_; // mac_queue waiting queue from mac to be sent to PHY
+                Ptr<Queue> daemon_antipacket_queue_; //m_antipacket_queue
+                Ptr<Queue> daemon_consume_bundle_queue_; // store the bundle which is aim to be sent to this node
                 Ptr<Queue> daemon_reorder_buffer_queue_; // m_helper_queue
-                Ptr<WifiPhy> wifi_ph_p;
-                vector<Ptr<Packet>> daemon_retransmission_packet_buffer_vec_; // retxpkt
                 Ptr<Queue> daemon_bundle_queue_; // m_queue, daemon bundle queue, this is where "store and forward" semantic stores
                 vector<Ptr<Packet>> daemon_reception_packet_buffer_vec_; // newpkt
+                vector<Ptr<Packet>> daemon_retransmission_packet_buffer_vec_; // retxpkt
 
                 /* vector<uint32_t> daemon_receive_bytes_vec_; // currentServerRxBytes // fragment probablly
                  * vector<uint32_t> daemon_bundle_receive_size_vec_; // bundle_size

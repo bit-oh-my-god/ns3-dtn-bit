@@ -1,6 +1,6 @@
 # Preface
 This Project is a simulate kit for dtn on ns-3 environment, easy to use for research purples.
-This project is highly inspirited by [Lakkakorpi](https://www.netlab.tkk.fi/tutkimus/dtn/ns/), we would call him "the author or Lakkakorpi"
+This project is highly inspirited by [Lakkakorpi](https://www.netlab.tkk.fi/tutkimus/dtn/ns/)
 
 # structure of this project
 
@@ -30,7 +30,8 @@ you would need to install miniconda first, and install full-package from minicon
 # develop log
 
 * Acknoeledgement Annoucement 
-    following graph are used to name variables in this project
+
+            following graph are used to name variables in this project
             source_node         from_node               to_node           destination_node
                 |                   |                       |                   |
                 |                   |                       |                   |
@@ -43,11 +44,11 @@ you would need to install miniconda first, and install full-package from minicon
                         this is called "transmition & retransmition"
                         note : "store and forward" is just semantic
 
-    ack--->
-    bundel---->     SocketSendDetail()
-    anti-pkt----> 
+            ack--->
+            bundel---->     SocketSendDetail()
+            anti-pkt----> 
 
-    hello---->  CreateHelloBundleAndSendDetail()
+            hello---->  CreateHelloBundleAndSendDetail()
                 
 * the post-it-note while writting code, not useful for you.
 

@@ -58,6 +58,7 @@ namespace ns3 {
                 NodeContainer nodes_container_;
                 NetDeviceContainer net_devices_container_;
                 Ipv4InterfaceContainer ip_interface_container_;
+                DtnApp::RoutingMethod ex_rm_;
 
                 virtual void CreateNodes();
                 virtual void CreateDevices();

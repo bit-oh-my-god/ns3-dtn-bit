@@ -48,7 +48,7 @@ namespace ns3 {
                 // create app and set
                 app[i] = CreateObject<DtnApp>();
                 app[i]->SetUp(nodes_container_.Get(i));
-                app[i]->InvokeMeWhenInstallAppToSetupDtnAppRoutingAssister();
+                app[i]->InvokeMeWhenInstallAppToSetupDtnAppRoutingAssister(ex_rm_);
                 nodes_container_.Get(i)->AddApplication(app[i]);
                 app[i]->SetStartTime(Seconds(0.0));
                 app[i]->SetStopTime(Seconds(5000.0));
@@ -237,7 +237,6 @@ namespace ns3 {
         void DtnExampleInterface::LogCounter(int n) {
             const int inter = 20;
             std::cout << "counter===> simulation time : " << n << "\n" << std::endl;
-            if (n > 200) {std::abort();}
             if (n < simulation_duration_) {
                 Simulator::Schedule(Seconds(inter), &DtnExampleInterface::LogCounter, this, n + inter);
             }
