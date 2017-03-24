@@ -98,7 +98,7 @@ namespace ns3dtnbit {
                 throw std::runtime_error(ss.str());
             }
         } catch (const std::exception& r_e) {
-            NS_LOG_WARN(LogPrefixMacro << "WARN:" << r_e.what()); 
+            NS_LOG_DEBUG(LogPrefixMacro << "NOTE:" << r_e.what()); 
         }
         Ptr<WifiNetDevice> wifi_d = DynamicCast<WifiNetDevice> (node_->GetDevice(0));
         wifi_ph_p = wifi_d->GetPhy();
@@ -476,6 +476,8 @@ namespace ns3dtnbit {
                 int total = daemon_transmission_info_vec_[k].info_transmission_total_send_bytes_, current = daemon_transmission_info_vec_[k].info_transmission_current_sent_acked_bytes_, last =daemon_transmission_info_vec_[k].info_transmission_bundle_last_sent_bytes_;
                 if (total ==  current + last) {
                     NS_LOG_DEBUG(LogPrefixMacro << "good! we know the bundle has been accept, this transmit-session can be close");
+                    daemon_transmission_info_vec_[k].info_transmission_current_sent_acked_bytes_ += 
+                        daemon_transmission_info_vec_[k].info_transmission_bundle_last_sent_bytes_;
                 } else if (total > current + last){
                     daemon_transmission_info_vec_[k].info_transmission_current_sent_acked_bytes_ += 
                         daemon_transmission_info_vec_[k].info_transmission_bundle_last_sent_bytes_;
@@ -488,11 +490,12 @@ namespace ns3dtnbit {
                 }
                 return;
             } else {
-                // if not, send 'transmission ack'
+                // if not, send 'transmission ack' first
                 NS_LOG_DEBUG(LogPrefixMacro << "here, before ToSendAck" << "; ip=" << from_ip 
                         << "; bp_header=" << bp_header);
                 ToSendAck(bp_header, from_ip);
                 {
+                    // process bundle or anti-pkt
                     NS_LOG_DEBUG(LogPrefixMacro << "here; process recept bp_header: " << bp_header);
                     if (bp_header.get_bundle_type() == AntiPacket) {
                         // antipacket must not be fragment, it's safe to directly process
@@ -653,7 +656,13 @@ namespace ns3dtnbit {
             if (daemon_transmission_bh_info_vec_[index] == bh_info) { index = ii; break; }
         }
         // check state, cancel transmission if condition
-        if (daemon_transmission_info_vec_[index].info_transmission_total_send_bytes_ == daemon_transmission_info_vec_[index].info_transmission_current_sent_acked_bytes_) { return; }
+        if (daemon_transmission_info_vec_[index].info_transmission_total_send_bytes_ == daemon_transmission_info_vec_[index].info_transmission_current_sent_acked_bytes_) {
+            NS_LOG_DEBUG(LogPrefixMacro << "this transmit-session has been done! return." 
+                    << "transmit-to-ip=" << bh_info.info_transmit_addr_.GetIpv4()
+                    << ";seqno=" << bh_info.info_source_seqno_
+                    << "; if this transmit-to-ip is equal to last, the robin-round schedule may not work");
+            return;
+        }
         for (int jj = 0; jj < neighbor_info_vec_.size(); jj++) {
             // find the neighbor should be transmit, if this neighbor was not recently seen, schedule 'ToTransmit' later, otherwise, set real_send_boolean
             auto ip_n = neighbor_info_vec_[jj].info_address_.GetIpv4();
@@ -715,9 +724,7 @@ namespace ns3dtnbit {
                     neighbor_info_vec_[j].info_sent_bp_seqno_vec_.push_back(tran_bp_header.get_source_seqno());
                 }
             }
-            NS_LOG_DEBUG(LogPrefixMacro << "before SocketSendDetail,tran_p_pkt.size()=" << tran_p_pkt->GetSize() << ";tran_bp_header.payload_size=" << tran_bp_header.get_payload_size() 
-                    << ";transmit ip=" << neighbor_info_vec_[j].info_address_.GetIpv4() << ";destination_ip=" << tran_bp_header.get_destination_ip() << ";source ip=" << tran_bp_header.get_source_ip() 
-                    << ";port=" << neighbor_info_vec_[j].info_address_.GetPort() << ";seqno=" << tran_bp_header.get_source_seqno());
+            NS_LOG_DEBUG(LogPrefixMacro << "before SocketSendDetail,tran_p_pkt.size()=" << tran_p_pkt->GetSize() << ";transmit ip=" << neighbor_info_vec_[j].info_address_.GetIpv4() << ";tran_bp_header : " << tran_bp_header);
             if (!SocketSendDetail(tran_p_pkt, 0, neighbor_info_vec_[j].info_address_)) {
                 NS_LOG_ERROR("SocketSendDetail fail");
                 std::abort();
@@ -742,6 +749,18 @@ namespace ns3dtnbit {
     }
 
     void DtnApp::StateCheckDetail() {
+        NS_LOG_DEBUG(LogPrefixMacro << "NOTE:"
+                << "\ndaemon_antipacket_queue_->GetNPackets()=" << daemon_antipacket_queue_->GetNPackets()
+                << "\ndaemon_consume_bundle_queue_->GetNPackets()=" << daemon_consume_bundle_queue_->GetNPackets()
+                << "\ndaemon_reorder_buffer_queue_->GetNPackets()=" << daemon_reorder_buffer_queue_->GetNPackets()
+                << "\ndaemon_bundle_queue_->GetNPackets()=" << daemon_bundle_queue_->GetNPackets()
+                << "\ndaemon_reception_packet_buffer_vec_.size()=" << daemon_reception_packet_buffer_vec_.size()
+                << "\ndaemon_retransmission_packet_buffer_vec_.size()=" <<daemon_retransmission_packet_buffer_vec_.size()
+                << "\ndaemon_reception_info_vec_.size()=" <<daemon_reception_info_vec_.size()
+                << "\nneighbor_info_vec_.size()=" <<neighbor_info_vec_.size()
+                << "\ndaemon_transmission_info_vec_.size()=" <<daemon_transmission_info_vec_.size()
+                << "\ndaemon_transmission_bh_info_vec_.size()=" <<daemon_transmission_bh_info_vec_.size()
+                );
         if (daemon_antipacket_queue_->GetNPackets() +
                 daemon_consume_bundle_queue_->GetNPackets() +
                 daemon_reorder_buffer_queue_->GetNPackets() +
@@ -752,18 +771,6 @@ namespace ns3dtnbit {
                 neighbor_info_vec_.size() +
                 daemon_transmission_info_vec_.size() +
                 daemon_transmission_bh_info_vec_.size() < 100) {
-            NS_LOG_DEBUG(LogPrefixMacro << "NOTE:"
-                    << "\ndaemon_antipacket_queue_->GetNPackets()=" << daemon_antipacket_queue_->GetNPackets()
-                    << "\ndaemon_consume_bundle_queue_->GetNPackets()=" << daemon_consume_bundle_queue_->GetNPackets()
-                    << "\ndaemon_reorder_buffer_queue_->GetNPackets()=" << daemon_reorder_buffer_queue_->GetNPackets()
-                    << "\ndaemon_bundle_queue_->GetNPackets()=" << daemon_bundle_queue_->GetNPackets()
-                    << "\ndaemon_reception_packet_buffer_vec_.size()=" << daemon_reception_packet_buffer_vec_.size()
-                    << "\ndaemon_retransmission_packet_buffer_vec_.size()=" <<daemon_retransmission_packet_buffer_vec_.size()
-                    << "\ndaemon_reception_info_vec_.size()=" <<daemon_reception_info_vec_.size()
-                    << "\nneighbor_info_vec_.size()=" <<neighbor_info_vec_.size()
-                    << "\ndaemon_transmission_info_vec_.size()=" <<daemon_transmission_info_vec_.size()
-                    << "\ndaemon_transmission_bh_info_vec_.size()=" <<daemon_transmission_bh_info_vec_.size()
-                    );
         } else {
             NS_LOG_ERROR(LogPrefixMacro << "ERROR: queue and vecotr too big");
             std::abort();
@@ -778,8 +785,12 @@ namespace ns3dtnbit {
     void DtnApp::CheckBuffer(CheckState check_state) {
         NS_LOG_INFO(LogPrefixMacro << "enter check buffer()");
         if (!daemon_socket_handle_) {
-            NS_LOG_WARN(LogPrefixMacro << "WARN:deamon_socket_handle not init");
             CreateSocketDetail();
+            if (daemon_socket_handle_) {
+                NS_LOG_WARN(LogPrefixMacro << "NOTE:deamon_socket_handle not init, init now");
+            } else {
+                NS_LOG_ERROR(LogPrefixMacro << "ERROR: can't init socket");
+            }
         }
         // remove expired antipackets and bundles
         RemoveExpiredBAQDetail();
@@ -852,7 +863,6 @@ namespace ns3dtnbit {
                 bp_header.get_source_seqno(),
                 bp_header.get_retransmission_count()
             };
-            daemon_transmission_bh_info_vec_.push_back(tmp_header_info);
             DaemonTransmissionInfo tmp_transmission_info = {
                 p_pkt->GetSize(),
                 0,
@@ -860,8 +870,19 @@ namespace ns3dtnbit {
                 Simulator::Now().GetSeconds(),
                 0
             };
-            daemon_transmission_info_vec_.push_back(tmp_transmission_info);
-            daemon_retransmission_packet_buffer_vec_.push_back(p_pkt->Copy());
+            bool transmist_session_already = false;
+            for (auto ele : daemon_transmission_bh_info_vec_) {
+                if (ele == tmp_header_info) {
+                    transmist_session_already = true;
+                }
+            }
+            if (transmist_session_already) {
+                NS_LOG_INFO(LogPrefixMacro << "transmit-session already have");
+            } else {
+                daemon_transmission_bh_info_vec_.push_back(tmp_header_info);
+                daemon_transmission_info_vec_.push_back(tmp_transmission_info);
+                daemon_retransmission_packet_buffer_vec_.push_back(p_pkt->Copy());
+            }
             ToTransmit(tmp_header_info, false);
         }
         if (check_state != CheckState::State_1) { daemon_flow_count_++; } else { }
@@ -995,7 +1016,7 @@ namespace ns3dtnbit {
                                                              */
                                                         }
                                                     } else {
-                                                        NS_LOG_WARN(LogPrefixMacro << "WARN:didn't make decision" << "already,has,sent is :" << transmit_session_already << " " << neighbor_has_bundle << " " << bundle_sent);
+                                                        NS_LOG_INFO(LogPrefixMacro << "didn't make decision" << "already,has,sent is :" << transmit_session_already << " " << neighbor_has_bundle << " " << bundle_sent);
                                                     }
                                                 }
                                                 break;
@@ -1071,10 +1092,13 @@ namespace ns3dtnbit {
         p_anti_pkt->RemoveHeader(lhs_bp_header);
         int number = daemon_bundle_queue_->GetNPackets();
         std::stringstream lhs_ss;
-        p_anti_pkt->CopyData(dynamic_cast<std::ostream *>(&lhs_ss), lhs_bp_header.get_payload_size());
+        p_anti_pkt->CopyData(&lhs_ss, lhs_bp_header.get_payload_size());
         std::string source_ip, destination_ip;
         dtn_seqno_t lhs_seqno_value;
         lhs_ss >> source_ip >> destination_ip >> lhs_seqno_value;
+        NS_LOG_DEBUG(LogPrefixMacro << "anti-pkt : anti- source ip=" << source_ip
+                << ";anti-destination_ip=" << destination_ip
+                << ";anti-seqno=" << lhs_seqno_value);
         Ipv4Address lhs_source_ip(source_ip.c_str()), lhs_destination_ip(destination_ip.c_str());
         while (number--) {
             Ptr<Packet> rhs_p_pkt = daemon_bundle_queue_->Dequeue()->GetPacket();
@@ -1089,6 +1113,7 @@ namespace ns3dtnbit {
                     NS_LOG_ERROR(LogPrefixMacro << "ERROR: not implement yet");
                     std::abort();
                 }
+                break;
             } else {
                 rhs_p_pkt->AddHeader(rhs_bp_header);
                 daemon_bundle_queue_->Enqueue(Packet2Queueit(rhs_p_pkt));//Enqueue(rhs_p_pkt);
@@ -1334,7 +1359,7 @@ namespace ns3dtnbit {
     */
     void DtnApp::ScheduleTx (Time tNext, uint32_t dstnode, uint32_t payload_size) {
         NS_LOG_DEBUG(LogPrefixMacro << "enter ScheduleTx(), time-" << tNext << ",size=" << payload_size << ", to node-" << dstnode);
-        send_event_id_ = Simulator::Schedule (tNext, &DtnApp::ToSendBundle, this, dstnode, payload_size);
+        Simulator::Schedule(tNext, &DtnApp::ToSendBundle, this, dstnode, payload_size);
     }
 } /* ns3dtnbit */ 
 /* ... */
