@@ -15,7 +15,7 @@ namespace ns3 {
         class YourExample : public DtnExampleInterface {
             public :
                 YourExample() : DtnExampleInterface() {
-                    node_number_ = 5;
+                    node_number_ = 2;
                     simulation_duration_ = 600;
                     print_log_boolean_ = true;
                     ex_rm_ = DtnApp::RoutingMethod::SprayAndWait;
@@ -36,8 +36,8 @@ int main(int argc, char *argv[]) {
     //!important LOG control
     //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_WARN);
     //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_DEBUG);
-    LogComponentEnable ("DtnRunningLog",LOG_LEVEL_INFO);
-    //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_LOGIC);
+    //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_INFO);
+    LogComponentEnable ("DtnRunningLog",LOG_LEVEL_LOGIC);
     //LogComponentEnableAll (LOG_PREFIX_TIME);
     //LogComponentEnableAll(LOG_PREFIX_NODE); 
     //

@@ -98,8 +98,13 @@ namespace ns3 {
                     vector<dtn_time_t> info_sent_ap_time_vec_;
                 };
 
-                DtnApp ();
-                virtual ~DtnApp ();
+                DtnApp () : transmit_assister_(*this) {
+
+                }
+
+                virtual ~DtnApp () {
+
+                }
                 void SetUp(Ptr<Node> node);
                 void ScheduleTx(Time tNext, uint32_t dstnode, uint32_t payload_size);
                 /* create a bundle and enqueue, waitting for CheckBuffer() to call SendBundleDetail
@@ -160,13 +165,12 @@ namespace ns3 {
                 DtnAppRoutingAssister routing_assister_;
 
                 /*
-                 * may be, may not
                  * nested private class for transmit-session init 
                  * used frequently in to transmit
                  * */
                 class DtnAppTransmitSessionAssister {
                     public :
-                        DtnAppTransmitSessionAssister() {
+                        DtnAppTransmitSessionAssister(DtnApp& dp) : out_app_(dp) {
 
                         }
 
@@ -176,6 +180,7 @@ namespace ns3 {
 
                         }
                     private :
+                        DtnApp& out_app_;
                         
                 };
                 DtnAppTransmitSessionAssister transmit_assister_;

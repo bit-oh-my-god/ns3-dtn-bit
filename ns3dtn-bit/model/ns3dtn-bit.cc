@@ -79,14 +79,6 @@ namespace ns3dtnbit {
 
 #define LogPrefixMacro LogPrefix()<<"line-"<<__LINE__<<"]"
 
-    DtnApp::DtnApp() {
-
-    }
-
-    DtnApp::~DtnApp() {
-
-    }
-
     /*
      * */
     void DtnApp::StartApplication() {
@@ -113,7 +105,6 @@ namespace ns3dtnbit {
         congestion_control_parameter_ = 1;
         retransmission_interval_ = 15.0;
         congestion_control_method_ = CongestionControlMethod::NoControl; 
-        //routing_method_ = RoutingMethod::SprayAndWait; 
 
         daemon_antipacket_queue_ = CreateObject<DropTailQueue>();
         daemon_bundle_queue_ = CreateObject<DropTailQueue>();
@@ -775,6 +766,7 @@ namespace ns3dtnbit {
             NS_LOG_ERROR(LogPrefixMacro << "ERROR: queue and vecotr too big");
             std::abort();
         }
+        //if (Simulator::Now().GetSeconds() > 150) { std::abort(); }
         Simulator::Schedule(Seconds(10), &DtnApp::StateCheckDetail, this);
     }
 
@@ -1108,11 +1100,13 @@ namespace ns3dtnbit {
                     && lhs_destination_ip.IsEqual(rhs_bp_header.get_destination_ip())
                     && lhs_seqno_value == rhs_bp_header.get_source_seqno()) {
                 NS_LOG_DEBUG(LogPrefixMacro << "NOTE: ANTI remove bundle");
+                /*
                 {
                     // do something anti remove
                     NS_LOG_ERROR(LogPrefixMacro << "ERROR: not implement yet");
                     std::abort();
                 }
+                */
                 break;
             } else {
                 rhs_p_pkt->AddHeader(rhs_bp_header);
@@ -1349,7 +1343,7 @@ namespace ns3dtnbit {
         sprintf(srcstring, "10.0.0.%d", (node_->GetId() + 1));
         p_bp_header->set_source_ip(srcstring);
         p_bp_header->set_hop_count(0);
-        p_bp_header->set_spray(2);
+        p_bp_header->set_spray(4);
         p_bp_header->set_retransmission_count(0);
         p_bp_header->set_src_time_stamp(Simulator::Now());
         p_bp_header->set_hop_time_stamp(Simulator::Now());

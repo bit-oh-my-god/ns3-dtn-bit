@@ -16,7 +16,7 @@ echo '***************** cp working code to root/xx_tmp *********'
 cd ./ns-allinone-3.26/ns-3.26
 echo '***************** gonna to configure'
 #CXXFLAGS=${CXXFLAGS} 
-./waf configure -d debug --enable-examples --enable-tests
+CXX="clang++" ./waf configure -d debug --enable-examples --enable-tests
 echo '***************** gonna to build' 
 ./waf build 
 #exit 1
