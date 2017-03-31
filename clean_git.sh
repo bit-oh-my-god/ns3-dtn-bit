@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DATE=`date +%Y-%m-%d`
-DIR1="./ns3dtn-bit_tmp"
+DIR1="./ns3dtn-bit"
 DIR2="./ns-allinone-3.26"
 # delete ns-3 source prepare for git
 function deletefuncion {
@@ -24,8 +24,7 @@ while true; do
 done
 
 if [ -d $DIR1 ]; then
-    rm -rf ./ns3dtn-bit
-    mv $DIR1 ./ns3dtn-bit
+    echo "$DIR1 exist, do git"
 else
     echo 'no tmp directory'
 fi

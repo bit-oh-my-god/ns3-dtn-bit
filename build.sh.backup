@@ -3,32 +3,20 @@
 ROOT_PATH=${PWD}
 LOG_FILE=${ROOT_PATH}/box/dtn_simulation_result/dtnrunninglog.txt
 DATE=`date +%Y-%m-%d`
-DIR1="./ns3dtn-bit-back-up"
-CXX="g++"
-
+DIR1="./ns3dtn-bit_tmp"
 if [ -d $DIR1 ]; then
-    echo 'back up!'
-    rm -rf ${DIR1}
-    cp -rf ./ns3dtn-bit ${DIR1}
+    rm -rf ./ns3dtn-bit_tmp
 else
-    echo 'no back_up, copy one'
-    cp -rf ./ns3dtn-bit ${DIR1}
-    return
+    echo 'no tmp directory'
 fi
+cp -rf ./ns-allinone-3.26/ns-3.26/src/ns3dtn-bit ./ns3dtn-bit_tmp
+cp -rf ./ns-allinone-3.25/ns-3.25/src/ns3dtn-bit ./ns3dtn-bit_tmp
 echo '***************** cp working code to root/xx_tmp *********' 
 # configure and run test
-cd ./ns-allinone-3.26/ns-3.26/src
-if [[ -L "$LINK_NAME" && -d "$LINK_NAME" ]]
-then 
-    echo "${LINK_NAME} exist and is a symbol link"
-else 
-    echo "${LINK_NAME} do not exist or is not symbol link, create one"
-    ln -s ${LINK_NAME} ../../../ns3dtn-bit
-fi
+cd ./ns-allinone-3.26/ns-3.26
 echo '***************** gonna to configure'
-cd ../
 #CXXFLAGS=${CXXFLAGS} 
-CXX="${CXX}" ./waf configure -d debug --enable-examples --enable-tests
+CXX="clang++" ./waf configure -d debug --enable-examples --enable-tests
 echo '***************** gonna to build' 
 ./waf build 
 #exit 1
