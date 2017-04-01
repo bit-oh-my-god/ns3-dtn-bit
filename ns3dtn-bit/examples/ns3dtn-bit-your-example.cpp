@@ -15,7 +15,7 @@ namespace ns3 {
         class YourExample : public DtnExampleInterface {
             public :
                 YourExample() : DtnExampleInterface() {
-                    node_number_ = 2;
+                    node_number_ = 5;
                     // simulation time should be less than trace_file_ time !Important
                     simulation_duration_ = 804;
                     print_log_boolean_ = true;

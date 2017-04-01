@@ -21,7 +21,8 @@ namespace ns3 {
         }
 
         void BPHeader::Serialize(Buffer::Iterator start) const {
-            start.WriteU32(int(bundle_type_));
+            start.WriteU32(static_cast<std::underlying_type<BundleType>::type>
+                    (bundle_type_));
             start.WriteU32(hop_count_);
             start.WriteU32(spray_);
             start.WriteU32(retransmission_count_);
@@ -38,7 +39,15 @@ namespace ns3 {
             Buffer::Iterator i = start;
             // read for bundle_type_, TODO
             int ttt = i.ReadU32();
-            bundle_type_ = ttt;
+            bundle_type_ = 
+                ttt == static_cast<std::underlying_type<BundleType>::type>(BundleType::BundlePacket) 
+                ? BundleType::BundlePacket :
+                ttt == static_cast<std::underlying_type<BundleType>::type>(BundleType::AntiPacket) 
+                ? BundleType::AntiPacket :
+                ttt == static_cast<std::underlying_type<BundleType>::type>(BundleType::HelloPacket)
+                ? BundleType::HelloPacket :
+                ttt == static_cast<std::underlying_type<BundleType>::type>(BundleType::TransmissionAck)
+                ? BundleType::TransmissionAck : BundleType::UnKnow;
             hop_count_ = i.ReadU32();
             spray_ = i.ReadU32();
             retransmission_count_ = i.ReadU32();
@@ -59,24 +68,29 @@ namespace ns3 {
         uint32_t BPHeader::GetSerializedSize() const {
             // Serialized byte is not memo byte
             /*
-            return (sizeof(BPHeader::bundle_type_) +
-                    sizeof(BPHeader::hop_count_) +
-                    sizeof(BPHeader::spray_) +
-                    sizeof(BPHeader::retransmission_count_) +
-                    sizeof(BPHeader::destination_ip_) +
-                    sizeof(BPHeader::source_ip_) +
-                    sizeof(BPHeader::source_seqno_) +
-                    sizeof(BPHeader::payload_size_) +
-                    sizeof(BPHeader::offset_size_) +
-                    sizeof(BPHeader::src_time_stamp_) +
-                    sizeof(BPHeader::hop_time_stamp_));
-            */
+               return (sizeof(BPHeader::bundle_type_) +
+               sizeof(BPHeader::hop_count_) +
+               sizeof(BPHeader::spray_) +
+               sizeof(BPHeader::retransmission_count_) +
+               sizeof(BPHeader::destination_ip_) +
+               sizeof(BPHeader::source_ip_) +
+               sizeof(BPHeader::source_seqno_) +
+               sizeof(BPHeader::payload_size_) +
+               sizeof(BPHeader::offset_size_) +
+               sizeof(BPHeader::src_time_stamp_) +
+               sizeof(BPHeader::hop_time_stamp_));
+               */
             return 44;
         }
 
         void BPHeader::Print(std::ostream& os) const {
             string bt;
-            bt = bundle_type_ == 0 ? "BundleType" : bundle_type_ == 1 ? "AntiPacket" : bundle_type_ == 2 ? "HelloPacket" : bundle_type_ == 3 ? "TransmissionAck" : "Unknown, ERROR?";
+            bt = bundle_type_ == BundleType::BundlePacket ? "BundlePacket" : 
+                bundle_type_ == BundleType::AntiPacket ? "AntiPacket" :
+                bundle_type_ == BundleType::HelloPacket ? "HelloPacket" :
+                bundle_type_ == BundleType::TransmissionAck ? "TransmissionAck" :
+                "Unknown, ERROR?";
+
             os << ",destination ip=" << destination_ip_
                 << ",source ip=" << source_ip_
                 << ",source seqno=" << source_seqno_
@@ -90,6 +104,16 @@ namespace ns3 {
 
         std::ostream& operator<<(std::ostream& os, BPHeader const& rh) {
             rh.Print(os);
+            return os;
+        }
+        std::ostream& operator<<(std::ostream& os, BundleType&& rh) {
+            string bt;
+            bt = rh == BundleType::BundlePacket ? "BundlePacket" : 
+                rh == BundleType::AntiPacket ? "AntiPacket" :
+                rh == BundleType::HelloPacket ? "HelloPacket" :
+                rh == BundleType::TransmissionAck ? "TransmissionAck" :
+                "Unknown, ERROR?";
+            os << bt;
             return os;
         }
     } /* ns3dtnbit */ 

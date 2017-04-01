@@ -80,6 +80,7 @@ namespace ns3dtnbit {
 #define LogPrefixMacro LogPrefix()<<"line-"<<__LINE__<<"]"
 
     /*
+     * Aim : inherited method
      * */
     void DtnApp::StartApplication() {
         NS_LOG_DEBUG(LogPrefixMacro << "NOTE:in startapplication()");
@@ -99,6 +100,7 @@ namespace ns3dtnbit {
     }
 
     /* refine
+     * Aim : inherited method
     */
     void DtnApp::SetUp(Ptr<Node> node) {
         node_ = node;
@@ -122,6 +124,7 @@ namespace ns3dtnbit {
     }
 
     /* refine 
+     * Aim : send hello
     */
     void DtnApp::ToSendHello(Ptr<Socket> socket, dtn_time_t simulation_end_time, Time hello_interval, bool hello_right_now_boolean) {
         NS_LOG_LOGIC(LogPrefixMacro << "enter ToSendHello()");
@@ -160,7 +163,8 @@ namespace ns3dtnbit {
                         sprintf(tmp_msg_00, "%d ", tmp_number);
                     }
                     msg << tmp_msg_00;
-                    PeriodReorderDaemonBundleQueueDetail();
+                    // TODO we shouldn't invoke this call here
+                    //PeriodReorderDaemonBundleQueueDetail();
                     // tmp_msg_01
                     char tmp_msg_01[1024] = "";
                     int pkts = daemon_bundle_queue_->GetNPackets();
@@ -213,6 +217,7 @@ namespace ns3dtnbit {
     }
 
     /* refine 
+     * Aim : ReceiveHello
     */
     void DtnApp::ReceiveHello(Ptr<Socket> socket_handle) {
         NS_LOG_LOGIC(LogPrefixMacro << "enter of receive hello");
@@ -307,6 +312,7 @@ namespace ns3dtnbit {
     }
 
     /* refine 
+     * Aim : send ack imediatly
     */
     void DtnApp::ToSendAck(BPHeader& ref_bp_header, Ipv4Address response_ip) {
         NS_LOG_INFO(LogPrefixMacro << "enter ToSendAck()");
@@ -330,7 +336,7 @@ namespace ns3dtnbit {
         {
             // fill up bp_header
             SemiFillBPHeaderDetail(&bp_header);
-            bp_header.set_bundle_type(TransmissionAck);
+            bp_header.set_bundle_type(BundleType::TransmissionAck);
             bp_header.set_destination_ip(response_ip);
             bp_header.set_source_seqno(p_pkt->GetUid());
             bp_header.set_payload_size(tmp_payload_str.size());
@@ -347,6 +353,7 @@ namespace ns3dtnbit {
 
     /* refine 
      * 
+     * Aim : enqueue bundle
      */
     void DtnApp::ToSendBundle(uint32_t dstnode_number, uint32_t payload_size) {
         NS_LOG_DEBUG(LogPrefixMacro << "enter ToSendBundle()");
@@ -358,7 +365,7 @@ namespace ns3dtnbit {
         {
             // fill up bp_header
             SemiFillBPHeaderDetail(&bp_header);
-            bp_header.set_bundle_type(BundlePacket);
+            bp_header.set_bundle_type(BundleType::BundlePacket);
             char dststring[1024] = "";
             sprintf(dststring, "10.0.0.%d", dstnode_number + 1);
             bp_header.set_destination_ip(dststring);
@@ -380,6 +387,7 @@ namespace ns3dtnbit {
     }
 
     /* refine 
+     * Aim : enqueue anti_pkts
      * create and fill up antipacket-bundle then enqueue
      */
     void DtnApp::ToSendAntipacketBundle(BPHeader& ref_bp_header) {
@@ -396,13 +404,14 @@ namespace ns3dtnbit {
             msg << " ";
             msg << ref_bp_header.get_source_seqno();
             anti_packet_payload_str = msg.str();
+            NS_LOG_DEBUG(LogPrefixMacro << "NOTE: anti content is : " << anti_packet_payload_str);
         }
         Ptr<Packet> p_pkt = Create<Packet>(anti_packet_payload_str.c_str(), anti_packet_payload_str.size());
         BPHeader bp_header;
         {
             // fill up bp_header
             SemiFillBPHeaderDetail(&bp_header);
-            bp_header.set_bundle_type(AntiPacket);
+            bp_header.set_bundle_type(BundleType::AntiPacket);
             bp_header.set_destination_ip(ref_bp_header.get_source_ip());
             bp_header.set_source_seqno(p_pkt->GetUid());
             bp_header.set_payload_size(anti_packet_payload_str.size());
@@ -417,6 +426,8 @@ namespace ns3dtnbit {
     }
 
     /* refine 
+     * Aim : handle reception of bundle except hello one.
+     * Detail :
      *     'ack bundle' : call 'ToTransmit' to transmit more(if have more) to the 'ack sender'
      *     'not ack bundle' : send a 'ack bundle', then get the information in that pkt
      *         'hello packet'
@@ -445,8 +456,10 @@ namespace ns3dtnbit {
                 NS_LOG_ERROR(LogPrefixMacro << "ERROR: can't be size = 0, bp_header.get_payload_size =" << bp_header.get_payload_size() << ";bundle_type=" << bp_header.get_bundle_type());
                 std::abort();
             }
-            if (bp_header.get_bundle_type() == TransmissionAck) {
+            NS_LOG_INFO(LogPrefixMacro << "receive bundle_type_ = " << bp_header.get_bundle_type());
+            if (bp_header.get_bundle_type() == BundleType::TransmissionAck) {
                 // if is 'ack' update state, get ack src-dst seqno, timestamp, bytes. then call 'ToTransmit' to transmit more
+                NS_LOG_INFO(LogPrefixMacro << "Receive a ACK");
                 Ipv4Address ip_ack_from;
                 dtn_seqno_t seqno_was_acked;
                 uint32_t bundle_total_payload; // note fragment
@@ -460,7 +473,7 @@ namespace ns3dtnbit {
                     retransmit_count,
                     seqno_was_acked
                 };
-                NS_LOG_DEBUG(LogPrefixMacro << "tmp_bh_info - seqno" << tmp_bh_info.info_source_seqno_);
+                NS_LOG_LOGIC(LogPrefixMacro << "tmp_bh_info - seqno" << tmp_bh_info.info_source_seqno_);
                 int k = 0;
                 for (int kk = 0; kk < daemon_transmission_info_vec_.size(); kk++) {
                     if (tmp_bh_info == daemon_transmission_bh_info_vec_[kk]) { k = kk; break; }
@@ -491,7 +504,7 @@ namespace ns3dtnbit {
                 {
                     // process bundle or anti-pkt
                     NS_LOG_DEBUG(LogPrefixMacro << "here; after send ack back, process recept bp_header: " << bp_header);
-                    if (bp_header.get_bundle_type() == AntiPacket) {
+                    if (bp_header.get_bundle_type() == BundleType::AntiPacket) {
                         // antipacket must not be fragment, it's safe to directly process
                         // keep antipacket and remove the bundle 'corresponded to'
                         BPHeader tmp_bp_header = bp_header;
@@ -502,7 +515,7 @@ namespace ns3dtnbit {
                         } else {
                             NS_LOG_WARN(LogPrefixMacro << "WARN:duplicate anti-pkt, may happen");
                         }
-                    } else if (bp_header.get_bundle_type() == BundlePacket) {
+                    } else if (bp_header.get_bundle_type() == BundleType::BundlePacket) {
                         // init the receiving pkt info
                         DaemonReceptionInfo tmp_recept_info = {
                             p_pkt->GetSize(),
@@ -599,6 +612,8 @@ namespace ns3dtnbit {
     }
 
     /* refine 
+     * Aim : recept tail work
+     * Detail :
      * update state 
      */
     void DtnApp::BundleReceptionTailWorkDetail() {
@@ -633,6 +648,8 @@ namespace ns3dtnbit {
     }
 
     /* refine 
+     * Aim : handle send bundle stuff after checkbuffer
+     * Detail :
      * use bh_info as key get all msg, 
      * check whether it's able to call 'SocketSendDetail'
      * handle retransmit and transmit more
@@ -711,7 +728,7 @@ namespace ns3dtnbit {
                 daemon_transmission_info_vec_[index].info_transmission_bundle_last_sent_time_ = Simulator::Now().GetSeconds();
                 daemon_transmission_info_vec_[index].info_transmission_bundle_last_sent_bytes_ = tran_p_pkt->GetSize();
                 daemon_transmission_bh_info_vec_[index].info_retransmission_count_ = tran_bp_header.get_retransmission_count();
-                if (tran_bp_header.get_bundle_type() == AntiPacket) {
+                if (tran_bp_header.get_bundle_type() == BundleType::AntiPacket) {
                     neighbor_info_vec_[j].info_sent_ap_seqno_vec_.push_back(tran_bp_header.get_source_seqno());
                     neighbor_info_vec_[j].info_sent_ap_time_vec_.push_back(Simulator::Now().GetSeconds());
                 } else {
@@ -727,6 +744,7 @@ namespace ns3dtnbit {
     }
 
     /*
+     * Aim : A RoutingMethod switcher
      * TODO
      * define your decision method
      */
@@ -744,20 +762,33 @@ namespace ns3dtnbit {
 
     void DtnApp::StateCheckDetail() {
         NS_LOG_DEBUG(LogPrefixMacro << "NOTE: Statecheck :"
+                << "\nneighbor_info_vec_.size()=" <<neighbor_info_vec_.size()
+                // TODO not using PeriodReorderDaemonBundleQueueDetail yet
+                << "\ndaemon_reorder_buffer_queue_->GetNPackets()=" << daemon_reorder_buffer_queue_->GetNPackets()
                 << "\ndaemon_antipacket_queue_->GetNPackets()=" << daemon_antipacket_queue_->GetNPackets()
                 << "\ndaemon_consume_bundle_queue_->GetNPackets()=" << daemon_consume_bundle_queue_->GetNPackets()
-                << "\ndaemon_reorder_buffer_queue_->GetNPackets()=" << daemon_reorder_buffer_queue_->GetNPackets()
                 << "\ndaemon_bundle_queue_->GetNPackets()=" << daemon_bundle_queue_->GetNPackets()
+                << "\n === reception ==="
                 << "\ndaemon_reception_packet_buffer_vec_.size()=" << daemon_reception_packet_buffer_vec_.size()
-                << "\ndaemon_retransmission_packet_buffer_vec_.size()=" <<daemon_retransmission_packet_buffer_vec_.size()
                 << "\ndaemon_reception_info_vec_.size()=" <<daemon_reception_info_vec_.size()
-                << "\nneighbor_info_vec_.size()=" <<neighbor_info_vec_.size()
+                << "\n === transmition ==="
+                << "\ndaemon_retransmission_packet_buffer_vec_.size()=" <<daemon_retransmission_packet_buffer_vec_.size()
                 << "\ndaemon_transmission_info_vec_.size()=" <<daemon_transmission_info_vec_.size()
                 << "\ndaemon_transmission_bh_info_vec_.size()=" <<daemon_transmission_bh_info_vec_.size()
+                << "\n === count ==="
                 << "\n bundle_send_count_ =" << bundle_send_count_
                 << "\n anti_send_count_ =" << anti_send_count_
                 << "\n ack_send_count_ =" << ack_send_count_
+                << "\n === END ==="
                 );
+        for (int c = 0; c < daemon_bundle_queue_->GetNPackets(); c++) {
+            Ptr<Packet> cp = daemon_bundle_queue_->Dequeue()->GetPacket();
+            BPHeader ch;
+            cp->RemoveHeader(ch);
+            NS_LOG_DEBUG("daemon bundle queue - bundle header : " << ch);
+            cp->AddHeader(ch);
+            daemon_bundle_queue_->Enqueue(Packet2Queueit(cp));
+        }
         if (daemon_antipacket_queue_->GetNPackets() +
                 daemon_consume_bundle_queue_->GetNPackets() +
                 daemon_reorder_buffer_queue_->GetNPackets() +
@@ -777,7 +808,9 @@ namespace ns3dtnbit {
     }
 
     /* refine 
+     * Aim : The main loop for this app
      * Usage : checkbuffer is only responsible to init 'transmit session' and invoke 'totransmit'
+     * Detail :
      * check your 'bundle queue' buffer and other related buffer periodly
      */
     void DtnApp::CheckBuffer(CheckState check_state) {
@@ -792,6 +825,7 @@ namespace ns3dtnbit {
         }
         // remove expired antipackets and bundles
         RemoveExpiredBAQDetail();
+        //PeriodReorderDaemonBundleQueueDetail();
         // one time one pkt would be sent
         Ptr<Packet> p_pkt;
         BPHeader bp_header;
@@ -891,6 +925,9 @@ namespace ns3dtnbit {
         CheckBufferSwitchStateDetail(real_send_boolean, check_state);
     }
 
+    /*
+     * Aim : switch state of app
+     * */
     void DtnApp::CheckBufferSwitchStateDetail(bool real_send_boolean, DtnApp::CheckState check_state) {
         NS_LOG_INFO(LogPrefixMacro << "enter CheckBufferSwitchStateDetail()");
         // refine switch schedule
@@ -926,6 +963,9 @@ namespace ns3dtnbit {
     }
         
     /* refine
+     * Aim :
+     * This is a routing method, just find the first avilable one.
+     * Detail :
      * handle normal bundle and antipacket send decision
      * TODO bundle_sent if logic included by transmit_session_already 
      * !Important It's just a round robin schedule
@@ -1081,6 +1121,7 @@ namespace ns3dtnbit {
                 */
                 break;
             } else {
+                assert(rhs_bp_header.get_bundle_type() == BundleType::BundlePacket);
                 rhs_p_pkt->AddHeader(rhs_bp_header);
                 daemon_bundle_queue_->Enqueue(Packet2Queueit(rhs_p_pkt));//Enqueue(rhs_p_pkt);
             }
@@ -1094,7 +1135,7 @@ namespace ns3dtnbit {
      */
     bool DtnApp::IsDuplicatedDetail(BPHeader& bp_header) {
         NS_LOG_INFO(LogPrefixMacro << "enter IsDuplicatedDetail()");
-        if (bp_header.get_bundle_type() == BundlePacket) {
+        if (bp_header.get_bundle_type() == BundleType::BundlePacket) {
             int number = daemon_bundle_queue_->GetNPackets();
             for (int i = 0; i < number; ++i) {
                 Ptr<Packet> lhs_p_pkt = daemon_bundle_queue_->Dequeue()->GetPacket();
@@ -1109,7 +1150,7 @@ namespace ns3dtnbit {
                 lhs_p_pkt->AddHeader(lhs_bp_header);
                 daemon_bundle_queue_->Enqueue(Packet2Queueit(lhs_p_pkt));//Enqueue(lhs_p_pkt);
             }
-        } else if (bp_header.get_bundle_type() == AntiPacket) {
+        } else if (bp_header.get_bundle_type() == BundleType::AntiPacket) {
             int number = daemon_antipacket_queue_->GetNPackets();
             for (int i = 0; i < number; ++i) {
                 Ptr<Packet> lhs_p_pkt = daemon_antipacket_queue_->Dequeue()->GetPacket();
@@ -1118,7 +1159,7 @@ namespace ns3dtnbit {
                 if (lhs_bp_header.get_source_ip().IsEqual(bp_header.get_source_ip())
                         && lhs_bp_header.get_source_seqno() == bp_header.get_source_seqno()) {
                     lhs_p_pkt->AddHeader(lhs_bp_header);
-                    daemon_bundle_queue_->Enqueue(Packet2Queueit(lhs_p_pkt));//Enqueue(lhs_p_pkt);
+                    daemon_antipacket_queue_->Enqueue(Packet2Queueit(lhs_p_pkt));//Enqueue(lhs_p_pkt);
                     return true;
                 }
                 lhs_p_pkt->AddHeader(lhs_bp_header);
@@ -1130,6 +1171,8 @@ namespace ns3dtnbit {
         return false;
     }
 
+    /*
+     * */
     void DtnApp::Report(std::ostream& os) {
         os << "node-" << node_->GetId() << "\nbundle_send_count_" << "=" << bundle_send_count_
             << "\nanti_send_count_=" << anti_send_count_ << endl;
@@ -1152,11 +1195,11 @@ namespace ns3dtnbit {
                 NS_LOG_ERROR(LogPrefixMacro << "ERROR:pkt size =" << p_pkt->GetSize() << ";bundle type=" << bp_header.get_bundle_type());
                 std::abort();
             } else {
-                if (bp_header.get_bundle_type() == 0) {
+                if (bp_header.get_bundle_type() == BundleType::BundlePacket) {
                     bundle_send_count_++;
-                } else if (bp_header.get_bundle_type() == 1) {
+                } else if (bp_header.get_bundle_type() == BundleType::AntiPacket) {
                     anti_send_count_++;
-                } else if (bp_header.get_bundle_type() == 3) {
+                } else if (bp_header.get_bundle_type() == BundleType::TransmissionAck) {
                     ack_send_count_++;
                 } else {
                     NS_LOG_ERROR(LogPrefixMacro << "ERROR : bundletype=" << bp_header.get_bundle_type());
@@ -1187,6 +1230,9 @@ namespace ns3dtnbit {
     }
 
     /* refine
+     * Aim :
+     * This function is used to balanced the pkt priority in the queue
+     * Detail :
      * using daemon_reorder_buffer_queue_
      * Important! such a ugly sort algorithm, refine it
      */
@@ -1248,7 +1294,7 @@ namespace ns3dtnbit {
         {
             // fill up bp_header
             SemiFillBPHeaderDetail(&bp_header);
-            bp_header.set_bundle_type(HelloPacket);
+            bp_header.set_bundle_type(BundleType::HelloPacket);
             bp_header.set_source_ip(Ipv4Address("255.255.255.255"));
             bp_header.set_source_seqno(p_pkt->GetUid());
             bp_header.set_payload_size(msg_str.size());
@@ -1339,6 +1385,7 @@ namespace ns3dtnbit {
     }
 
     /* refine
+     * Aim: handy wrpper
     */
     void DtnApp::ScheduleTx (Time tNext, uint32_t dstnode, uint32_t payload_size) {
         NS_LOG_DEBUG(LogPrefixMacro << "enter ScheduleTx(), time-" << tNext << ",size=" << payload_size << ", to node-" << dstnode);

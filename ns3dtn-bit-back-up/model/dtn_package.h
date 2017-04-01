@@ -16,7 +16,10 @@
 namespace ns3 {
     namespace ns3dtnbit {
 
-        enum BundleType {BundlePacket = 0, AntiPacket = 1, HelloPacket = 2, TransmissionAck = 3};
+        //enum BundleType {BundlePacket = 0, AntiPacket = 1, HelloPacket = 2, TransmissionAck = 3};
+        enum class BundleType : std::uint32_t {
+            BundlePacket, AntiPacket, HelloPacket, TransmissionAck, UnKnow};
+        std::ostream& operator<<(std::ostream& os, BundleType&& rh);
 
         class BPHeader : public Header {
             public :
@@ -34,8 +37,8 @@ namespace ns3 {
                 //bool operator==(BPHeader const& rh) const;
 
                 // assuming that different BundleType has different payload size, and payload size themselves could be different , used to be todo, now done
-                enum BundleType get_bundle_type() {return bundle_type_;}
-                void set_bundle_type(enum BundleType arg) {bundle_type_ = arg;}
+                BundleType get_bundle_type() {return bundle_type_;}
+                void set_bundle_type(BundleType arg) {bundle_type_ = arg;}
                 // bool is_valid() {return is_valid_;}
                 // void set_valid(bool arg) {is_valid_ = arg;}
                 uint32_t get_hop_count() {return hop_count_;}
@@ -63,7 +66,7 @@ namespace ns3 {
 
                 // bool is_valid_;
                 //TODO// this may not be a good design
-                enum BundleType bundle_type_;
+                BundleType bundle_type_;
                 uint32_t hop_count_;
                 uint32_t spray_;
                 uint32_t retransmission_count_;

@@ -10,6 +10,7 @@
 #include <iostream>
 #include <regex>
 #include <fstream>
+#include <type_traits>
 #include <execinfo.h>
 #include <cmath>
 #include <vector>
@@ -43,6 +44,7 @@ namespace ns3 {
         using std::vector;
         using std::string;
         using std::endl;
+        using std::ostream;
 
         using dtn_time_t = double;
         /* dtn_seqnof_t is used with sign, eg. -(seqno2003) means giving out while (seqno2003) means receiving

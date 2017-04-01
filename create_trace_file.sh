@@ -3,9 +3,9 @@ set -x
 
 function function1 {
 ./bm -hm RandomWaypoint
-# what the hell the bonnmotion have bugs?? TODO, speed is higher than the number -h dedicate
+# what the hell that bonnmotion had bugs?? TODO, speed is higher than the number -h dedicate where is contract to the help doc.
 echo '========================= Important command ============='
-./bm -f default_scenario RandomWaypoint -n 2 -d 2400 -i 600 -x 9999 -y 9999 -z 9999 -h 80 -l 20 -o 5 > /dev/null
+./bm -f default_scenario RandomWaypoint -n 5 -d 3600 -i 600 -x 9999 -y 9999 -z 9999 -h 80 -l 20 -o 5 > /dev/null
 ./bm NSFile -f default_scenario > /dev/null
 mv *.ns_movements ~/ns-3_build/ns3-dtn-bit/box/current_trace/
 cd ~/ns-3_build/ns3-dtn-bit/box/current_trace

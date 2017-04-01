@@ -2,4 +2,4 @@ set val(x) 10019.0
 set val(y) 10019.0
 set val(z) 10019.0
 set val(nn) 5
-set val(duration) 4800.0
+set val(duration) 3600.0
