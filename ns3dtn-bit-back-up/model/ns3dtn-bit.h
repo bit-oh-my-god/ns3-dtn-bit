@@ -213,7 +213,8 @@ namespace ns3 {
                         void SetIt() { is_init = true; }
                         bool IsSet() {return is_init;}
                         RoutingMethod get_rm() {return rm_;}
-                        void set_rm(RoutingMethod rm, std::unique_ptr<RoutingMethodInterface> p_rm_in) {rm_ = rm; p_rm_in_ = std::move(p_rm_in);}
+                        void set_rm(RoutingMethod rm) {rm_ = rm;}
+                        void set_rmob(std::unique_ptr<RoutingMethodInterface> p_rm_in) {p_rm_in_ = std::move(p_rm_in);}
                         void load_ob(const vector<DtnApp::Adob>& v) {
                             vec_ = v;
                             adob_cur_ = vec_[0];
@@ -258,8 +259,16 @@ namespace ns3 {
 
             public :
 
+                bool InvokeMeWhenInstallAppToSetupDtnAppRoutingAssister(RoutingMethod rm, vector<Adob>& adob) {
+                    routing_assister_.set_rm(rm);
+                    routing_assister_.SetIt();
+                    routing_assister_.load_ob(adob);
+                    return true;
+                };
+
                 bool InvokeMeWhenInstallAppToSetupDtnAppRoutingAssister(RoutingMethod rm, std::unique_ptr<RoutingMethodInterface> p_rm_in, vector<Adob>& adob) {
-                    routing_assister_.set_rm(rm, std::move(p_rm_in));
+                    routing_assister_.set_rm(rm);
+                    routing_assister_.set_rmob(std::move(p_rm_in));
                     routing_assister_.SetIt();
                     routing_assister_.load_ob(adob);
                     return true;
@@ -322,7 +331,10 @@ namespace ns3 {
             public :
             RoutingMethodInterface(DtnApp& dp) : out_app_(dp) {}
             virtual ~RoutingMethodInterface() {}
-            virtual void DoRoute() = 0;
+            virtual void DoRoute() {
+                std::cout << "DoRoute, Error : empty ! abort!" << std::endl;
+                std::abort();
+            }
             private :
             // can only read
             const DtnApp& out_app_;

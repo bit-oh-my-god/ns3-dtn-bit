@@ -1,12 +1,21 @@
 #ifndef NS3DTN_BIT_EXAMPLE_INTERFACE_H
-define NS3DTN_BIT_EXAMPLE_INTERFACE_H value
+#define NS3DTN_BIT_EXAMPLE_INTERFACE_H value
 
 #include "ns3/ns3dtn-bit.h"
 
 namespace ns3 {
     namespace ns3dtnbit {
 
-     class DtnExample {
+        class EmptyRouting : public RoutingMethodInterface {
+            public :
+                EmptyRouting(DtnApp& dp) : RoutingMethodInterface(dp) {}
+                void DoRoute() override {
+                    std::cout << " empty method, abort!" << std::endl;
+                    std::abort();
+                }
+        };
+
+        class DtnExample {
             public :
                 DtnExample();
                 void Configure(int argc, char** argv);
@@ -48,12 +57,7 @@ namespace ns3 {
                     return *this;
                 }
 
-                class EmptyRouting : RoutingMethodInterface {
-                    void DoRoute() override {
-                        std::cout << " empty method, abort!" << std::endl;
-                        std::abort();
-                    }
-                };
+
 
             protected :
                 uint32_t random_seed_;
@@ -73,17 +77,19 @@ namespace ns3 {
                 virtual void CreateNodes();
                 virtual void CreateDevices();
                 virtual void InstallInternetStack();
-                /*
-                virtual std::unique_ptr<RoutingMethodInterface> CreateRouting(DtnApp* pdtn) {
-                    auto p = new EmptyRouting(*pdtn);
-                    return std::move(std::unique_ptr<RoutingMethodInterface>(p));
+                virtual std::unique_ptr<RoutingMethodInterface> CreateRouting(DtnApp& dtn) {
+                    auto p = new EmptyRouting(dtn);
+                    auto pb = new RoutingMethodInterface(dtn);
+                    pb = p;
+                    return std::unique_ptr<RoutingMethodInterface>(pb);
                 }
-                */
 
                 virtual void InstallApplications();
                 // call LogCounter to counter for simulation time
                 void LogCounter(int);
         };   
+
+
     } /* ns3dtnbit
     */ 
 } /* ns3  */ 
