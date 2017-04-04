@@ -30,7 +30,7 @@ cd ../
 #CXXFLAGS=${CXXFLAGS} 
 CXX="${CXX}" ./waf configure -d debug --enable-examples --enable-tests
 echo '***************** gonna to build' 
-./waf build 
+./waf build --boost-lib=/usr/lib/x86_64-linux-gnu
 #exit 1
 echo '============================== Dividing =========================='
 echo "This script would write running log into ${LOG_FILE}---${DATE}"

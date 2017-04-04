@@ -17,16 +17,25 @@ namespace ns3 {
                 YourExample() : DtnExampleInterface() {
                     node_number_ = 5;
                     // simulation time should be less than trace_file_ time !Important
-                    simulation_duration_ = 804;
+                    simulation_duration_ = 802;
                     print_log_boolean_ = true;
                     ex_rm_ = DtnApp::RoutingMethod::SprayAndWait;
-                    // if you want do your method, add code in DtnApp, 
-                    // TODO
-                    // may be I can abstract one interface like 'routing method interface' for user to iheritance from.
                 }
                 void ReportEx(std::ostream& os) override {
                     os << "Here In DtnExampleInterface::ReportEx" << endl;
                 }
+
+                /*
+                std::unique_ptr<RoutingMethodInterface> CreateRouting(DtnApp* pdtn) override {
+                    ex_rm_ = DtnApp::RoutingMethod::Other;
+                    class MyRouting : RoutingMethodInterface {
+                        void DoRoute override {
+                            std::cout << "in user method!!!" << std::endl;
+                            std::abort();
+                        }
+                    };
+                }
+                */
         };
 
     } /* ns3dtnbit */ 

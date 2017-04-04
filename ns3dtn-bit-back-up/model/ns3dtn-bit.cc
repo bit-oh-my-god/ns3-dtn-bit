@@ -267,7 +267,7 @@ namespace ns3dtnbit {
                 auto tmpbaq_vec = vector<dtn_seqno_t>();
                 // fill up baq with 'b' pkt
                 if (pkt_seqno_number > 0) {
-                    NS_LOG_INFO(LogPrefixMacro << "string stream has sth to read, for hello bundle-seqno, pkt_seqno_number=" << pkt_seqno_number);
+                    NS_LOG_INFO(LogPrefixMacro << "in Receive hello, string stream has sth to read, for hello bundle-seqno, pkt_seqno_number=" << pkt_seqno_number);
                     if (pkt_seqno_number > 100) {
                         NS_LOG_ERROR(LogPrefixMacro << "Error: pkt_seqno_number > 100"
                                 << ",hello packet it receive is " << hello_packet_size
@@ -1390,6 +1390,10 @@ namespace ns3dtnbit {
     void DtnApp::ScheduleTx (Time tNext, uint32_t dstnode, uint32_t payload_size) {
         NS_LOG_DEBUG(LogPrefixMacro << "enter ScheduleTx(), time-" << tNext << ",size=" << payload_size << ", to node-" << dstnode);
         Simulator::Schedule(tNext, &DtnApp::ToSendBundle, this, dstnode, payload_size);
+    }
+
+    void DtnApp::DtnAppRoutingAssister::RouteIt() {
+        p_rm_in_->DoRoute();
     }
 } /* ns3dtnbit */ 
 /* ... */

@@ -43,25 +43,63 @@ namespace ns3 {
         }
 
         vector<DtnApp::Adob> DtnExampleInterface::CreateAdjacentList() {
-            std::ifstream fin;
-            fin.open(trace_file_);
-            vector<vector<double>> node_time_expand_point;  
             vector<DtnApp::Adob> result;
+            std::map<int, std::map<int, vector<int>>> ntpos_map;
             {
-                // regular expression code
+                // regular expression code TODO
+                std::ifstream infile(teg_file_);
+                string line;
+                while (std::getline(infile, line)) {
+                    std::istringstream iss(line);
+                    string str_tmp;
+                    int node_v, time_v, x_v, y_v, z_v;
+                    iss >> str_tmp >> node_v >> str_tmp >> time_v >> str_tmp >> x_v >> y_v >> z_v;
+                    vector<int> ntpos = {node_v, time_v, x_v, y_v, z_v};
+                    ntpos_map[time_v][node_v] = ntpos;
+                }
             }
-            fin.close();
+            assert(ntpos_map.size() == node_number_);
+            std::map<int, vector<vector<int>>> t_2_adjacent_array;
+            {
+                // calculate code
+                auto distance_func = [](std::map<int, vector<int>>& m, int i, int j) -> int {
+                    long reint = 0;
+                    auto pos1 = m[i];
+                    auto pos2 = m[j];
+                    reint = (pos1[0] - pos2[0]) * (pos1[0] - pos2[0]) 
+                        + (pos1[1] - pos2[1]) * (pos1[1] - pos2[1])
+                        + (pos1[2] - pos2[2]) *(pos1[2] - pos2[2]);
+                    reint = sqrt(reint);
+                    return reint;
+                };
+                for (auto& m1 : ntpos_map) {
+                    auto m2 = get<1>(m1);
+                    int time = get<0>(m1);
+                    auto tmp_adjacent_array = vector<vector<int>>(node_number_, vector<int>(node_number_, -1));
+                    for (int i = 0; i < node_number_; i++) {
+                        for (int j = 0; j < node_number_; ++j) {
+                            tmp_adjacent_array[i][j] = distance_func(m2, i, j);
+                        }
+                    }
+                    t_2_adjacent_array[time] = tmp_adjacent_array;
+                }
+            }
+            DtnApp::Adob adob_ob = DtnApp::Adob(t_2_adjacent_array, node_number_);
+            result.push_back(adob_ob);
             return result;
         }
 
         void DtnExampleInterface::InstallApplications() {
             TypeId udp_tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
+            // create adob for app
+            std::cout << "=============== CreateAdjacentList ===============" << endl;
+            auto adob = CreateAdjacentList();
+            std::cout << "=============== End of create ===============" << endl;
             Ptr<DtnApp> app[node_number_];
             for (uint32_t i = 0; i < node_number_; ++i) { 
                 // create app and set
                 app[i] = CreateObject<DtnApp>();
                 app[i]->SetUp(nodes_container_.Get(i));
-                app[i]->InvokeMeWhenInstallAppToSetupDtnAppRoutingAssister(ex_rm_);
                 nodes_container_.Get(i)->AddApplication(app[i]);
                 app[i]->SetStartTime(Seconds(0.0));
                 app[i]->SetStopTime(Seconds(5000.0));
@@ -85,10 +123,15 @@ namespace ns3 {
                 InetSocketAddress local(Ipv4Address::GetAny(), NS3DTNBIT_HELLO_PORT_NUMBER);
                 recvSink->Bind(local);
                 recvSink->SetRecvCallback(MakeCallback(&DtnApp::ReceiveHello, app[i]));
+                // load adob to each app, and load RoutingMethodInterface
+                if (ex_rm_ == DtnApp::RoutingMethod::Other) {
+                    std::unique_ptr<RoutingMethodInterface> p_rm_in = CreateRouting(app[i]);
+                    app[i]->InvokeMeWhenInstallAppToSetupDtnAppRoutingAssister(ex_rm_, p_rm_in, adob);
+                }
             }
             // bundle send 
             Ptr<UniformRandomVariable> x = CreateObject<UniformRandomVariable> ();
-            unsigned int pkts_total = 1;
+            unsigned int pkts_total = 3;
             double xinterval = simulation_duration_ / (2 * node_number_);
             for (uint32_t i = 0; i < node_number_; ++i) { 
                 for (uint32_t j = 0; j < pkts_total; ++j) { 
@@ -104,6 +147,10 @@ namespace ns3 {
                 }
             }
             Simulator::Schedule(Seconds(5), &DtnExampleInterface::LogCounter, this, 5);
+            {
+                std::cout << __LINE__ << " we would abort" << endl;
+                std::abort();
+            }
         }
 
         void DtnExampleInterface::InstallInternetStack() {
@@ -122,8 +169,9 @@ namespace ns3 {
             simulation_duration_ = 600;
             pcap_boolean_ = false;
             print_route_boolean_ = false;
-            // TODO, make trace_file_ to be relative path
+            // TODO, make files to be relative path
             trace_file_ = "/home/dtn-012345/ns-3_build/ns3-dtn-bit/box/current_trace/current_trace.tcl";
+            teg_file_ = "/home/dtn-012345/ns-3_build/ns3-dtn-bit/box/current_trace/teg.txt";
             log_file_ = "~/ns-3_build/ns3-dtn-bit/box/dtn_simulation_result/dtn_trace_log.txt";
         }
 
@@ -160,6 +208,11 @@ namespace ns3 {
          *
          */
         void DtnExampleInterface::ConfigureEx(int argc, char** argv) {
+            std::cout << "Using Boost "     
+                << BOOST_VERSION / 100000     << "."  // major version
+                << BOOST_VERSION / 100 % 1000 << "."  // minor version
+                << BOOST_VERSION % 100                // patch level
+                << std::endl;
             CommandLine cmdl_parser;
             cmdl_parser.AddValue("randmon_seed", "help:just random", random_seed_);
             cmdl_parser.AddValue("node_number", "nothing help", node_number_);

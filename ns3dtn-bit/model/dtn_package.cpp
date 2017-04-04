@@ -106,6 +106,7 @@ namespace ns3 {
             rh.Print(os);
             return os;
         }
+
         std::ostream& operator<<(std::ostream& os, BundleType&& rh) {
             string bt;
             bt = rh == BundleType::BundlePacket ? "BundlePacket" : 
@@ -116,6 +117,7 @@ namespace ns3 {
             os << bt;
             return os;
         }
+
     } /* ns3dtnbit */ 
 
 } /* ns3  */ 

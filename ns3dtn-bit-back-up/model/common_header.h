@@ -3,8 +3,6 @@
 
 // this file should be the neck of the header dependent graph
 // every header file would need outside dependent should include this one
-// 
-// 
 
 #include <cassert>
 #include <iostream>
@@ -15,6 +13,7 @@
 #include <cmath>
 #include <vector>
 #include <cstdio>
+#include <memory>
 #include <type_traits>
 #include <sstream>
 #include <memory>
@@ -23,6 +22,10 @@
 #include <map>
 #include <tuple>
 #include <utility>
+#include <boost/version.hpp>
+#include <boost/config.hpp>
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/bellman_ford_shortest_paths.hpp>
 
 #define DEBUG
 #define NS3DTNBIT_PORT_NUMBER 1234
