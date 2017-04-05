@@ -274,6 +274,13 @@ namespace ns3 {
 
             public :
 
+                bool InvokeMeWhenInstallAppToSetupDtnAppRoutingAssister(RoutingMethod rm, vector<Adob>& adob) {
+                    routing_assister_.set_rm(rm);
+                    routing_assister_.SetIt();
+                    routing_assister_.load_ob(adob);
+                    return true;
+                };
+
                 bool InvokeMeWhenInstallAppToSetupDtnAppRoutingAssister(RoutingMethod rm, std::unique_ptr<RoutingMethodInterface> p_rm_in, vector<Adob>& adob) {
                     routing_assister_.set_rm(rm);
                     routing_assister_.set_rmob(std::move(p_rm_in));

@@ -125,6 +125,10 @@ namespace ns3 {
                 if (ex_rm_ == DtnApp::RoutingMethod::Other) {
                     std::unique_ptr<RoutingMethodInterface> p_rm_in = CreateRouting(*app[i]);
                     app[i]->InvokeMeWhenInstallAppToSetupDtnAppRoutingAssister(ex_rm_, std::move(p_rm_in), adob);
+                } else if (ex_rm_ == DtnApp::RoutingMethod::SprayAndWait) {
+                    app[i]->InvokeMeWhenInstallAppToSetupDtnAppRoutingAssister(ex_rm_, adob);
+                } else {
+                    std::abort();
                 }
             }
             // bundle send 
