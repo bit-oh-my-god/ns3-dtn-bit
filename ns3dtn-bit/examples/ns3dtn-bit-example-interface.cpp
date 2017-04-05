@@ -115,10 +115,8 @@ namespace ns3 {
                 Ptr<Socket> source = Socket::CreateSocket(nodes_container_.Get (i), udp_tid);
                 InetSocketAddress remote(Ipv4Address("255.255.255.255"), NS3DTNBIT_HELLO_PORT_NUMBER);
                 source->SetAllowBroadcast(true);
-                source->Connect(remote);
-                Time tmpt = Seconds(0.1 + 0.01*i);
-                app[i]->ToSendHello(source, simulation_duration_, tmpt, false);
-                // set hello listen socket
+                source->Connect(remote); Time tmpt = Seconds(0.1 + 0.01*i); app[i]->ToSendHello(source, simulation_duration_, tmpt, false); 
+                // set hello listen socket 
                 Ptr<Socket> recvSink = Socket::CreateSocket(nodes_container_.Get(i), udp_tid);
                 InetSocketAddress local(Ipv4Address::GetAny(), NS3DTNBIT_HELLO_PORT_NUMBER);
                 recvSink->Bind(local);
@@ -147,11 +145,6 @@ namespace ns3 {
                 }
             }
             Simulator::Schedule(Seconds(5), &DtnExampleInterface::LogCounter, this, 5);
-
-            {
-                std::cout << __LINE__ << "! before real run it we would abort" << endl;
-                std::abort();
-            }
         }
 
         void DtnExampleInterface::InstallInternetStack() {
@@ -461,7 +454,7 @@ namespace ns3 {
             InstallInternetStack();
             std::cout << "******************** install app ******************" << std::endl;
             InstallApplications();
-            // TODO do I really need arpchche populated???
+            // do I really need arpchche populated???
             //std::cout << "******************** populate arpcache ******************" << std::endl;
             //PopulateArpCache();
             std::cout << "********************* Simulate **************" << std::endl;

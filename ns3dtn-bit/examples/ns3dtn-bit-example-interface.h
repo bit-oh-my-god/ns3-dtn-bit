@@ -9,7 +9,7 @@ namespace ns3 {
         class EmptyRouting : public RoutingMethodInterface {
             public :
                 EmptyRouting(DtnApp& dp) : RoutingMethodInterface(dp) {}
-                void DoRoute() override {
+                int DoRoute(int s, int d) override {
                     std::cout << " empty method, abort!" << std::endl;
                     std::abort();
                 }
@@ -57,8 +57,6 @@ namespace ns3 {
                     return *this;
                 }
 
-
-
             protected :
                 uint32_t random_seed_;
                 uint32_t node_number_;
@@ -79,9 +77,7 @@ namespace ns3 {
                 virtual void InstallInternetStack();
                 virtual std::unique_ptr<RoutingMethodInterface> CreateRouting(DtnApp& dtn) {
                     auto p = new EmptyRouting(dtn);
-                    auto pb = new RoutingMethodInterface(dtn);
-                    pb = p;
-                    return std::unique_ptr<RoutingMethodInterface>(pb);
+                    return std::unique_ptr<RoutingMethodInterface>(p);
                 }
 
                 virtual void InstallApplications();
@@ -89,9 +85,7 @@ namespace ns3 {
                 void LogCounter(int);
         };   
 
-
     } /* ns3dtnbit
     */ 
 } /* ns3  */ 
 #endif /* ifndef NS3DTN_BIT_EXAMPLE_INTERFACE_H */
-

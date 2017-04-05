@@ -31,10 +31,17 @@ namespace ns3 {
     namespace ns3dtnbit {
 
         class RoutingMethodInterface;
-        
+
+        // TODO may be ?
+        class BoostTypedef {
+            BoostTypedef() {}
+            ~BoostTypedef() {}
+        };
+
         class DtnApp : public Application {
 
             public :
+
                 struct Adob {
                     struct edge_property {
                         edge_property() {
@@ -45,13 +52,11 @@ namespace ns3 {
                         }
                         int distance_; 
                     };
-
                     using EdgeProperties = edge_property;
                     using NameProperties = boost::property<boost::vertex_name_t, std::string>;
                     using Graph = boost::adjacency_list < boost::vecS, boost::vecS, boost::directedS, NameProperties, EdgeProperties, boost::no_property>;
                     using VeDe = boost::graph_traits < Graph >::vertex_descriptor;
                     using EdDe = boost::graph_traits < Graph >::edge_descriptor;
-
                     Adob() {}
                     Adob(std::map<int, vector<vector<int>>> t_2_adjacent_array, int node_number) {
                         // boost code
@@ -74,13 +79,23 @@ namespace ns3 {
                                     add_edge(vec_vertex_des[i], vec_vertex_des[j], EdgeProperties(t3[i][j]), my_g);
                                     auto tedp = EdgeProperties(t3[i][j]);
                                     std::cout << "edge_property of " << i << "and" << j 
-                                    << "=" << tedp.distance_ << std::endl;
+                                        << "=" << tedp.distance_ << std::endl;
                                 }
                             }
                             // load it
                             t_vec_.push_back(time_index);
                             g_vec_.push_back(my_g);
                         }
+                    }
+                    Graph get_graph_for_now() const {
+                        for (int i = t_vec_.size() - 1; i > 0 ; i--) {
+                            if (Simulator::Now().GetSeconds() >= t_vec_[i]) {
+                                auto g_re = g_vec_[i];
+                                return g_re;
+                            }
+                        }
+                        std::cout << "Error:" <<__LINE__ << "can't be" << std::endl;
+                        std::abort();
                     }
                     ~Adob() {}
                     private :
@@ -220,7 +235,7 @@ namespace ns3 {
                             adob_cur_ = vec_[0];
                         }
 
-                        void RouteIt();
+                        int RouteIt(int src_node_n, int dest_node_n);
 
                         ~DtnAppRoutingAssister() {
 
@@ -259,13 +274,6 @@ namespace ns3 {
 
             public :
 
-                bool InvokeMeWhenInstallAppToSetupDtnAppRoutingAssister(RoutingMethod rm, vector<Adob>& adob) {
-                    routing_assister_.set_rm(rm);
-                    routing_assister_.SetIt();
-                    routing_assister_.load_ob(adob);
-                    return true;
-                };
-
                 bool InvokeMeWhenInstallAppToSetupDtnAppRoutingAssister(RoutingMethod rm, std::unique_ptr<RoutingMethodInterface> p_rm_in, vector<Adob>& adob) {
                     routing_assister_.set_rm(rm);
                     routing_assister_.set_rmob(std::move(p_rm_in));
@@ -273,6 +281,7 @@ namespace ns3 {
                     routing_assister_.load_ob(adob);
                     return true;
                 };
+                friend RoutingMethodInterface;
 
             private :
                 void ToSendAntipacketBundle(BPHeader& ref_bp_header);
@@ -324,20 +333,25 @@ namespace ns3 {
                 vector<NeighborInfo> neighbor_info_vec_;
                 vector<DaemonTransmissionInfo> daemon_transmission_info_vec_;
                 vector<DaemonBundleHeaderInfo> daemon_transmission_bh_info_vec_;
-                friend RoutingMethodInterface;
         };
 
         class RoutingMethodInterface {
             public :
-            RoutingMethodInterface(DtnApp& dp) : out_app_(dp) {}
-            virtual ~RoutingMethodInterface() {}
-            virtual void DoRoute() {
-                std::cout << "DoRoute, Error : empty ! abort!" << std::endl;
-                std::abort();
-            }
-            private :
-            // can only read
-            const DtnApp& out_app_;
+                RoutingMethodInterface(DtnApp& dp) : out_app_(dp) {}
+                virtual ~RoutingMethodInterface() {}
+                // Aim :
+                // src is the node number for traffic source node
+                // dst is the node number for traffic sink node
+                // return the next hop node number
+                // Note : 
+                // use adob in the out_app_
+                virtual int DoRoute(int src, int dst) = 0;
+            protected :
+                // can only read
+                const DtnApp& out_app_;
+                DtnApp::Adob get_adob() { 
+                    return out_app_.routing_assister_.adob_cur_;
+                }
         };
 
     } /* ns3dtnbit */ 

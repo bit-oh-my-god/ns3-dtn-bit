@@ -101,7 +101,7 @@ namespace ns3dtnbit {
 
     /* refine
      * Aim : inherited method
-    */
+     */
     void DtnApp::SetUp(Ptr<Node> node) {
         node_ = node;
         congestion_control_parameter_ = 1;
@@ -125,7 +125,7 @@ namespace ns3dtnbit {
 
     /* refine 
      * Aim : send hello
-    */
+     */
     void DtnApp::ToSendHello(Ptr<Socket> socket, dtn_time_t simulation_end_time, Time hello_interval, bool hello_right_now_boolean) {
         NS_LOG_LOGIC(LogPrefixMacro << "enter ToSendHello()");
         Ptr<Packet> p_pkt; 
@@ -218,7 +218,7 @@ namespace ns3dtnbit {
 
     /* refine 
      * Aim : ReceiveHello
-    */
+     */
     void DtnApp::ReceiveHello(Ptr<Socket> socket_handle) {
         NS_LOG_LOGIC(LogPrefixMacro << "enter of receive hello");
         Ptr<Packet> p_pkt;
@@ -313,7 +313,7 @@ namespace ns3dtnbit {
 
     /* refine 
      * Aim : send ack imediatly
-    */
+     */
     void DtnApp::ToSendAck(BPHeader& ref_bp_header, Ipv4Address response_ip) {
         NS_LOG_INFO(LogPrefixMacro << "enter ToSendAck()");
         std::string tmp_payload_str;
@@ -753,11 +753,49 @@ namespace ns3dtnbit {
         if (routing_assister_.IsSet() && routing_assister_.get_rm() == RoutingMethod::SprayAndWait) {
             // this method is default one
             return BPHeaderBasedSendDecisionDetail(ref_bp_header, return_index_of_neighbor_you_dedicate, check_state);
-            //} else if (routing_assister_.IsSet()) {
-    } else {
-        NS_LOG_ERROR("can't fine the routing method or method not assigned, routing_assister_ is set=" << routing_assister_.IsSet());
-        std::abort();
-    }
+        } else if (routing_assister_.IsSet() && routing_assister_.get_rm() == RoutingMethod::Other) {
+            int s, d, indx = -1, result;
+            {
+                // init s, d
+                auto ip_s = ref_bp_header.get_source_ip();
+                auto ip_d = ref_bp_header.get_destination_ip();
+                uint8_t buf[4], base[4];
+                auto ip_base = Ipv4Address("10.0.0.0");
+                ip_base.Serialize(base);
+                ip_s.Serialize(buf);
+                s = (buf[3] - base[3]) + (256 * (buf[2] - base[2])) + (256 * 256 * (buf[1] - base[1])) + (256 * 256 * 256 * (buf[0] - base[0]));
+                ip_base.Serialize(base);
+                ip_d.Serialize(buf);
+                d = (buf[3] - base[3]) + (256 * (buf[2] - base[2])) + (256 * 256 * (buf[1] - base[1])) + (256 * 256 * 256 * (buf[0] - base[0]));
+                if (s + d > 100) {
+                    NS_LOG_WARN(LogPrefixMacro << "WARN: s node = " << s << " d node =" << d);
+                }
+            }
+            result = routing_assister_.RouteIt(s, d);
+            if (result != -1) {
+                {
+                    // find indx of result
+                    auto ip_base = Ipv4Address("10.0.0.0");
+                    uint8_t base[4];
+                    ip_base.Serialize(base);
+                    base[3] += result;
+                    ip_base.Deserialize(base);
+                    for (int i = 0; i < neighbor_info_vec_.size(); i++) {
+                        if (neighbor_info_vec_[i].info_address_.GetIpv4().IsEqual(ip_base)) {
+                            indx = i;
+                            break;
+                        }
+                    }
+                }
+                return_index_of_neighbor_you_dedicate = indx;
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            NS_LOG_ERROR("can't fine the routing method or method not assigned, routing_assister_ is set=" << routing_assister_.IsSet());
+            std::abort();
+        }
     }
 
     void DtnApp::StateCheckDetail() {
@@ -961,7 +999,7 @@ namespace ns3dtnbit {
             default : {break;}
         }
     }
-        
+
     /* refine
      * Aim :
      * This is a routing method, just find the first avilable one.
@@ -1113,10 +1151,10 @@ namespace ns3dtnbit {
                     && lhs_seqno_value == rhs_bp_header.get_source_seqno()) {
                 NS_LOG_DEBUG(LogPrefixMacro << "NOTE: ANTI remove bundle");
                 /*
-                {
-                    // do something anti remove
-                    NS_LOG_ERROR(LogPrefixMacro << "ERROR: not implement yet");
-                    std::abort();
+                   {
+                // do something anti remove
+                NS_LOG_ERROR(LogPrefixMacro << "ERROR: not implement yet");
+                std::abort();
                 }
                 */
                 break;
@@ -1386,14 +1424,14 @@ namespace ns3dtnbit {
 
     /* refine
      * Aim: handy wrpper
-    */
+     */
     void DtnApp::ScheduleTx (Time tNext, uint32_t dstnode, uint32_t payload_size) {
         NS_LOG_DEBUG(LogPrefixMacro << "enter ScheduleTx(), time-" << tNext << ",size=" << payload_size << ", to node-" << dstnode);
         Simulator::Schedule(tNext, &DtnApp::ToSendBundle, this, dstnode, payload_size);
     }
 
-    void DtnApp::DtnAppRoutingAssister::RouteIt() {
-        p_rm_in_->DoRoute();
+    int DtnApp::DtnAppRoutingAssister::RouteIt(int s, int d) {
+        return p_rm_in_->DoRoute(s, d);
     }
 } /* ns3dtnbit */ 
 /* ... */

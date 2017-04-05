@@ -2,7 +2,6 @@
  * 1. generate your trace file
  * 2. define your example, mainly how node are connected,
  *  you can override it, but must implement ReportEx(),
- *  !!Important it was designed to let you do it.
  * 3. run your example
  */
 #include "ns3/ns3dtn-bit-helper.h"
@@ -12,6 +11,18 @@
 using namespace ns3;
 namespace ns3 {
     namespace ns3dtnbit {
+
+        class YouRouting : public RoutingMethodInterface {
+            public :
+                YouRouting(DtnApp& dp) : RoutingMethodInterface(dp) {}
+                int DoRoute(int s, int d) override {
+                    const DtnApp::Adob& ref_adob = RoutingMethodInterface::get_adob();
+                    auto g = ref_adob.get_graph_for_now();
+                    std::cout << "acess adob, In your method, abort!" << std::endl;
+                    std::abort();
+                }
+        };
+
         class YourExample : public DtnExampleInterface {
             public :
                 YourExample() : DtnExampleInterface() {
@@ -24,18 +35,10 @@ namespace ns3 {
                 void ReportEx(std::ostream& os) override {
                     os << "Here In DtnExampleInterface::ReportEx" << endl;
                 }
-
-                /*
-                std::unique_ptr<RoutingMethodInterface> CreateRouting(DtnApp* pdtn) override {
-                    ex_rm_ = DtnApp::RoutingMethod::Other;
-                    class MyRouting : RoutingMethodInterface {
-                        void DoRoute override {
-                            std::cout << "in user method!!!" << std::endl;
-                            std::abort();
-                        }
-                    };
+                std::unique_ptr<RoutingMethodInterface> CreateRouting(DtnApp& dtn) override {
+                    auto p = new YouRouting(dtn);
+                    return std::unique_ptr<RoutingMethodInterface>(p);
                 }
-                */
         };
 
     } /* ns3dtnbit */ 
@@ -48,9 +51,6 @@ int main(int argc, char *argv[]) {
     //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_DEBUG);
     LogComponentEnable ("DtnRunningLog",LOG_LEVEL_INFO);
     //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_LOGIC);
-    //LogComponentEnableAll (LOG_PREFIX_TIME);
-    //LogComponentEnableAll(LOG_PREFIX_NODE); 
-    //
 
     assert(std::is_move_constructible<ns3dtnbit::YourExample>::value);
     assert(std::is_move_assignable<ns3dtnbit::YourExample>::value);
