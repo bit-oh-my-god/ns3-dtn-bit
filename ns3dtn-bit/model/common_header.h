@@ -11,6 +11,7 @@
 #include <type_traits>
 #include <execinfo.h>
 #include <cmath>
+#include <limits>
 #include <vector>
 #include <cstdio>
 #include <memory>
@@ -23,8 +24,13 @@
 #include <tuple>
 #include <utility>
 #include <boost/version.hpp>
-#include <boost/config.hpp>
+//#include <boost/config.hpp>
 #include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/graph_traits.hpp>
+#include <boost/graph/dijkstra_shortest_paths.hpp>
+#include <boost/property_map/property_map.hpp>
+#include <boost/range/algorithm.hpp>
+#include <boost/range/adaptors.hpp>
 #include <boost/graph/bellman_ford_shortest_paths.hpp>
 
 #define DEBUG

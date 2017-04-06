@@ -16,10 +16,32 @@ namespace ns3 {
             public :
                 YouRouting(DtnApp& dp) : RoutingMethodInterface(dp) {}
                 int DoRoute(int s, int d) override {
+                    using namespace boost;
                     const DtnApp::Adob& ref_adob = RoutingMethodInterface::get_adob();
                     auto g = ref_adob.get_graph_for_now();
-                    std::cout << "acess adob, In your method, abort!" << std::endl;
-                    std::abort();
+
+                    using Graph_T = decltype(g);
+                    using Vertex_D = boost::graph_traits<Graph_T>::vertex_descriptor;
+                    using Edge_D = boost::graph_traits<Graph_T>::edge_descriptor;
+
+                    //boost::property_map<Graph_T, edge_mycost_t>::type mycostmap = boost::get(edge_mycost, g);
+                    std::vector<Vertex_D> predecessor(boost::num_vertices(g));
+                    std::vector<int> distances(boost::num_vertices(g));
+                    auto s_des = predecessor[s];
+                    auto d_des = predecessor[d];
+
+                    dijkstra_shortest_paths(g, s_des,
+                            weight_map(get(&my_edge_property::distance, g)).
+                            distance_map(make_iterator_property_map(distances.begin(), get(vertex_index, g))).
+                            predecessor_map(make_iterator_property_map(predecessor.begin(), get(vertex_index, g)))
+                            );
+                    Vertex_D cur = d_des;
+                    // dangerous cast but works
+                    while (predecessor[cur] != s_des) {
+                        cur = predecessor[cur];
+                    }
+                    int result = (int)cur;
+                    return result;
                 }
         };
 

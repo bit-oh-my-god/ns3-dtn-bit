@@ -27,33 +27,34 @@ std::string GetLogStr(std::string);
 
 #endif /* ifndef DEBUG */
 
+enum edge_mycost_t {edge_mycost};
+
+namespace boost {
+    BOOST_INSTALL_PROPERTY(edge, mycost);
+}
+
 namespace ns3 {
     namespace ns3dtnbit {
 
-        class RoutingMethodInterface;
-
-        // TODO may be ?
-        class BoostTypedef {
-            BoostTypedef() {}
-            ~BoostTypedef() {}
+        struct my_edge_property {
+            my_edge_property () { }
+            my_edge_property(int v) {
+                distance = v;
+            }
+            int distance;
         };
+
+        class RoutingMethodInterface;
 
         class DtnApp : public Application {
 
             public :
 
                 struct Adob {
-                    struct edge_property {
-                        edge_property() {
-                            distance_ = -1;
-                        }
-                        edge_property(int v) {
-                            distance_ = v;
-                        }
-                        int distance_; 
-                    };
-                    using EdgeProperties = edge_property;
+                    //using EdgeProperties = boost::property<edge_mycost_t, int>;
+                    using EdgeProperties = my_edge_property;
                     using NameProperties = boost::property<boost::vertex_name_t, std::string>;
+                    // use vecS is essential to use vertex_descriptor as an index of vector
                     using Graph = boost::adjacency_list < boost::vecS, boost::vecS, boost::directedS, NameProperties, EdgeProperties, boost::no_property>;
                     using VeDe = boost::graph_traits < Graph >::vertex_descriptor;
                     using EdDe = boost::graph_traits < Graph >::edge_descriptor;
@@ -77,9 +78,8 @@ namespace ns3 {
                                 for (int j = 0; j < node_number; ++j) {
                                     if (i == j) {break;}
                                     add_edge(vec_vertex_des[i], vec_vertex_des[j], EdgeProperties(t3[i][j]), my_g);
-                                    auto tedp = EdgeProperties(t3[i][j]);
                                     std::cout << "edge_property of " << i << "and" << j 
-                                        << "=" << tedp.distance_ << std::endl;
+                                        << "=" << t3[i][j] << std::endl;
                                 }
                             }
                             // load it
@@ -87,6 +87,7 @@ namespace ns3 {
                             g_vec_.push_back(my_g);
                         }
                     }
+
                     Graph get_graph_for_now() const {
                         for (int i = t_vec_.size() - 1; i > 0 ; i--) {
                             if (Simulator::Now().GetSeconds() >= t_vec_[i]) {
@@ -97,6 +98,7 @@ namespace ns3 {
                         std::cout << "Error:" <<__LINE__ << "can't be" << std::endl;
                         std::abort();
                     }
+
                     ~Adob() {}
                     private :
                     vector<Graph> g_vec_;

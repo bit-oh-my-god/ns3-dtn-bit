@@ -5,6 +5,7 @@ LOG_FILE=${ROOT_PATH}/box/dtn_simulation_result/dtnrunninglog.txt
 DATE=`date +%Y-%m-%d`
 DIR1="./ns3dtn-bit-back-up"
 CXX="g++"
+CXXFLAGS="-Wno-error"
 
 if [ -d $DIR1 ]; then
     echo 'back up!'
@@ -27,10 +28,10 @@ else
 fi
 echo '***************** gonna to configure'
 cd ../
-#CXXFLAGS=${CXXFLAGS} 
 CXX="${CXX}" ./waf configure -d debug --enable-examples --enable-tests
 echo '***************** gonna to build' 
 ./waf build --boost-lib=/usr/lib/x86_64-linux-gnu
+#./waf build
 #exit 1
 echo '============================== Dividing =========================='
 echo "This script would write running log into ${LOG_FILE}---${DATE}"
