@@ -1,8 +1,6 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 
 def build(bld):
-    obj2 = bld.create_ns3_program('ns3dtn-bit-example', ['ns3dtn-bit'])
-    obj2.source = 'ns3dtn-bit-example.cc'
     obj = bld.create_ns3_program('ns3dtn-bit-your-example',['ns3dtn-bit']) 
     obj.source = 'ns3dtn-bit-your-example.cpp'
     obj.cxxflags = ['-std=c++11', '-Wall', '-Wextra', '-fpermissive', '-w']

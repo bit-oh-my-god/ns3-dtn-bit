@@ -1,7 +1,10 @@
 /*
  * 1. generate your trace file
- * 2. define your example, mainly how node are connected,
- *  you can override it, but must implement ReportEx(),
+ * 2. define your example, mainly 3 parts of it
+ *      a. constructor of YourExample
+ *      b. CreateRouting()
+ *      c. YouRouting()
+ *          note that you do can use value of s,d as index of predecessor until listS is set to be the vertex container of Graph
  * 3. run your example
  */
 #include "ns3/ns3dtn-bit-helper.h"
@@ -15,6 +18,7 @@ namespace ns3 {
         class YouRouting : public RoutingMethodInterface {
             public :
                 YouRouting(DtnApp& dp) : RoutingMethodInterface(dp) {}
+                // s is source index, d is dest index, return next hop
                 int DoRoute(int s, int d) override {
                     using namespace boost;
                     const DtnApp::Adob& ref_adob = RoutingMethodInterface::get_adob();
@@ -24,22 +28,46 @@ namespace ns3 {
                     using Vertex_D = boost::graph_traits<Graph_T>::vertex_descriptor;
                     using Edge_D = boost::graph_traits<Graph_T>::edge_descriptor;
 
-                    //boost::property_map<Graph_T, edge_mycost_t>::type mycostmap = boost::get(edge_mycost, g);
+                    Vertex_D s_des, d_des;
+                    {
+                        // get vertex_descriptor
+                        std::stringstream ss1;
+                        ss1 << "node-" << s;
+                        string s_str = ss1.str();
+                        std::stringstream ss0;
+                        ss0 << "node-" << d;
+                        string d_str = ss0.str();
+                        boost::graph_traits<Graph_T>::vertex_iterator vi, vi_end;
+                        for(boost::tie(vi, vi_end) = boost::vertices(g); vi != vi_end; ++vi){
+                            if (g[*vi].name_ == s_str) {
+                                s_des = *vi;
+                            } else if (g[*vi].name_  == d_str) {
+                                d_des = *vi;
+                            }
+                        }
+                    }
+
                     std::vector<Vertex_D> predecessor(boost::num_vertices(g));
                     std::vector<int> distances(boost::num_vertices(g));
-                    auto s_des = predecessor[s];
-                    auto d_des = predecessor[d];
 
                     dijkstra_shortest_paths(g, s_des,
-                            weight_map(get(&my_edge_property::distance, g)).
+                            weight_map(get(&my_edge_property::distance_, g)).
                             distance_map(make_iterator_property_map(distances.begin(), get(vertex_index, g))).
                             predecessor_map(make_iterator_property_map(predecessor.begin(), get(vertex_index, g)))
                             );
                     Vertex_D cur = d_des;
-                    // dangerous cast but works
-                    while (predecessor[cur] != s_des) {
+                    int count = num_vertices(g);
+                    while (predecessor[cur] != s_des && count-- > 0) {
                         cur = predecessor[cur];
                     }
+                    if (count <= 0) {
+                        std::cout << "fuckhere, you can't find the next hop, print predecessor and abort()" << std::endl;
+                        for (auto v : predecessor) {
+                            std::cout << " v=" << v << ";";
+                        }
+                        std::cout << endl;
+                    }
+                    std::cout << "fuckhere , s_dex =" << s_des << "; d_des=" << d_des <<  ";predecessor[cur]=" << predecessor[cur] << ";cur=" << cur << std::endl;
                     int result = (int)cur;
                     return result;
                 }
@@ -52,7 +80,8 @@ namespace ns3 {
                     // simulation time should be less than trace_file_ time !Important
                     simulation_duration_ = 802;
                     print_log_boolean_ = true;
-                    ex_rm_ = DtnApp::RoutingMethod::SprayAndWait;
+                    ex_rm_ = DtnApp::RoutingMethod::Other;
+                    //ex_rm_ = DtnApp::RoutingMethod::SprayAndWait;
                 }
                 void ReportEx(std::ostream& os) override {
                     os << "Here In DtnExampleInterface::ReportEx" << endl;

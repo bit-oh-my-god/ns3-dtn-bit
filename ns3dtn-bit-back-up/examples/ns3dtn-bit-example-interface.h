@@ -15,34 +15,6 @@ namespace ns3 {
                 }
         };
 
-        class DtnExample {
-            public :
-                DtnExample();
-                void Configure(int argc, char** argv);
-                void Run();
-                void Report(std::ostream& os);
-                //void Report(std::ostream& os);
-
-            private :
-                uint32_t random_seed_;
-                uint32_t node_number_;
-                double simulation_duration_;
-                bool pcap_boolean_, print_route_boolean_;
-                std::string trace_file_;
-                std::string log_file_;
-                std::ofstream file_stream_;
-                NodeContainer nodes_container_;
-                NetDeviceContainer net_devices_container_;
-                Ipv4InterfaceContainer ip_interface_container_;
-
-                void CreateNodes();
-                void CreateDevices();
-                void InstallInternetStack();
-                void InstallApplications();
-                void PopulateArpCache();
-                void LogCounter(int);
-        };
-
         class DtnExampleInterface {
             public :
                 DtnExampleInterface();

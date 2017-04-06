@@ -39,9 +39,17 @@ namespace ns3 {
         struct my_edge_property {
             my_edge_property () { }
             my_edge_property(int v) {
-                distance = v;
+                distance_ = v;
             }
-            int distance;
+            int distance_;
+        };
+
+        struct my_vertex_property {
+            my_vertex_property() {}
+            my_vertex_property(string s) {
+                name_ = s;
+            }
+            string name_;
         };
 
         class RoutingMethodInterface;
@@ -53,9 +61,11 @@ namespace ns3 {
                 struct Adob {
                     //using EdgeProperties = boost::property<edge_mycost_t, int>;
                     using EdgeProperties = my_edge_property;
-                    using NameProperties = boost::property<boost::vertex_name_t, std::string>;
+                    //using NameProperties = boost::property<boost::vertex_name_t, std::string>;
+                    using VertexProperties = my_vertex_property;
                     // use vecS is essential to use vertex_descriptor as an index of vector
-                    using Graph = boost::adjacency_list < boost::vecS, boost::vecS, boost::directedS, NameProperties, EdgeProperties, boost::no_property>;
+                    using Graph = boost::adjacency_list < boost::vecS, boost::vecS, boost::bidirectionalS, VertexProperties, EdgeProperties, boost::no_property>;
+                    //using Graph = boost::adjacency_list < boost::vecS, boost::vecS, boost::directedS, NameProperties, EdgeProperties, boost::no_property>;
                     using VeDe = boost::graph_traits < Graph >::vertex_descriptor;
                     using EdDe = boost::graph_traits < Graph >::edge_descriptor;
                     Adob() {}
@@ -71,17 +81,19 @@ namespace ns3 {
                             for (int i = 0; i < node_number; i++) {
                                 std::stringstream ss;
                                 ss << "node-" << i;
-                                vec_vertex_des.push_back(add_vertex(ss.str(), my_g));
+                                vec_vertex_des.push_back(add_vertex(VertexProperties(ss.str()), my_g));
                             }
                             //auto vec_edge_des = std::vector<vector<EdDe>>(node_number_, std::vector<EdDe>(node_number_, EdDe()));
                             for (int i = 0; i < node_number; ++i) {
-                                for (int j = 0; j < node_number; ++j) {
-                                    if (i == j) {break;}
+                                for (int j = i; j < node_number; ++j) {
+                                    if (i == j) {continue;}
                                     add_edge(vec_vertex_des[i], vec_vertex_des[j], EdgeProperties(t3[i][j]), my_g);
                                     std::cout << "edge_property of " << i << "and" << j 
                                         << "=" << t3[i][j] << std::endl;
                                 }
                             }
+                            assert(boost::num_edges(my_g)>0);
+                            assert(boost::num_vertices(my_g)>0);
                             // load it
                             t_vec_.push_back(time_index);
                             g_vec_.push_back(my_g);
@@ -89,13 +101,13 @@ namespace ns3 {
                     }
 
                     Graph get_graph_for_now() const {
-                        for (int i = t_vec_.size() - 1; i > 0 ; i--) {
+                        for (int i = t_vec_.size() - 1; i >= 0 ; i--) {
                             if (Simulator::Now().GetSeconds() >= t_vec_[i]) {
                                 auto g_re = g_vec_[i];
                                 return g_re;
                             }
                         }
-                        std::cout << "Error:" <<__LINE__ << "can't be" << std::endl;
+                        std::cout << "Error:" <<__LINE__ << "can't be, Seconds =" << Simulator::Now().GetSeconds() << "t_vec_" << t_vec_[0] << std::endl;
                         std::abort();
                     }
 
@@ -293,6 +305,7 @@ namespace ns3 {
                 friend RoutingMethodInterface;
 
             private :
+                bool SprayGoodDetail(BPHeader bp_header, int flag);
                 void ToSendAntipacketBundle(BPHeader& ref_bp_header);
                 void RemoveBundleFromAntiDetail(Ptr<Packet> p_pkt);
                 void StartApplication() override;
@@ -301,7 +314,7 @@ namespace ns3 {
                 void BundleReceptionTailWorkDetail();
                 void SemiFillBPHeaderDetail(BPHeader* p_bp_header);
                 void FragmentReassembleDetail(int k);
-                bool BPHeaderBasedSendDecisionDetail(BPHeader& ref_bp_header, int& return_index_of_neighbor, enum CheckState check_state);
+                vector<int> BPHeaderBasedSendDecisionDetail(BPHeader& ref_bp_header, enum CheckState check_state);
                 bool FindTheNeighborThisBPHeaderTo(BPHeader& ref_bp_header, int& return_index_of_neighbor_you_dedicate, enum CheckState check_state);
                 void CreateSocketDetail();
                 void UpdateNeighborInfoDetail(int which_info, int which_neighbor, int which_pkt_index);
@@ -317,27 +330,25 @@ namespace ns3 {
                 std::string LogPrefix();
 
                 Ptr<WifiPhy> wifi_ph_p;
+                std::map<dtn_seqno_t, int> spray_map_;
                 int anti_send_count_ = 0;
                 int ack_send_count_ = 0;
                 int bundle_send_count_ = 0;
-                uint32_t daemon_baq_bytes_max_; // b_s   
-                uint32_t drops_count_; // drops
-                Ptr<Node> node_; // m_node
+                uint32_t daemon_baq_bytes_max_;
+                uint32_t drops_count_;
+                Ptr<Node> node_; 
                 Ipv4Address own_ip_;
-                uint32_t daemon_flow_count_; // NumFlows
-                enum RunningFlag running_flag_; // m_running
-                enum CongestionControlMethod congestion_control_method_; // cc
-                double congestion_control_parameter_; //t_c     // will only works when enable Dynamic congestion control
+                enum RunningFlag running_flag_;
+                enum CongestionControlMethod congestion_control_method_;
+                double congestion_control_parameter_; // will only works when enable Dynamic congestion control
                 dtn_time_t retransmission_interval_;
-                //EventId send_event_id_; // m_sendEvent
-
-                Ptr<Socket> daemon_socket_handle_; // m_socket, note that hello socket is another socket
-                Ptr<Queue> daemon_antipacket_queue_; //m_antipacket_queue
+                Ptr<Socket> daemon_socket_handle_; // note that hello socket is another socket
+                Ptr<Queue> daemon_antipacket_queue_;
                 Ptr<Queue> daemon_consume_bundle_queue_; // store the bundle which is aim to be sent to this node
                 Ptr<Queue> daemon_reorder_buffer_queue_; // m_helper_queue
                 Ptr<Queue> daemon_bundle_queue_; // m_queue, daemon bundle queue, this is where "store and forward" semantic stores
-                vector<Ptr<Packet>> daemon_reception_packet_buffer_vec_; // newpkt
-                vector<Ptr<Packet>> daemon_retransmission_packet_buffer_vec_; // retxpkt
+                vector<Ptr<Packet>> daemon_reception_packet_buffer_vec_;
+                vector<Ptr<Packet>> daemon_retransmission_packet_buffer_vec_;
                 vector<DaemonReceptionInfo> daemon_reception_info_vec_;
                 vector<NeighborInfo> neighbor_info_vec_;
                 vector<DaemonTransmissionInfo> daemon_transmission_info_vec_;
