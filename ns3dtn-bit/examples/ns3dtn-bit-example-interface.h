@@ -31,6 +31,7 @@ namespace ns3 {
 
             protected :
                 uint32_t random_seed_;
+                vector<Ptr<DtnApp>> app_;
                 uint32_t node_number_;
                 dtn_time_t simulation_duration_;
                 bool pcap_boolean_, print_route_boolean_, print_log_boolean_;
@@ -47,6 +48,7 @@ namespace ns3 {
                 virtual void CreateNodes();
                 virtual void CreateDevices();
                 virtual void InstallInternetStack();
+                virtual void ScheduleTask();
                 virtual std::unique_ptr<RoutingMethodInterface> CreateRouting(DtnApp& dtn) {
                     auto p = new EmptyRouting(dtn);
                     return std::unique_ptr<RoutingMethodInterface>(p);

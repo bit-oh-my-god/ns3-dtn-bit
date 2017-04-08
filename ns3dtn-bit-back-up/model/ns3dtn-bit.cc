@@ -799,7 +799,7 @@ namespace ns3 {
                     }
                     NS_LOG_INFO(LogPrefixMacro << "routing decision is not available, or have be sent;" << " to-node-id =" << result << "; index of neighbor_info_vec_ is = " << indx << "all available is: ");
                     if (available.size() == 0) {
-                        NS_LOG_ERROR(LogPrefixMacro << "Error: available is none.");
+                        NS_LOG_WARN(LogPrefixMacro << "WARN: available is none.");
                         return false;
                     }
                     return_index_of_neighbor_you_dedicate = available[0];
@@ -1019,7 +1019,7 @@ namespace ns3 {
                                                if (real_send_boolean) {
                                                    Simulator::Schedule(Seconds(NS3DTNBIT_BUFFER_CHECK_INTERVAL), &DtnApp::CheckBuffer, this, CheckState::State_1);
                                                } else {
-                                                   Simulator::Schedule(Seconds(NS3DTNBIT_BUFFER_CHECK_INTERVAL), &DtnApp::CheckBuffer, this, CheckState::State_2);
+                                                   Simulator::Schedule(Seconds(3 * NS3DTNBIT_BUFFER_CHECK_INTERVAL), &DtnApp::CheckBuffer, this, CheckState::State_2);
                                                }
                                                break;
                                            }
@@ -1027,7 +1027,7 @@ namespace ns3 {
                                                if (real_send_boolean) {
                                                    Simulator::Schedule(Seconds(NS3DTNBIT_BUFFER_CHECK_INTERVAL), &DtnApp::CheckBuffer, this, CheckState::State_2);
                                                } else {
-                                                   Simulator::Schedule(Seconds(NS3DTNBIT_BUFFER_CHECK_INTERVAL), &DtnApp::CheckBuffer, this, CheckState::State_1);
+                                                   Simulator::Schedule(Seconds(3 * NS3DTNBIT_BUFFER_CHECK_INTERVAL), &DtnApp::CheckBuffer, this, CheckState::State_1);
                                                }
                                                break;
                                            }

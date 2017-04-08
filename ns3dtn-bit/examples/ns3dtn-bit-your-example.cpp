@@ -90,6 +90,20 @@ namespace ns3 {
                     auto p = new YouRouting(dtn);
                     return std::unique_ptr<RoutingMethodInterface>(p);
                 }
+                void ScheduleTask() override {
+                    int sch_size = 341;
+                    auto handy_func = [sch_size, this](dtn_time_t sch_time, int i, int dstnode){
+                        std::cout << "bundle send schedule: time=" << sch_time << ";node-" << i << "send " << sch_size << " size-pkt to node-" << dstnode << std::endl;
+                        app_[i]->ScheduleTx(Seconds(sch_time), dstnode, sch_size);
+                    };
+                    handy_func(3.0, 0, 1);
+                    handy_func(7.0, 0, 2);
+                    handy_func(22.0, 0, 1);
+                    handy_func(123.0, 0, 2);
+                    handy_func(34.0, 2, 1);
+                    handy_func(55.0, 2, 0);
+                    handy_func(421.0, 2, 0);
+                }
         };
 
     } /* ns3dtnbit */ 
