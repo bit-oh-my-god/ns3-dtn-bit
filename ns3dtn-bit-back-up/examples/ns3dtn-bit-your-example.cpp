@@ -76,9 +76,9 @@ namespace ns3 {
         class YourExample : public DtnExampleInterface {
             public :
                 YourExample() : DtnExampleInterface() {
-                    node_number_ = 5;
+                    node_number_ = 3;
                     // simulation time should be less than trace_file_ time !Important
-                    simulation_duration_ = 802;
+                    simulation_duration_ = 1601;
                     print_log_boolean_ = true;
                     ex_rm_ = DtnApp::RoutingMethod::Other;
                     //ex_rm_ = DtnApp::RoutingMethod::SprayAndWait;

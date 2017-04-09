@@ -15,7 +15,7 @@ namespace ns3 {
         void DtnExampleInterface::CreateDevices() {
             WifiHelper wifi;
             std::string phyMode("DsssRate1Mbps");
-            double rss = -80;  // -dBm
+            //double rss = -80;  // -dBm
             if (print_log_boolean_) {
                 // wifi.EnableLogComponents();  // Turn on all Wifi logging
             }
@@ -30,7 +30,8 @@ namespace ns3 {
             wifiChannel.SetPropagationDelay("ns3::ConstantSpeedPropagationDelayModel");
             // The below FixedRssLossModel will cause the rss to be fixed regardless
             // of the distance between the two stations, and the transmit power
-            wifiChannel.AddPropagationLoss("ns3::FixedRssLossModel", "Rss", DoubleValue(rss));
+            //wifiChannel.AddPropagationLoss("ns3::FixedRssLossModel", "Rss", DoubleValue(rss));
+            wifiChannel.AddPropagationLoss("ns3::FriisPropagationLossModel");
             wifiPhy.SetChannel(wifiChannel.Create());
             // Add a mac and disable rate control
             WifiMacHelper wifiMac;
@@ -58,7 +59,8 @@ namespace ns3 {
                     ntpos_map[time_v][node_v] = ntpos;
                 }
             }
-            assert(ntpos_map.size() == node_number_);
+            // first time stamp is '0'
+            assert(ntpos_map[0].size() == node_number_);
             std::map<int, vector<vector<int>>> t_2_adjacent_array;
             {
                 // calculate code
@@ -149,7 +151,6 @@ namespace ns3 {
                     app_[i]->ScheduleTx(Seconds(sch_time), dstnode, sch_size);
                 }
             }
-            Simulator::Schedule(Seconds(5), &DtnExampleInterface::LogCounter, this, 5);
         }
 
         void DtnExampleInterface::InstallInternetStack() {
