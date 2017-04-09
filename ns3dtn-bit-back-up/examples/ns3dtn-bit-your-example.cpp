@@ -77,9 +77,7 @@ namespace ns3 {
             public :
                 YourExample() : DtnExampleInterface() {
                     // simulation time should be less than trace_file_ time !Important
-                    //node_number_ = 5;
-                    //simulation_duration_ = 802;
-                    node_number_ = 3;
+                    node_number_ = 5;
                     simulation_duration_ = 802;
                     print_wifi_log_ = false;
                     ex_rm_ = DtnApp::RoutingMethod::Other;
