@@ -76,8 +76,8 @@ namespace ns3 {
         class YourExample : public DtnExampleInterface {
             public :
                 YourExample() : DtnExampleInterface() {
-                    node_number_ = 5;
                     // simulation time should be less than trace_file_ time !Important
+                    node_number_ = 3;
                     simulation_duration_ = 802;
                     print_wifi_log_ = false;
                     ex_rm_ = DtnApp::RoutingMethod::Other;
@@ -96,12 +96,14 @@ namespace ns3 {
                         std::cout << "bundle send schedule: time=" << sch_time << ";node-" << i << "send " << sch_size << " size-pkt to node-" << dstnode << std::endl;
                         this->apps_[i]->ScheduleTx(Seconds(sch_time), dstnode, sch_size);
                     };
+                    // this three would be transmit to node-1, and carry to node-2
                     handy_func(3.0, 1, 0);
                     handy_func(5.0, 2, 0);
                     handy_func(22.0, 2, 0);
+                    // this two would wait node-1 to transmit
                     handy_func(54.0, 0, 2);
                     handy_func(66.0, 1, 2);
-                    handy_func(323.0, 0, 2);
+                    handy_func(423.0, 0, 2);
                     Simulator::Schedule(Seconds(5), &YourExample::LogCounter, this, 5);
                 }
         };
@@ -114,8 +116,8 @@ int main(int argc, char *argv[]) {
     //!important LOG control
     //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_WARN);
     //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_DEBUG);
-    LogComponentEnable ("DtnRunningLog",LOG_LEVEL_INFO);
-    //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_LOGIC);
+    //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_INFO);
+    LogComponentEnable ("DtnRunningLog",LOG_LEVEL_LOGIC);
 
     assert(std::is_move_constructible<ns3dtnbit::YourExample>::value);
     assert(std::is_move_assignable<ns3dtnbit::YourExample>::value);

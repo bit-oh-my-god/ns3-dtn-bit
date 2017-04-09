@@ -62,7 +62,7 @@ namespace ns3 {
                     ntpos_map[time_v][node_v] = ntpos;
                 }
             }
-            assert(ntpos_map.size() == node_number_);
+            assert(ntpos_map[0].size() == node_number_);
             std::map<int, vector<vector<int>>> t_2_adjacent_array;
             {
                 // calculate code
@@ -173,8 +173,6 @@ namespace ns3 {
             random_seed_ = 214127;
             node_number_ = 20 ;
             simulation_duration_ = 600;
-            pcap_boolean_ = false;
-            print_route_boolean_ = false;
             // TODO, make files to be relative path
             std::stringstream ss0;
             ss0 << root_path << "/box/current_trace/current_trace.tcl";
@@ -221,8 +219,6 @@ namespace ns3 {
             cmdl_parser.AddValue("randmon_seed", "help:just random", random_seed_);
             cmdl_parser.AddValue("node_number", "nothing help", node_number_);
             cmdl_parser.AddValue("simulation_duration", "nothing help", simulation_duration_);
-            cmdl_parser.AddValue("pcap_boolean", "nothing help", pcap_boolean_);
-            cmdl_parser.AddValue("print_route_boolean", "nothing help", print_route_boolean_);
             cmdl_parser.AddValue("trace_file", "nothing help", trace_file_);
             if(trace_file_.empty()) {
                 std::cout << "traceFile is empty!!!! Usage of " 
