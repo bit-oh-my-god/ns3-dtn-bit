@@ -99,6 +99,7 @@ namespace ns3 {
                         std::cout << "bundle send schedule: time=" << sch_time << ";node-" << i << "send " << sch_size << " size-pkt to node-" << dstnode << std::endl;
                         app_[i]->ScheduleTx(Seconds(sch_time), dstnode, sch_size);
                     };
+                    /*
                     handy_func(3.0, 0, 1);
                     handy_func(7.0, 0, 2);
                     handy_func(22.0, 0, 1);
@@ -106,6 +107,7 @@ namespace ns3 {
                     handy_func(34.0, 2, 1);
                     handy_func(55.0, 2, 0);
                     handy_func(421.0, 2, 0);
+                    */
                 }
         };
 
@@ -117,8 +119,8 @@ int main(int argc, char *argv[]) {
     //!important LOG control
     //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_WARN);
     //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_DEBUG);
-    LogComponentEnable ("DtnRunningLog",LOG_LEVEL_INFO);
-    //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_LOGIC);
+    //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_INFO);
+    LogComponentEnable ("DtnRunningLog",LOG_LEVEL_LOGIC);
 
     assert(std::is_move_constructible<ns3dtnbit::YourExample>::value);
     assert(std::is_move_assignable<ns3dtnbit::YourExample>::value);
