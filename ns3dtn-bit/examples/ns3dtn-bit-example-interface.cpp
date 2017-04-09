@@ -122,7 +122,9 @@ namespace ns3 {
                 Ptr<Socket> source = Socket::CreateSocket(nodes_container_.Get (i), udp_tid);
                 InetSocketAddress remote(Ipv4Address("255.255.255.255"), NS3DTNBIT_HELLO_PORT_NUMBER);
                 source->SetAllowBroadcast(true);
-                source->Connect(remote); Time tmpt = Seconds(0.1 + 0.01*i); app_[i]->ToSendHello(source, simulation_duration_, tmpt, false); 
+                source->Connect(remote);
+                Time tmpt = Seconds(0.1 + 0.01*i);
+                app_[i]->ToSendHello(source, simulation_duration_, tmpt, false); 
                 // set hello listen socket 
                 Ptr<Socket> recvSink = Socket::CreateSocket(nodes_container_.Get(i), udp_tid);
                 InetSocketAddress local(Ipv4Address::GetAny(), NS3DTNBIT_HELLO_PORT_NUMBER);
@@ -157,6 +159,7 @@ namespace ns3 {
                     app_[i]->ScheduleTx(Seconds(sch_time), dstnode, sch_size);
                 }
             }
+            Simulator::Schedule(Seconds(5), &DtnExampleInterface::LogCounter, this, 5);
         }
 
         void DtnExampleInterface::InstallInternetStack() {

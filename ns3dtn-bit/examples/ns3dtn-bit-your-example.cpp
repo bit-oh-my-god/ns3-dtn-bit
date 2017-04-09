@@ -1,10 +1,7 @@
 /*
  * 1. generate your trace file
  * 2. define your example, mainly 3 parts of it
- *      a. constructor of YourExample
- *      b. CreateRouting()
- *      c. YouRouting()
- *          note that you do can use value of s,d as index of predecessor until listS is set to be the vertex container of Graph
+ *      a. constructor of YourExample *      b. CreateRouting() *      c. YouRouting() *          note that you do can use value of s,d as index of predecessor until listS is set to be the vertex container of Graph
  * 3. run your example
  */
 #include "ns3/ns3dtn-bit-helper.h"
@@ -76,9 +73,11 @@ namespace ns3 {
         class YourExample : public DtnExampleInterface {
             public :
                 YourExample() : DtnExampleInterface() {
-                    node_number_ = 3;
                     // simulation time should be less than trace_file_ time !Important
-                    simulation_duration_ = 1601;
+                    node_number_ = 5;
+                    simulation_duration_ = 802;
+                    //node_number_ = 3;
+                    //simulation_duration_ = 1602;
                     print_wifi_log_ = false;
                     ex_rm_ = DtnApp::RoutingMethod::Other;
                     //ex_rm_ = DtnApp::RoutingMethod::SprayAndWait;
