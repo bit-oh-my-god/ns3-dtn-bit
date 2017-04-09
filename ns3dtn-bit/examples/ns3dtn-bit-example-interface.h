@@ -34,7 +34,7 @@ namespace ns3 {
                 vector<Ptr<DtnApp>> app_;
                 uint32_t node_number_;
                 dtn_time_t simulation_duration_;
-                bool pcap_boolean_, print_route_boolean_, print_log_boolean_;
+                bool print_wifi_log_;
                 std::string trace_file_;
                 std::string teg_file_;
                 std::string log_file_;

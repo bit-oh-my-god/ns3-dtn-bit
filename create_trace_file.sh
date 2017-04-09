@@ -25,10 +25,15 @@ echo "revert the 'cmd' to user, remember move the .ns_movements file to box/curr
 return
 }
 
+function function3 {
+    echo "static std::string root_path = \"${PWD}\";" > ./ns3dtn-bit/config.txt
+}
+
 
 ####################################
 # script begin
 ###################################
+function3
 cd ../ns3-dtn-bit/bonnmotion-3.0.1/bin
 
 echo "*******************************************"

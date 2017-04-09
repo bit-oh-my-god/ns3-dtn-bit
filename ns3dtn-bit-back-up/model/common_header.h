@@ -41,8 +41,8 @@
 #define NS3DTNBIT_HYPOTHETIC_TRANS_SIZE_FRAGMENT_MAX 1472
 #define NS3DTNBIT_HELLO_BUNDLE_SIZE_MAX 2280
 #define NS3DTNBIT_HYPOTHETIC_NEIGHBOR_BAQ_NUMBER_MAX 100
-#define NS3DTNBIT_BUFFER_CHECK_INTERVAL 1
-#define NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME 0.5
+#define NS3DTNBIT_BUFFER_CHECK_INTERVAL 0.5
+#define NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME 0.2
 #define NS3DTNBIT_RETRANSMISSION_INTERVAL 15.0
 #define NS3DTNBIT_HYPOTHETIC_BUNDLE_EXPIRED_TIME 750.0
 #define NS3DTNBIT_ANTIPACKET_EXPIRED_TIME 1000.0
@@ -54,6 +54,8 @@ namespace ns3 {
         using std::string;
         using std::endl;
         using std::ostream;
+        using std::ifstream;
+        using std::stringstream;
 
         using dtn_time_t = double;
         /* dtn_seqnof_t is used with sign, eg. -(seqno2003) means giving out while (seqno2003) means receiving

@@ -79,7 +79,7 @@ namespace ns3 {
                     node_number_ = 3;
                     // simulation time should be less than trace_file_ time !Important
                     simulation_duration_ = 1601;
-                    print_log_boolean_ = true;
+                    print_wifi_log_ = false;
                     ex_rm_ = DtnApp::RoutingMethod::Other;
                     //ex_rm_ = DtnApp::RoutingMethod::SprayAndWait;
                 }
@@ -95,7 +95,7 @@ namespace ns3 {
 
                 void ScheduleTask() override {
                     int sch_size = 341;
-                    auto handy_func = [sch_size, this](dtn_time_t sch_time, int i, int dstnode){
+                    auto handy_func = [sch_size, this](dtn_time_t sch_time, int i, int dstnode) {
                         std::cout << "bundle send schedule: time=" << sch_time << ";node-" << i << "send " << sch_size << " size-pkt to node-" << dstnode << std::endl;
                         app_[i]->ScheduleTx(Seconds(sch_time), dstnode, sch_size);
                     };
@@ -117,8 +117,8 @@ int main(int argc, char *argv[]) {
     //!important LOG control
     //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_WARN);
     //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_DEBUG);
-    LogComponentEnable ("DtnRunningLog",LOG_LEVEL_INFO);
-    //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_LOGIC);
+    //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_INFO);
+    LogComponentEnable ("DtnRunningLog",LOG_LEVEL_LOGIC);
 
     assert(std::is_move_constructible<ns3dtnbit::YourExample>::value);
     assert(std::is_move_assignable<ns3dtnbit::YourExample>::value);

@@ -1,6 +1,9 @@
 /*
 */
 #include "ns3dtn-bit-example-interface.h"
+#include "../config.txt"
+
+extern std::string root_path;
 
 namespace ns3 {
     namespace ns3dtnbit {
@@ -15,9 +18,9 @@ namespace ns3 {
         void DtnExampleInterface::CreateDevices() {
             WifiHelper wifi;
             std::string phyMode("DsssRate1Mbps");
-            //double rss = -80;  // -dBm
-            if (print_log_boolean_) {
-                // wifi.EnableLogComponents();  // Turn on all Wifi logging
+            double rss = -80;  // -dBm
+            if (print_wifi_log_) {
+                wifi.EnableLogComponents();  // Turn on all Wifi logging
             }
             wifi.SetStandard(WIFI_PHY_STANDARD_80211b);
             YansWifiPhyHelper wifiPhy =  YansWifiPhyHelper::Default();
@@ -30,8 +33,8 @@ namespace ns3 {
             wifiChannel.SetPropagationDelay("ns3::ConstantSpeedPropagationDelayModel");
             // The below FixedRssLossModel will cause the rss to be fixed regardless
             // of the distance between the two stations, and the transmit power
-            //wifiChannel.AddPropagationLoss("ns3::FixedRssLossModel", "Rss", DoubleValue(rss));
-            wifiChannel.AddPropagationLoss("ns3::FriisPropagationLossModel");
+            wifiChannel.AddPropagationLoss("ns3::FixedRssLossModel", "Rss", DoubleValue(rss));
+            //wifiChannel.AddPropagationLoss("ns3::FriisPropagationLossModel");
             wifiPhy.SetChannel(wifiChannel.Create());
             // Add a mac and disable rate control
             WifiMacHelper wifiMac;
@@ -50,7 +53,9 @@ namespace ns3 {
                 // regular expression code TODO
                 std::ifstream infile(teg_file_);
                 string line;
+                int count = 0;
                 while (std::getline(infile, line)) {
+                    count ++;
                     std::istringstream iss(line);
                     string str_tmp;
                     int node_v, time_v, x_v, y_v, z_v;
@@ -58,6 +63,7 @@ namespace ns3 {
                     vector<int> ntpos = {node_v, time_v, x_v, y_v, z_v};
                     ntpos_map[time_v][node_v] = ntpos;
                 }
+                infile.close();
             }
             // first time stamp is '0'
             assert(ntpos_map[0].size() == node_number_);
@@ -167,12 +173,19 @@ namespace ns3 {
             random_seed_ = 214127;
             node_number_ = 20 ;
             simulation_duration_ = 600;
-            pcap_boolean_ = false;
-            print_route_boolean_ = false;
             // TODO, make files to be relative path
-            trace_file_ = "/home/dtn-012345/ns-3_build/ns3-dtn-bit/box/current_trace/current_trace.tcl";
-            teg_file_ = "/home/dtn-012345/ns-3_build/ns3-dtn-bit/box/current_trace/teg.txt";
-            log_file_ = "~/ns-3_build/ns3-dtn-bit/box/dtn_simulation_result/dtn_trace_log.txt";
+            std::stringstream ss0;
+            ss0 << root_path << "/box/current_trace/current_trace.tcl";
+            trace_file_ = ss0.str();
+            std::stringstream ss1;
+            ss1 << root_path << "/box/current_trace/teg.txt";
+            teg_file_ = ss1.str();
+            std::stringstream ss2;
+            ss2 << root_path << "/box/dtn_simulation_result/dtn_trace_log.txt";
+            trace_file_ = ss2.str();
+            //trace_file_ = "/home/dtn-012345/ns-3_build/ns3-dtn-bit/box/current_trace/current_trace.tcl";
+            //teg_file_ = "/home/dtn-012345/ns-3_build/ns3-dtn-bit/box/current_trace/teg.txt";
+            //log_file_ = "~/ns-3_build/ns3-dtn-bit/box/dtn_simulation_result/dtn_trace_log.txt";
         }
 
 
@@ -206,8 +219,6 @@ namespace ns3 {
             cmdl_parser.AddValue("randmon_seed", "help:just random", random_seed_);
             cmdl_parser.AddValue("node_number", "nothing help", node_number_);
             cmdl_parser.AddValue("simulation_duration", "nothing help", simulation_duration_);
-            cmdl_parser.AddValue("pcap_boolean", "nothing help", pcap_boolean_);
-            cmdl_parser.AddValue("print_route_boolean", "nothing help", print_route_boolean_);
             cmdl_parser.AddValue("trace_file", "nothing help", trace_file_);
             if(trace_file_.empty()) {
                 std::cout << "traceFile is empty!!!! Usage of " 
