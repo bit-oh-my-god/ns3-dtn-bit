@@ -19,8 +19,8 @@ namespace ns3 {
             WifiHelper wifi;
             std::string phyMode("DsssRate1Mbps");
             double rss = -80;  // -dBm
-            if (print_wifi_log_) {
-                wifi.EnableLogComponents();  // Turn on all Wifi logging
+            if (print_log_boolean_) {
+                // wifi.EnableLogComponents();  // Turn on all Wifi logging
             }
             wifi.SetStandard(WIFI_PHY_STANDARD_80211b);
             YansWifiPhyHelper wifiPhy =  YansWifiPhyHelper::Default();
@@ -34,7 +34,6 @@ namespace ns3 {
             // The below FixedRssLossModel will cause the rss to be fixed regardless
             // of the distance between the two stations, and the transmit power
             wifiChannel.AddPropagationLoss("ns3::FixedRssLossModel", "Rss", DoubleValue(rss));
-            //wifiChannel.AddPropagationLoss("ns3::FriisPropagationLossModel");
             wifiPhy.SetChannel(wifiChannel.Create());
             // Add a mac and disable rate control
             WifiMacHelper wifiMac;
@@ -53,9 +52,7 @@ namespace ns3 {
                 // regular expression code TODO
                 std::ifstream infile(teg_file_);
                 string line;
-                int count = 0;
                 while (std::getline(infile, line)) {
-                    count ++;
                     std::istringstream iss(line);
                     string str_tmp;
                     int node_v, time_v, x_v, y_v, z_v;
@@ -63,10 +60,8 @@ namespace ns3 {
                     vector<int> ntpos = {node_v, time_v, x_v, y_v, z_v};
                     ntpos_map[time_v][node_v] = ntpos;
                 }
-                infile.close();
             }
-            // first time stamp is '0'
-            assert(ntpos_map[0].size() == node_number_);
+            assert(ntpos_map.size() == node_number_);
             std::map<int, vector<vector<int>>> t_2_adjacent_array;
             {
                 // calculate code
@@ -103,45 +98,44 @@ namespace ns3 {
             std::cout << "=============== CreateAdjacentList ===============" << endl;
             auto adob = CreateAdjacentList();
             std::cout << "=============== End of create ===============" << endl;
+            //Ptr<DtnApp> app[node_number_];
             for (uint32_t i = 0; i < node_number_; ++i) { 
                 // create app and set
-                app_.push_back(CreateObject<DtnApp>());
-                app_[i]->SetUp(nodes_container_.Get(i));
-                nodes_container_.Get(i)->AddApplication(app_[i]);
-                app_[i]->SetStartTime(Seconds(0.0));
-                app_[i]->SetStopTime(Seconds(5000.0));
+                apps_.push_back(CreateObject<DtnApp>());
+                apps_[i]->SetUp(nodes_container_.Get(i));
+                nodes_container_.Get(i)->AddApplication(apps_[i]);
+                apps_[i]->SetStartTime(Seconds(0.0));
+                apps_[i]->SetStopTime(Seconds(5000.0));
                 // set bundle receive socket
                 Ptr<Socket> dst = Socket::CreateSocket(nodes_container_.Get(i), udp_tid);
                 char dststring[1024]="";
                 sprintf(dststring,"10.0.0.%d",(i + 1));
                 InetSocketAddress dstlocaladdr(Ipv4Address(dststring), NS3DTNBIT_PORT_NUMBER);
                 dst->Bind(dstlocaladdr);
-                dst->SetRecvCallback(MakeCallback(&DtnApp::ReceiveBundle, app_[i]));
+                dst->SetRecvCallback(MakeCallback(&DtnApp::ReceiveBundle, apps_[i]));
 
                 // set hello send socket
                 Ptr<Socket> source = Socket::CreateSocket(nodes_container_.Get (i), udp_tid);
                 InetSocketAddress remote(Ipv4Address("255.255.255.255"), NS3DTNBIT_HELLO_PORT_NUMBER);
                 source->SetAllowBroadcast(true);
-                source->Connect(remote);
-                Time tmpt = Seconds(0.1 + 0.01*i);
-                app_[i]->ToSendHello(source, simulation_duration_, tmpt, false); 
+                source->Connect(remote); 
+                Time tmpt = Seconds(0.1 + 0.01*i); 
+                apps_[i]->ToSendHello(source, simulation_duration_, tmpt, false); 
                 // set hello listen socket 
                 Ptr<Socket> recvSink = Socket::CreateSocket(nodes_container_.Get(i), udp_tid);
                 InetSocketAddress local(Ipv4Address::GetAny(), NS3DTNBIT_HELLO_PORT_NUMBER);
                 recvSink->Bind(local);
-                recvSink->SetRecvCallback(MakeCallback(&DtnApp::ReceiveHello, app_[i]));
+                recvSink->SetRecvCallback(MakeCallback(&DtnApp::ReceiveHello, apps_[i]));
                 // load adob to each app, and load RoutingMethodInterface
                 if (ex_rm_ == DtnApp::RoutingMethod::Other) {
-                    std::unique_ptr<RoutingMethodInterface> p_rm_in = CreateRouting(*app_[i]);
-                    app_[i]->InvokeMeWhenInstallAppToSetupDtnAppRoutingAssister(ex_rm_, std::move(p_rm_in), adob);
+                    std::unique_ptr<RoutingMethodInterface> p_rm_in = CreateRouting(*apps_[i]);
+                    apps_[i]->InvokeMeWhenInstallAppToSetupDtnAppRoutingAssister(ex_rm_, std::move(p_rm_in), adob);
                 } else if (ex_rm_ == DtnApp::RoutingMethod::SprayAndWait) {
-                    app_[i]->InvokeMeWhenInstallAppToSetupDtnAppRoutingAssister(ex_rm_, adob);
+                    apps_[i]->InvokeMeWhenInstallAppToSetupDtnAppRoutingAssister(ex_rm_, adob);
                 } else {
                     std::abort();
                 }
             }
-        }
-        void DtnExampleInterface::ScheduleTask() {
             // bundle send 
             Ptr<UniformRandomVariable> x = CreateObject<UniformRandomVariable> ();
             unsigned int pkts_total = 3;
@@ -156,10 +150,14 @@ namespace ns3 {
                     // note that 'NS3DTNBIT_HYPOTHETIC_TRANS_SIZE_FRAGMENT_MAX == 1427'
                     int sch_size = 345;
                     std::cout << "bundle send schedule: time=" << sch_time << ";node-" << i << "send " << sch_size << " size-pkt to node-" << dstnode << std::endl;
-                    app_[i]->ScheduleTx(Seconds(sch_time), dstnode, sch_size);
+                    apps_[i]->ScheduleTx(Seconds(sch_time), dstnode, sch_size);
                 }
             }
             Simulator::Schedule(Seconds(5), &DtnExampleInterface::LogCounter, this, 5);
+        }
+        
+        void DtnExampleInterface::ScheduleTask() {
+
         }
 
         void DtnExampleInterface::InstallInternetStack() {
@@ -176,6 +174,8 @@ namespace ns3 {
             random_seed_ = 214127;
             node_number_ = 20 ;
             simulation_duration_ = 600;
+            pcap_boolean_ = false;
+            print_route_boolean_ = false;
             // TODO, make files to be relative path
             std::stringstream ss0;
             ss0 << root_path << "/box/current_trace/current_trace.tcl";
@@ -185,7 +185,7 @@ namespace ns3 {
             teg_file_ = ss1.str();
             std::stringstream ss2;
             ss2 << root_path << "/box/dtn_simulation_result/dtn_trace_log.txt";
-            trace_file_ = ss2.str();
+            log_file_ = ss2.str();
             //trace_file_ = "/home/dtn-012345/ns-3_build/ns3-dtn-bit/box/current_trace/current_trace.tcl";
             //teg_file_ = "/home/dtn-012345/ns-3_build/ns3-dtn-bit/box/current_trace/teg.txt";
             //log_file_ = "~/ns-3_build/ns3-dtn-bit/box/dtn_simulation_result/dtn_trace_log.txt";
@@ -222,6 +222,8 @@ namespace ns3 {
             cmdl_parser.AddValue("randmon_seed", "help:just random", random_seed_);
             cmdl_parser.AddValue("node_number", "nothing help", node_number_);
             cmdl_parser.AddValue("simulation_duration", "nothing help", simulation_duration_);
+            cmdl_parser.AddValue("pcap_boolean", "nothing help", pcap_boolean_);
+            cmdl_parser.AddValue("print_route_boolean", "nothing help", print_route_boolean_);
             cmdl_parser.AddValue("trace_file", "nothing help", trace_file_);
             if(trace_file_.empty()) {
                 std::cout << "traceFile is empty!!!! Usage of " 
@@ -277,7 +279,7 @@ namespace ns3 {
             InstallInternetStack();
             std::cout << "******************** install app ***************" << std::endl;
             InstallApplications();
-            std::cout << "******************** ScheduleTask ***************" << std::endl;
+            std::cout << "******************* ScheduleTask *************" << std::endl;
             ScheduleTask();
             std::cout << "******************** simulation ***************" << std::endl;
             std::cout << "simulator began, nodes =" << node_number_ << " simulate time = " << simulation_duration_ << ", randmon seed = " << random_seed_ << std::endl;

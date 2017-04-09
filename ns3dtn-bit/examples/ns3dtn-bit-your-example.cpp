@@ -1,7 +1,10 @@
 /*
  * 1. generate your trace file
  * 2. define your example, mainly 3 parts of it
- *      a. constructor of YourExample *      b. CreateRouting() *      c. YouRouting() *          note that you do can use value of s,d as index of predecessor until listS is set to be the vertex container of Graph
+ *      a. constructor of YourExample
+ *      b. CreateRouting()
+ *      c. YouRouting()
+ *          note that you do can use value of s,d as index of predecessor until listS is set to be the vertex container of Graph
  * 3. run your example
  */
 #include "ns3/ns3dtn-bit-helper.h"
@@ -73,40 +76,19 @@ namespace ns3 {
         class YourExample : public DtnExampleInterface {
             public :
                 YourExample() : DtnExampleInterface() {
-                    // simulation time should be less than trace_file_ time !Important
                     node_number_ = 5;
+                    // simulation time should be less than trace_file_ time !Important
                     simulation_duration_ = 802;
-                    //node_number_ = 3;
-                    //simulation_duration_ = 1602;
-                    print_wifi_log_ = false;
+                    print_log_boolean_ = true;
                     ex_rm_ = DtnApp::RoutingMethod::Other;
                     //ex_rm_ = DtnApp::RoutingMethod::SprayAndWait;
                 }
-
                 void ReportEx(std::ostream& os) override {
                     os << "Here In DtnExampleInterface::ReportEx" << endl;
                 }
-
                 std::unique_ptr<RoutingMethodInterface> CreateRouting(DtnApp& dtn) override {
                     auto p = new YouRouting(dtn);
                     return std::unique_ptr<RoutingMethodInterface>(p);
-                }
-
-                void ScheduleTask() override {
-                    int sch_size = 341;
-                    auto handy_func = [sch_size, this](dtn_time_t sch_time, int i, int dstnode) {
-                        std::cout << "bundle send schedule: time=" << sch_time << ";node-" << i << "send " << sch_size << " size-pkt to node-" << dstnode << std::endl;
-                        app_[i]->ScheduleTx(Seconds(sch_time), dstnode, sch_size);
-                    };
-                    /*
-                    handy_func(3.0, 0, 1);
-                    handy_func(7.0, 0, 2);
-                    handy_func(22.0, 0, 1);
-                    handy_func(123.0, 0, 2);
-                    handy_func(34.0, 2, 1);
-                    handy_func(55.0, 2, 0);
-                    handy_func(421.0, 2, 0);
-                    */
                 }
         };
 
@@ -118,8 +100,8 @@ int main(int argc, char *argv[]) {
     //!important LOG control
     //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_WARN);
     //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_DEBUG);
-    //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_INFO);
-    LogComponentEnable ("DtnRunningLog",LOG_LEVEL_LOGIC);
+    LogComponentEnable ("DtnRunningLog",LOG_LEVEL_INFO);
+    //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_LOGIC);
 
     assert(std::is_move_constructible<ns3dtnbit::YourExample>::value);
     assert(std::is_move_assignable<ns3dtnbit::YourExample>::value);

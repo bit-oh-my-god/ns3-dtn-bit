@@ -31,12 +31,10 @@ namespace ns3 {
 
             protected :
                 uint32_t random_seed_;
-                vector<Ptr<DtnApp>> app_;
                 uint32_t node_number_;
                 dtn_time_t simulation_duration_;
-                bool print_wifi_log_;
-//                bool pcap_boolean;
-//                bool print_route_boolean;
+                vector<Ptr<DtnApp>> apps_;
+                bool pcap_boolean_, print_route_boolean_, print_log_boolean_;
                 std::string trace_file_;
                 std::string teg_file_;
                 std::string log_file_;
@@ -50,13 +48,13 @@ namespace ns3 {
                 virtual void CreateNodes();
                 virtual void CreateDevices();
                 virtual void InstallInternetStack();
-                virtual void ScheduleTask();
                 virtual std::unique_ptr<RoutingMethodInterface> CreateRouting(DtnApp& dtn) {
                     auto p = new EmptyRouting(dtn);
                     return std::unique_ptr<RoutingMethodInterface>(p);
                 }
 
                 virtual void InstallApplications();
+                virtual void ScheduleTask();
                 // call LogCounter to counter for simulation time
                 void LogCounter(int);
         };   
