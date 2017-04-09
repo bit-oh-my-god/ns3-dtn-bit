@@ -1362,9 +1362,7 @@ namespace ns3 {
             }
             p_pkt->AddHeader(bp_header);
             //p_pkt->AddPacketTag(QosTag(6));
-            NS_LOG_DEBUG(LogPrefixMacro << "fuckyou");
             broad_cast_skt->Send(p_pkt);
-            NS_LOG_DEBUG(LogPrefixMacro << "fuckyou");
         }
 
         /* refine 

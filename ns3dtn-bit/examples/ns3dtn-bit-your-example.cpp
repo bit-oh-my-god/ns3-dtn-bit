@@ -79,7 +79,7 @@ namespace ns3 {
                     node_number_ = 5;
                     // simulation time should be less than trace_file_ time !Important
                     simulation_duration_ = 802;
-                    print_log_boolean_ = true;
+                    print_wifi_log_ = false;
                     ex_rm_ = DtnApp::RoutingMethod::Other;
                     //ex_rm_ = DtnApp::RoutingMethod::SprayAndWait;
                 }
@@ -89,6 +89,20 @@ namespace ns3 {
                 std::unique_ptr<RoutingMethodInterface> CreateRouting(DtnApp& dtn) override {
                     auto p = new YouRouting(dtn);
                     return std::unique_ptr<RoutingMethodInterface>(p);
+                }
+                void ScheduleTask() override {
+                    int sch_size = 345;
+                    auto handy_func = [sch_size, this](int sch_time, int dstnode, int i) {
+                        std::cout << "bundle send schedule: time=" << sch_time << ";node-" << i << "send " << sch_size << " size-pkt to node-" << dstnode << std::endl;
+                        this->apps_[i]->ScheduleTx(Seconds(sch_time), dstnode, sch_size);
+                    };
+                    handy_func(3.0, 1, 0);
+                    handy_func(5.0, 2, 0);
+                    handy_func(22.0, 2, 0);
+                    handy_func(54.0, 0, 2);
+                    handy_func(66.0, 1, 2);
+                    handy_func(323.0, 0, 2);
+                    Simulator::Schedule(Seconds(5), &YourExample::LogCounter, this, 5);
                 }
         };
 

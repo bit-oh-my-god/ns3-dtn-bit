@@ -18,9 +18,9 @@ namespace ns3 {
         void DtnExampleInterface::CreateDevices() {
             WifiHelper wifi;
             std::string phyMode("DsssRate1Mbps");
-            double rss = -80;  // -dBm
-            if (print_log_boolean_) {
-                // wifi.EnableLogComponents();  // Turn on all Wifi logging
+            //double rss = -80;  // -dBm
+            if (print_wifi_log_) {
+                wifi.EnableLogComponents();  // Turn on all Wifi logging
             }
             wifi.SetStandard(WIFI_PHY_STANDARD_80211b);
             YansWifiPhyHelper wifiPhy =  YansWifiPhyHelper::Default();
@@ -33,7 +33,8 @@ namespace ns3 {
             wifiChannel.SetPropagationDelay("ns3::ConstantSpeedPropagationDelayModel");
             // The below FixedRssLossModel will cause the rss to be fixed regardless
             // of the distance between the two stations, and the transmit power
-            wifiChannel.AddPropagationLoss("ns3::FixedRssLossModel", "Rss", DoubleValue(rss));
+            //wifiChannel.AddPropagationLoss("ns3::FixedRssLossModel", "Rss", DoubleValue(rss));
+            wifiChannel.AddPropagationLoss ("ns3::FriisPropagationLossModel");
             wifiPhy.SetChannel(wifiChannel.Create());
             // Add a mac and disable rate control
             WifiMacHelper wifiMac;
@@ -136,7 +137,9 @@ namespace ns3 {
                     std::abort();
                 }
             }
-            // bundle send 
+        }
+
+        void DtnExampleInterface::ScheduleTask() {
             Ptr<UniformRandomVariable> x = CreateObject<UniformRandomVariable> ();
             unsigned int pkts_total = 3;
             double xinterval = simulation_duration_ / (2 * node_number_);
@@ -154,10 +157,6 @@ namespace ns3 {
                 }
             }
             Simulator::Schedule(Seconds(5), &DtnExampleInterface::LogCounter, this, 5);
-        }
-        
-        void DtnExampleInterface::ScheduleTask() {
-
         }
 
         void DtnExampleInterface::InstallInternetStack() {
