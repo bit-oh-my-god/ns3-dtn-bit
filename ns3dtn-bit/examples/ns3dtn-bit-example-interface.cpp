@@ -167,6 +167,7 @@ namespace ns3 {
             NS_LOG_UNCOND("Assign IP Addresses.");
             ipv4.SetBase("10.0.0.0", "255.0.0.0");
             Ipv4InterfaceContainer i = ipv4.Assign(net_devices_container_);
+            Ipv4GlobalRoutingHelper::PopulateRoutingTables();
         }
 
         DtnExampleInterface::DtnExampleInterface() {

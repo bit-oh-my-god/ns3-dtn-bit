@@ -28,10 +28,14 @@ else
 fi
 echo '***************** gonna to configure'
 cd ../
-CXX="${CXX}" ./waf configure -d debug --enable-examples --enable-tests
+CXX="${CXX}" ./waf configure -d debug --disable-python --enable-examples --enable-tests
+#./waf configure -d debug --enable-examples --enable-tests
 echo '***************** gonna to build' 
-./waf build --boost-lib=/usr/lib/x86_64-linux-gnu
-#./waf build
+#./waf build --boost-lib=/usr/lib/x86_64-linux-gnu
+#./waf --run bonnmotion-ns2-example --visualize
+#./waf --run examples/wireless/wifi-adhoc --visualize 
+#./waf --run ns3dtn-bit-your-example --verbose 2>&1 >${LOG_FILE}
+./waf build
 #exit 1
 echo '============================== Dividing =========================='
 echo "This script would write running log into ${LOG_FILE}---${DATE}"

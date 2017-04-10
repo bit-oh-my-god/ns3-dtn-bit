@@ -18,7 +18,7 @@ namespace ns3 {
         void DtnExampleInterface::CreateDevices() {
             WifiHelper wifi;
             std::string phyMode("DsssRate1Mbps");
-            //double rss = -80;  // -dBm
+            double rss = -80;  // -dBm
             if (print_wifi_log_) {
                 wifi.EnableLogComponents();  // Turn on all Wifi logging
             }
@@ -33,8 +33,9 @@ namespace ns3 {
             wifiChannel.SetPropagationDelay("ns3::ConstantSpeedPropagationDelayModel");
             // The below FixedRssLossModel will cause the rss to be fixed regardless
             // of the distance between the two stations, and the transmit power
-            //wifiChannel.AddPropagationLoss("ns3::FixedRssLossModel", "Rss", DoubleValue(rss));
-            wifiChannel.AddPropagationLoss ("ns3::FriisPropagationLossModel");
+            wifiChannel.AddPropagationLoss("ns3::FixedRssLossModel", "Rss", DoubleValue(rss));
+            // !!! wifi don't work with mobility
+            //wifiChannel.AddPropagationLoss ("ns3::FriisPropagationLossModel");
             wifiPhy.SetChannel(wifiChannel.Create());
             // Add a mac and disable rate control
             WifiMacHelper wifiMac;
@@ -166,6 +167,7 @@ namespace ns3 {
             NS_LOG_UNCOND("Assign IP Addresses.");
             ipv4.SetBase("10.0.0.0", "255.0.0.0");
             Ipv4InterfaceContainer i = ipv4.Assign(net_devices_container_);
+            Ipv4GlobalRoutingHelper::PopulateRoutingTables();
         }
 
         DtnExampleInterface::DtnExampleInterface() {
