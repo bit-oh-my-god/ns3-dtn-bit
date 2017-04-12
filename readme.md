@@ -52,9 +52,16 @@ you would need to install miniconda first, and install full-package from minicon
 
 # TODO list
 
-    * wifi delay
-    * <s>relative path </s>
+    * <s>wifi delay </s> done by 
+            wifiChannel.AddPropagationLoss ("ns3::RangePropagationLossModel",  
+                    "MaxRange", DoubleValue (4000.0));
+    * <s>note that ns2mobilityhelper only have ability to parse velocity 2d, extend it to support 3d </s> done by modify it, copy /box/ns2-mobilityhelp to src/mobility/helper to use it.
+    would support '$ns at $time $node setdest x2 y2 z2 speed' format, and this format only.
+        
+    * <s>relative path </s> done by 
+            config.txt
     * transmit session
+    * time extented graph like that [paper]()
 
 # Develpment Annoucement & Publish Log
 

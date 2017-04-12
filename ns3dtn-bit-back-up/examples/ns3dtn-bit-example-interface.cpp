@@ -18,30 +18,21 @@ namespace ns3 {
         void DtnExampleInterface::CreateDevices() {
             WifiHelper wifi;
             std::string phyMode("DsssRate1Mbps");
-            double rss = -80;  // -dBm
             if (print_wifi_log_) {
                 wifi.EnableLogComponents();  // Turn on all Wifi logging
             }
             wifi.SetStandard(WIFI_PHY_STANDARD_80211b);
             YansWifiPhyHelper wifiPhy =  YansWifiPhyHelper::Default();
-            // This is one parameter that matters when using FixedRssLossModel
-            // set it to zero; otherwise, gain will be added
             wifiPhy.Set("RxGain", DoubleValue(0)); 
-            // ns-3 supports RadioTap and Prism tracing extensions for 802.11b
             wifiPhy.SetPcapDataLinkType(YansWifiPhyHelper::DLT_IEEE802_11_RADIO); 
             YansWifiChannelHelper wifiChannel;
             wifiChannel.SetPropagationDelay("ns3::ConstantSpeedPropagationDelayModel");
-            // The below FixedRssLossModel will cause the rss to be fixed regardless
-            // of the distance between the two stations, and the transmit power
-            wifiChannel.AddPropagationLoss("ns3::FixedRssLossModel", "Rss", DoubleValue(rss));
-            // !!! wifi don't work with mobility
-            //wifiChannel.AddPropagationLoss ("ns3::FriisPropagationLossModel");
+            wifiChannel.AddPropagationLoss ("ns3::RangePropagationLossModel",  
+                    "MaxRange", DoubleValue (4000.0));
             wifiPhy.SetChannel(wifiChannel.Create());
-            // Add a mac and disable rate control
             WifiMacHelper wifiMac;
-            wifi.SetRemoteStationManager("ns3::ConstantRateWifiManager",
-                    "DataMode",StringValue(phyMode),
-                    "ControlMode",StringValue(phyMode));
+
+            wifi.SetRemoteStationManager("ns3::IdealWifiManager");
             // Set it to adhoc mode
             wifiMac.SetType("ns3::AdhocWifiMac");
             net_devices_container_ = wifi.Install(wifiPhy, wifiMac, nodes_container_);
@@ -194,8 +185,7 @@ namespace ns3 {
         /* we define this would rewrite ( you can say shade ) the dufault CourseChange
          * and this rewrite is supposed in tutorial
          */
-        static void CourseChanged(std::ostream *myos, std::string somethingImusthavetobecallableinthistracefunctionwhichisnotuseful_fuck_, Ptr<const MobilityModel> mobility)
-        {
+        static void CourseChanged(std::ostream *myos, std::string something, Ptr<const MobilityModel> mobility) {
             Ptr<Node> node = mobility->GetObject<Node> ();
             Vector pos = mobility->GetPosition (); // Get position
             Vector vel = mobility->GetVelocity (); // Get velocity
@@ -249,6 +239,7 @@ namespace ns3 {
         /* refine 
         */
         void DtnExampleInterface::CreateNodes() {
+        //NS_LOG_COMPONENT_DEFINE ("Ns2MobilityHelper");
             std::string full_path_str = trace_file_;
             Ns2MobilityHelper ns2_mobi = Ns2MobilityHelper(full_path_str);
             std::cout << "Create " << node_number_ << "nodes." << std::endl;
@@ -261,6 +252,7 @@ namespace ns3 {
             }
             ns2_mobi.Install();
             // what does Config::Connect("",) means nothing ,just how API works
+            file_stream_ << "begin moveing\n" << std::endl;
             Config::Connect("/NodeList/*/$ns3::MobilityModel/CourseChange", 
                     MakeBoundCallback(&CourseChanged, &file_stream_));
         }

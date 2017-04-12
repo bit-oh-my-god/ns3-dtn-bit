@@ -269,7 +269,7 @@ namespace ns3 {
                 int pkt_seqno_number;
                 // the rest seqno is the seqno for antipacket
                 pkt_str_stream >> pkt_seqno_number;
-                NS_LOG_LOGIC(LogPrefixMacro << "receive hello, node-" << Ipv42NodeNo(ip_from) << " to node-" << node_->GetId() << ", ip=" << ip_from << ";found =" << neighbor_found << ";j=" << j << ";pkt_seqno_number=" << pkt_seqno_number << ";Available_bytes_=" << neighbor_info_vec_[j].info_daemon_baq_available_bytes_ << ";avli_s=" << avli_s << ";size()=" << bp_header.get_payload_size());
+                NS_LOG_INFO(LogPrefixMacro << "receive hello, node-" << Ipv42NodeNo(ip_from) << " to node-" << node_->GetId() << ", ip=" << ip_from << ";found =" << neighbor_found << ";j=" << j << ";pkt_seqno_number=" << pkt_seqno_number << ";Available_bytes_=" << neighbor_info_vec_[j].info_daemon_baq_available_bytes_ << ";avli_s=" << avli_s << ";size()=" << bp_header.get_payload_size());
                 {
                     // going to fill baq
                     auto tmpbaq_vec = vector<dtn_seqno_t>();
