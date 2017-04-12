@@ -4,8 +4,7 @@ This project is highly inspirited by [Lakkakorpi](https://www.netlab.tkk.fi/tutk
 
 # structure of this project
 
-* editor tool :
-editor Vim do I use, if you are using YCM for code complete, remember add pull path include path to ~/.ycm_extra_config.py
+* editor tool : editor Vim do I use, if you are using YCM for code complete, remember add pull path include path to ~/.ycm_extra_config.py
 * bonnmotion 
 it is a software depending on java used to generate location files
 we just need the **.ns_movements** file
@@ -61,7 +60,7 @@ you would need to install miniconda first, and install full-package from minicon
     * <s>relative path </s> done by 
             config.txt
     * transmit session
-    * time extented graph like that [paper]()
+    * time extented graph like that [paper](https://smartech.gatech.edu/bitstream/handle/1853/6492/GIT-CC-04-07.pdf?sequence=1&isAllowed=y)
 
 # Develpment Annoucement & Publish Log
 
