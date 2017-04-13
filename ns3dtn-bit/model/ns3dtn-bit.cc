@@ -316,7 +316,6 @@ namespace ns3 {
                     neighbor_info_vec_[j].info_baq_seqno_vec_ = tmpbaq_vec;
                 }
             }
-            //NS_LOG_LOGIC(LogPrefixMacro << "out of receive hello");
         }
 
         /* refine 
@@ -807,6 +806,9 @@ namespace ns3 {
                 } else {
                     return false;
                 }
+            } else if (routing_assister_.IsSet() && routing_assister_.get_rm() == RoutingMethod::TimeExpanded) {
+                NS_LOG_ERROR(LogPrefixMacro << "Error: not implemented yet");
+                std::abort();
             } else {
                 NS_LOG_ERROR("can't fine the routing method or method not assigned, routing_assister_ is set=" << routing_assister_.IsSet());
                 std::abort();
@@ -1438,7 +1440,15 @@ namespace ns3 {
             sprintf(srcstring, "10.0.0.%d", (node_->GetId() + 1));
             p_bp_header->set_source_ip(srcstring);
             p_bp_header->set_hop_count(0);
-            p_bp_header->set_spray(2);
+            if (routing_assister_.get_rm() == RoutingMethod::TimeExpanded) {
+                p_bp_header->set_spray(1);
+            } else if (routing_assister_.get_rm() == RoutingMethod::SprayAndWait) {
+                p_bp_header->set_spray(2);
+            } else if (routing_assister_.get_rm() == RoutingMethod::Other) {
+                p_bp_header->set_spray(2);
+            } else {
+                p_bp_header->set_spray(2);
+            }
             p_bp_header->set_retransmission_count(0);
             p_bp_header->set_src_time_stamp(Simulator::Now());
             p_bp_header->set_hop_time_stamp(Simulator::Now());

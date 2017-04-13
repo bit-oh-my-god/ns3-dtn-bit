@@ -53,6 +53,9 @@ namespace ns3 {
         using std::vector;
         using std::string;
         using std::endl;
+        using std::pair;
+        using std::map;
+        using std::set;
         using std::ostream;
         using std::ifstream;
         using std::stringstream;

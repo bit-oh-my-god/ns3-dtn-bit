@@ -1,6 +1,7 @@
 # Preface
 This Project is a simulate kit for dtn on ns-3 environment, easy to use for research purples.
 This project is highly inspirited by [Lakkakorpi](https://www.netlab.tkk.fi/tutkimus/dtn/ns/)
+Read this [paper](https://smartech.gatech.edu/bitstream/handle/1853/6492/GIT-CC-04-07.pdf?sequence=1&isAllowed=y) if you want know about TEG(time-expanded graph)
 
 # structure of this project
 
@@ -51,7 +52,7 @@ you would need to install miniconda first, and install full-package from minicon
 
 # TODO list
 
-    * <s>wifi delay </s> done by 
+    * <s>wireless max range </s> done by 
             wifiChannel.AddPropagationLoss ("ns3::RangePropagationLossModel",  
                     "MaxRange", DoubleValue (4000.0));
     * <s>note that ns2mobilityhelper only have ability to parse velocity 2d, extend it to support 3d </s> done by modify it, copy /box/ns2-mobilityhelp to src/mobility/helper to use it.
@@ -72,3 +73,4 @@ you would need to install miniconda first, and install full-package from minicon
             abstract example-interface
         * debug a bunch
             abstract routing-method interface
+    * Third edition, features and anything else for paper.

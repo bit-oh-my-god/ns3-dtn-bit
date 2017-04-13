@@ -73,6 +73,18 @@ namespace ns3 {
                 }
         };
 
+        class TegRouting : public RoutingMethodInterface {
+            public :
+                TegRouting(DtnApp& dp) : RoutingMethodInterface(dp) {}
+                // s is source index, d is dest index, return next hop
+                int DoRoute(int s, int d) override {
+                    using namespace boost;
+                    const DtnApp::Adob& ref_adob = RoutingMethodInterface::get_adob();
+                    assert(ref_adob.get_teg_size() > ref_adob.get_g_vec_size() * ref_adob.get_node_number());
+                    std::abort();
+                }
+        };
+
         class YourExample : public DtnExampleInterface {
             public :
                 YourExample() : DtnExampleInterface() {
@@ -86,10 +98,12 @@ namespace ns3 {
                 void ReportEx(std::ostream& os) override {
                     os << "Here In DtnExampleInterface::ReportEx" << endl;
                 }
+
                 std::unique_ptr<RoutingMethodInterface> CreateRouting(DtnApp& dtn) override {
-                    auto p = new YouRouting(dtn);
+                    auto p = new TegRouting(dtn);
                     return std::unique_ptr<RoutingMethodInterface>(p);
                 }
+
                 void ScheduleTask() override {
                     int sch_size = 345;
                     auto handy_func = [sch_size, this](int sch_time, int dstnode, int i) {

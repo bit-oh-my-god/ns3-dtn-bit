@@ -38,6 +38,7 @@ namespace ns3 {
             net_devices_container_ = wifi.Install(wifiPhy, wifiMac, nodes_container_);
         }
 
+        // use vector for further modify
         vector<DtnApp::Adob> DtnExampleInterface::CreateAdjacentList() {
             vector<DtnApp::Adob> result;
             std::map<int, std::map<int, vector<int>>> ntpos_map;
@@ -80,7 +81,10 @@ namespace ns3 {
                     t_2_adjacent_array[time] = tmp_adjacent_array;
                 }
             }
-            DtnApp::Adob adob_ob = DtnApp::Adob(t_2_adjacent_array, node_number_);
+            DtnApp::Adob adob_ob = DtnApp::Adob();
+            adob_ob.AdobDo_01(t_2_adjacent_array, node_number_);
+            // default, I recommand to use set teg_layer_n to be time_duration_ / 2
+            adob_ob.AdobDo_02(node_number_, simulation_duration_, 4000);
             result.push_back(adob_ob);
             return result;
         }
@@ -106,7 +110,6 @@ namespace ns3 {
                 InetSocketAddress dstlocaladdr(Ipv4Address(dststring), NS3DTNBIT_PORT_NUMBER);
                 dst->Bind(dstlocaladdr);
                 dst->SetRecvCallback(MakeCallback(&DtnApp::ReceiveBundle, apps_[i]));
-
                 // set hello send socket
                 Ptr<Socket> source = Socket::CreateSocket(nodes_container_.Get (i), udp_tid);
                 InetSocketAddress remote(Ipv4Address("255.255.255.255"), NS3DTNBIT_HELLO_PORT_NUMBER);
