@@ -1112,7 +1112,7 @@ namespace ns3 {
                         }
                     } else if (ref_bp_header.get_bundle_type() == BundleType::AntiPacket) { 
                         for (int m = 0; (!transmit_session_already) && !neighbor_has_bundle && m < neighbor_info_vec_[j].info_sent_ap_seqno_vec_.size(); m++) {
-                        if (neighbor_info_vec_[j].info_sent_ap_seqno_vec_[m] == ref_bp_header.get_source_seqno()) { bundle_sent = true; break; }
+                            if (neighbor_info_vec_[j].info_sent_ap_seqno_vec_[m] == ref_bp_header.get_source_seqno()) { bundle_sent = true; break; }
                         }
                     }
                 }

@@ -78,6 +78,17 @@ namespace ns3 {
                 TegRouting(DtnApp& dp) : RoutingMethodInterface(dp) {}
                 // s is source index, d is dest index, return next hop
                 int DoRoute(int s, int d) override {
+                    using namespace boost;
+                    const DtnApp::Adob& ref_adob = RoutingMethodInterface::get_adob();
+                    using Graph_T = DtnApp::Adob::Graph;
+                    using VeDe_T = DtnApp::Adob::VeDe;
+                    using EdDe_T = DtnApp::Adob::EdDe;
+                    using Tegijt_T = DtnApp::Adob::Teg_i_j_t;
+
+                    int tmp_time = Simulator::
+
+                    std::cout << "Error: not implement!" << std::endl;
+                    std::abort();
                 }
         };
 
@@ -126,10 +137,10 @@ namespace ns3 {
 
 int main(int argc, char *argv[]) {
     //!important LOG control
-    //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_WARN);
+    LogComponentEnable ("DtnRunningLog",LOG_LEVEL_WARN);
     //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_DEBUG);
     //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_INFO);
-    LogComponentEnable ("DtnRunningLog",LOG_LEVEL_LOGIC);
+    //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_LOGIC);
     LogComponentEnable("Ns2MobilityHelper", LOG_LEVEL_DEBUG);
 
     assert(std::is_move_constructible<ns3dtnbit::YourExample>::value);

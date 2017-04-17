@@ -43,7 +43,7 @@ echo -e "***************** gonna to test ***************"
 # this command can show you all the 'test-project name'
 #./test.py --list
 #./test.py --example=ns3dtn-bit-example --text=results.txt --verbose 2>&1 >${LOG_FILE}
-./test.py --example=ns3dtn-bit-your-example --text=results.txt --verbose 2>&1 >${LOG_FILE}
+./test.py --example=ns3dtn-bit-your-example --verbose 2>&1 >${LOG_FILE}
 
 while true; do
     echo -e "\033[96m do you want gdb ? \033[0m"
