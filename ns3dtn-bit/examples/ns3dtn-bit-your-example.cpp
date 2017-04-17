@@ -85,7 +85,7 @@ namespace ns3 {
                     using EdDe_T = DtnApp::Adob::EdDe;
                     using Tegijt_T = DtnApp::Adob::Teg_i_j_t;
 
-                    int tmp_time = Simulator::
+                    int tmp_time = Simulator::Now().GetSeconds();
 
                     std::cout << "Error: not implement!" << std::endl;
                     std::abort();
