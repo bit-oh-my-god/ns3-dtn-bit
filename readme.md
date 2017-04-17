@@ -84,4 +84,4 @@ would support '$ns at $time $node setdest x2 y2 z2 speed' format, and this forma
 * Third edition, features and anything else for paper.
 
 
-[image01] : https://github.com/bit-oh-my-god/ns3-dtn-bit/tree/master/box/Diagram1.png
+[image01]: https://github.com/bit-oh-my-god/ns3-dtn-bit/tree/master/box/Diagram1.png
