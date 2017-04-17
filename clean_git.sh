@@ -29,7 +29,6 @@ else
     echo 'no tmp directory'
 fi
 # git push
-git add --all
-git commit -a -m "${DATE} local commit"
+git add --all && git commit -a -m "${DATE} local commit"
 
 echo 'normal exit'
