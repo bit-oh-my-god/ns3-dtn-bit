@@ -1582,11 +1582,11 @@ namespace ns3 {
             // get round time 
             int rounded_time = Simulator::Now().GetSeconds();
             int t_max = g_vec_.size();
-            DelayMap delay_map;
+            //DelayMap delay_map_;
 
-            std::cout << "NOTE:in AdobDo_03, before initialize delay_map" << std::endl;
-            // Initialize delay_map
-            const int c = 1; // assume every data transmit would cost one unit of time
+            std::cout << "NOTE:in AdobDo_03, before initialize delay_map_" << std::endl;
+            // Initialize delay_map_
+            const int c = hypo_c; // assume every data transmit would cost one unit of time
             for (int t = t_max - 2; t >= 0; t--) {
                 for (int i = 0; i < get_node_number(); i++) {
                     for (int j = 0; j < get_node_number(); j++) {
@@ -1596,19 +1596,19 @@ namespace ns3 {
                         if (ep.second) {
                             int edge_delay_color = teg_[ep.first].message_color_;
                             DelayIndex tmp_dl = make_tuple(i, j, t, edge_delay_color);
-                            delay_map[tmp_dl] = edge_delay_color;
+                            delay_map_[tmp_dl] = edge_delay_color;
                         } else {
                             DelayIndex tmp_dl = make_tuple(i, j, t + 1, c);
                             DelayIndex tmp_dl_x = make_tuple(i, j, t, c);
-                            auto found = delay_map.find(tmp_dl);
-                            if (found != delay_map.end()) {
-                                if (delay_map[tmp_dl] < NS3DTNBIT_HYPOTHETIC_INFINITE_DELAY) {
-                                    delay_map[tmp_dl_x] = delay_map[tmp_dl] + 1;
+                            auto found = delay_map_.find(tmp_dl);
+                            if (found != delay_map_.end()) {
+                                if (delay_map_[tmp_dl] < NS3DTNBIT_HYPOTHETIC_INFINITE_DELAY) {
+                                    delay_map_[tmp_dl_x] = delay_map_[tmp_dl] + 1;
                                 } else {
-                                    delay_map[tmp_dl_x] = NS3DTNBIT_HYPOTHETIC_INFINITE_DELAY;
+                                    delay_map_[tmp_dl_x] = NS3DTNBIT_HYPOTHETIC_INFINITE_DELAY;
                                 }
                             } else {
-                                delay_map[tmp_dl_x] = NS3DTNBIT_HYPOTHETIC_INFINITE_DELAY;
+                                delay_map_[tmp_dl_x] = NS3DTNBIT_HYPOTHETIC_INFINITE_DELAY;
                             }
                         }
                     }
@@ -1619,17 +1619,17 @@ namespace ns3 {
             for (int k = 0; k < get_node_number(); k++) {
                 for (int i = 0; i < get_node_number(); i++) {
                     for (int j = 0; j < get_node_number(); j++) {
-                        for (int t = 0; t < t_max - 2; t++) { // it's not meaning to set delay_map for t_max - 1, this is one difference from that paper
+                        for (int t = 0; t < t_max - 2; t++) { // it's not meaning to set delay_map_ for t_max - 1, this is one difference from that paper
                             DelayIndex di_cur = make_tuple(i, j, t, c), di_to_k = make_tuple(i, k, t, c);
-                            int delay_cur = delay_map[di_cur];
-                            int delay_to_k = delay_map[di_to_k];
+                            int delay_cur = delay_map_[di_cur];
+                            int delay_to_k = delay_map_[di_to_k];
                             DelayIndex di_from_k = make_tuple(k, j, t + delay_to_k, c);
-                            auto found = delay_map.find(di_from_k);
-                            if (found != delay_map.end()) {
-                                int delay_from_k = delay_map[di_from_k];
+                            auto found = delay_map_.find(di_from_k);
+                            if (found != delay_map_.end()) {
+                                int delay_from_k = delay_map_[di_from_k];
                                 int sum = delay_to_k + delay_from_k;
                                 if (sum < delay_cur) {
-                                    delay_map[di_cur] = sum;
+                                    delay_map_[di_cur] = sum;
                                     auto tmp_tuple = make_tuple(i, j, t);
                                     teg_routing_table_[tmp_tuple] = k;
                                 }

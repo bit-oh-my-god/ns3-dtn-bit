@@ -145,7 +145,9 @@ namespace ns3 {
                     // using unordered_map would be more efficient, but I got a compile error, fix this compile error TODO
                     using CustomedMap = map<Teg_i_j_t, int>;
                     using DelayMap = map<DelayIndex, int>;
+                    const static int hypo_c = 1;
                     CustomedMap teg_routing_table_;
+                    DelayMap delay_map_;
                     int node_number_;
                 };
 
