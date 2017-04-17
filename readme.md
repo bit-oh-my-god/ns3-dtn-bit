@@ -60,8 +60,10 @@ you would need to install miniconda first, and install full-package from minicon
         
     * <s>relative path </s> done by 
             config.txt
-    * transmit session
-    * time extented graph like that [paper](https://smartech.gatech.edu/bitstream/handle/1853/6492/GIT-CC-04-07.pdf?sequence=1&isAllowed=y)
+    * <s>transmit session </s> done by
+            transmit_assister_
+    * <s>time extented graph like that</s> [paper](https://smartech.gatech.edu/bitstream/handle/1853/6492/GIT-CC-04-07.pdf?sequence=1&isAllowed=y) done by
+            Adob_do02 Adob_do03
 
 # Develpment Annoucement & Publish Log
 
