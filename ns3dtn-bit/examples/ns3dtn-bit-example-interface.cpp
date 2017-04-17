@@ -85,7 +85,10 @@ namespace ns3 {
             adob_ob.AdobDo_01(t_2_adjacent_array, node_number_);
             // default, I recommand to use set teg_layer_n to be time_duration_ / 2
             adob_ob.AdobDo_02(node_number_, simulation_duration_, 4000);
-            result.push_back(adob_ob);
+            std::cout << "NOTE: after AdobDo_02()" <<std::endl;
+            adob_ob.AdobDo_03();
+            std::cout << "NOTE: after AdobDo_03()" <<std::endl;
+            result.emplace_back(std::move(adob_ob));
             return result;
         }
 
@@ -123,12 +126,13 @@ namespace ns3 {
                 recvSink->Bind(local);
                 recvSink->SetRecvCallback(MakeCallback(&DtnApp::ReceiveHello, apps_[i]));
                 // load adob to each app, and load RoutingMethodInterface
-                if (ex_rm_ == DtnApp::RoutingMethod::Other) {
+                if (ex_rm_ == DtnApp::RoutingMethod::Other || ex_rm_ == DtnApp::RoutingMethod::TimeExpanded) {
                     std::unique_ptr<RoutingMethodInterface> p_rm_in = CreateRouting(*apps_[i]);
                     apps_[i]->InvokeMeWhenInstallAppToSetupDtnAppRoutingAssister(ex_rm_, std::move(p_rm_in), adob);
                 } else if (ex_rm_ == DtnApp::RoutingMethod::SprayAndWait) {
                     apps_[i]->InvokeMeWhenInstallAppToSetupDtnAppRoutingAssister(ex_rm_, adob);
                 } else {
+                    std::cout << "Error : can't find Routing method" << __LINE__ << std::endl;
                     std::abort();
                 }
             }

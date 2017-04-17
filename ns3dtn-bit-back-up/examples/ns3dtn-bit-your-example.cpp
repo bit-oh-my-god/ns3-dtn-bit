@@ -78,10 +78,6 @@ namespace ns3 {
                 TegRouting(DtnApp& dp) : RoutingMethodInterface(dp) {}
                 // s is source index, d is dest index, return next hop
                 int DoRoute(int s, int d) override {
-                    using namespace boost;
-                    const DtnApp::Adob& ref_adob = RoutingMethodInterface::get_adob();
-                    assert(ref_adob.get_teg_size() > ref_adob.get_g_vec_size() * ref_adob.get_node_number());
-                    std::abort();
                 }
         };
 
@@ -93,6 +89,7 @@ namespace ns3 {
                     simulation_duration_ = 802;
                     print_wifi_log_ = false;
                     ex_rm_ = DtnApp::RoutingMethod::Other;
+                    //ex_rm_ = DtnApp::RoutingMethod::TimeExpanded;
                     //ex_rm_ = DtnApp::RoutingMethod::SprayAndWait;
                 }
                 void ReportEx(std::ostream& os) override {
@@ -100,7 +97,8 @@ namespace ns3 {
                 }
 
                 std::unique_ptr<RoutingMethodInterface> CreateRouting(DtnApp& dtn) override {
-                    auto p = new TegRouting(dtn);
+                    //auto p = new TegRouting(dtn);
+                    auto p = new YouRouting(dtn);
                     return std::unique_ptr<RoutingMethodInterface>(p);
                 }
 

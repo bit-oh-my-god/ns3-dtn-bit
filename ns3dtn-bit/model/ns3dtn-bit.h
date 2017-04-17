@@ -75,112 +75,16 @@ namespace ns3 {
                     using EdDe = boost::graph_traits < Graph >::edge_descriptor;
                     Adob() {}
                     // generate ob for heuristics routing using 
-                    AdobDo_01(std::map<int, vector<vector<int>>> t_2_adjacent_array, int node_number) {
-                        // boost code
-                        node_number_ = node_number;
-                        int t = -1;
-                        for (auto t2 : t_2_adjacent_array) {
-                            t++;
-                            auto time_index = get<0>(t2);
-                            auto t3 = get<1>(t2);
-                            Graph my_g;
-                            vector<VeDe> vec_vertex_des;
-                            map<int, VeDe> tmp_m;
-                            // add node & node NameProperties
-                            for (int i = 0; i < node_number; i++) {
-                                std::stringstream ss;
-                                ss << "node-" << i;
-                                auto tmp_vd = add_vertex(VertexProperties(ss.str()), my_g);
-                                vec_vertex_des.push_back(tmp_vd);
-                                tmp_m[i] = tmp_vd;
-                            }
-                            //auto vec_edge_des = std::vector<vector<EdDe>>(node_number_, std::vector<EdDe>(node_number_, EdDe()));
-                            for (int i = 0; i < node_number; ++i) {
-                                for (int j = i; j < node_number; ++j) {
-                                    if (i == j) {continue;}
-                                    add_edge(vec_vertex_des[i], vec_vertex_des[j], EdgeProperties(t3[i][j], 1), my_g);
-                                        << "=" << t3[i][j] << std::endl;
-                                }
-                            }
-                            assert(boost::num_edges(my_g)>0);
-                            assert(boost::num_vertices(my_g)>0);
-                            // load it
-                            t_vec_.push_back(time_index);
-                            g_vec_.push_back(my_g);
-                            g_vede_m_.push_back(tmp_m);
-                        }
-                    }
+                    void AdobDo_01(std::map<int, vector<vector<int>>> t_2_adjacent_array, int node_number);
 
                     // Aim : generate ob for time-expanded graph
                     // Note : teg_layer_n is number of layer in teg, which would let expanded teg to have teg_layer_n * N amout of nodes.
                     // where N is the number of nodes in a static graph
-                    // !Important the complexity of this function is O(N * N * N * T * T * T), please do not use too large argument
-                    AdobDo_02(int node_number, int teg_layer_n, int max_range) {
-                        // add all node to it node-n-t-i
-                        map<string, VeDe> name2vd;
-                        map<pair<string, string>, EdDe> pair2ed;
-                        for (int n = 0; n < node_number; n++) {
-                            for (int t = 0; t < teg_layer_n; t++) {
-                                stringstream ss;
-                                ss << "node-" << n << "-" << t;
-                                VeDe tmp_d = add_vertex(VertexProperties(ss.str()), teg_);
-                                name2vd[ss.str()] = tmp_d;
-                            }
-                        }
-                        // add temporal link
-                        // g_vec_ is vector of static graph
-                        const int hypothetic_distance_of_temporal_link = max_range / 20;    // privent that message keep on one node all the time
-                        for (int t = 0; t < teg_layer_n - 1; t++) {
-                            for (int n = 0; n < node_number; n++) {
-                                stringstream ss;
-                                ss << "node-" << n << "-" << t;
-                                auto name_0 = ss.str();
-                                ss.str("");
-                                ss << "node-" << n << "-" << t + 1;
-                                auto name_1 = ss.str();
-                                auto vd_0 = name2vd[name_0];
-                                auto vd_1 = name2vd[name_1];
-                                auto tmp_ed = add_edge(vd_0, vd_1, EdgeProperties(hypothetic_distance_of_temporal_link, 0), teg_);
-                            }
-                        }
-                        // for each layer add transmit link if distance_ of link 'a' of static upper layer graph is under max_range 
-                        // and the distance of link 'b' of static lower layer graph is also under max_range
-                        assert(g_vec_.size() >= teg_layer_n);
-                        // assume that g_vede_m_ == teg_layer_n 
-                        for (int t = 0; t < teg_layer_n - 1; t++) {
-                            auto tmp_g = g_vec_[t];
-                            auto tmp_g_other = g_vec_[t + 1];
-                            for (int i = 0; i < node_number; i++) {
-                                for (int j = i; j < node_number; j++) {
-                                    auto i_d = g_vede_m_[t][i];
-                                    auto j_d = g_vede_m_[t][j];
-                                    auto e_p = edge(i_d, j_d, tmp_g);
-                                    auto i_d_other = g_vede_m_[t + 1][i];
-                                    auto j_d_other = g_vede_m_[t + 1][j];
-                                    auto e_p_other = edge(i_d_other, j_d_other, tmp_g_other);
-                                    if (e_p.second && e_p_other.second) {
-                                        auto ed = e_p.first;
-                                        auto ed_other = e_p_other.first;
-                                        if (tmp_g[ed].distance_ < max_range && tmp_g_other[ed_other].distance_ < max_range) {
-                                            auto tmp_id_of_g = g_vede_m_[t][i];
-                                            auto tmp_id_of_g_other = g_vede_m_[t + 1][i];
-                                            auto tmp_jd_of_g = g_vede_m_[t][j];
-                                            auto tmp_jd_of_g_other = g_vede_m_[t + 1][j];
-                                            auto tmp_edge_of_g = add_edge(tmp_id_of_g, tmp_jd_of_g_other, EdgeProperties(
-                                                        (tmp_g[ed].distance_ / 2) + (tmp_g_other[ed_other].distance_ / 2), 1), teg_);
-                                            auto tmp_edge_of_g_other = add_edge(tmp_jd_of_g, tmp_id_of_g_other, EdgeProperties(
-                                                        (tmp_g[ed].distance_ / 2) + (tmp_g_other[ed_other].distance_ / 2), 1), teg_);
-                                        }
-                                    } else {
-                                        std::cerr << "Error: can't acess edge" << " : line " << __LINE__ 
-                                            << " t=" << t << " i =" << i << " j =" << j 
-                                            << std::endl;
-                                        std::abort();
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    void AdobDo_02(int node_number, int teg_layer_n, int max_range);
+
+                    // get teg_routing_table_ done
+                    // the complexity of this function is O(N * N * N * T), please do not use too large argument
+                    void AdobDo_03();
 
                     Graph get_graph_for_now() const {
                         for (int i = t_vec_.size() - 1; i >= 0 ; i--) {
@@ -203,12 +107,45 @@ namespace ns3 {
                     int get_node_number() {
                         return node_number_;
                     }
-                    private :
+
                     vector<dtn_time_t> t_vec_;
                     vector<Graph> g_vec_;
-                    vector<map<int, VeDe>> g_vede_m_;
+                    vector<unordered_map<int, VeDe>> g_vede_m_;
+
+                    unordered_map<string, VeDe> name2vd_map;
                     Graph teg_;
-                    vector<vector<int>> teg_routing_table_;
+                    //                    i     j      t
+                    using Teg_i_j_t = tuple<int, int, int>;
+                    //                     src   dst   time   color
+                    using DelayIndex = tuple<int, int, int, int>;
+                    struct key_hash : public std::unary_function<Teg_i_j_t, std::size_t> {
+                         std::size_t operator()(const Teg_i_j_t& k) const {
+                                return std::get<0>(k) ^ std::get<1>(k) ^ std::get<2>(k);
+                         }
+                    };
+                    struct equal_to : public std::binary_function<Teg_i_j_t, Teg_i_j_t, bool> {
+                        bool operator()(const Teg_i_j_t& lhs, const Teg_i_j_t& rhs) const {
+                            return std::get<0>(lhs) == std::get<0>(rhs) && std::get<1>(lhs) == std::get<1>(rhs) && std::get<2>(lhs) == std::get<2>(rhs);
+                        }
+                    };
+                    struct key_hash0 : public std::unary_function<DelayIndex, std::size_t> {
+                         std::size_t operator()(const DelayIndex& k) const {
+                                return std::get<0>(k) ^ std::get<1>(k) ^ std::get<2>(k) ^ std::get<3>(k);
+                         }
+                    };
+                    struct equal_to0 : public std::binary_function<DelayIndex, DelayIndex, bool> {
+                        bool operator()(const DelayIndex& lhs, const DelayIndex& rhs) const {
+                            return std::get<0>(lhs) == std::get<0>(rhs) && std::get<1>(lhs) == std::get<1>(rhs) && std::get<2>(lhs) == std::get<2>(rhs) && std::get<3>(lhs) == std::get<3>(rhs);
+                        }
+                    };
+                    //                                            tegijt     k
+                    //using CustomedMap = std::unordered_map<const Teg_i_j_t, int, key_hash, equal_to>;
+                    //                                      ijtc        delay
+                    //using DelayMap = unordered_map<const DelayIndex, int, key_hash0, equal_to0>;
+                    // using unordered_map would be more efficient, but I got a compile error, fix this compile error TODO
+                    using CustomedMap = map<Teg_i_j_t, int>;
+                    using DelayMap = map<DelayIndex, int>;
+                    CustomedMap teg_routing_table_;
                     int node_number_;
                 };
 
@@ -361,26 +298,6 @@ namespace ns3 {
 
                 DtnAppRoutingAssister routing_assister_;
 
-                /*
-                 * nested private class for transmit-session init 
-                 * used frequently in to transmit
-                 * */
-                class DtnAppTransmitSessionAssister {
-                    public :
-                        DtnAppTransmitSessionAssister(DtnApp& dp) : out_app_(dp) {
-
-                        }
-
-                        //InitTransmitSession
-
-                        ~DtnAppTransmitSessionAssister() {
-
-                        }
-                    private :
-                        DtnApp& out_app_;
-
-                };
-                DtnAppTransmitSessionAssister transmit_assister_;
 
             public :
 
@@ -444,11 +361,36 @@ namespace ns3 {
                 Ptr<Queue> daemon_reorder_buffer_queue_; // m_helper_queue
                 Ptr<Queue> daemon_bundle_queue_; // m_queue, daemon bundle queue, this is where "store and forward" semantic stores
                 vector<Ptr<Packet>> daemon_reception_packet_buffer_vec_;
-                vector<Ptr<Packet>> daemon_retransmission_packet_buffer_vec_;
                 vector<DaemonReceptionInfo> daemon_reception_info_vec_;
                 vector<NeighborInfo> neighbor_info_vec_;
-                vector<DaemonTransmissionInfo> daemon_transmission_info_vec_;
-                vector<DaemonBundleHeaderInfo> daemon_transmission_bh_info_vec_;
+
+                //vector<Ptr<Packet>> daemon_retransmission_packet_buffer_vec_;
+                //vector<DaemonTransmissionInfo> daemon_transmission_info_vec_;
+                //vector<DaemonBundleHeaderInfo> daemon_transmission_bh_info_vec_;
+
+                /*
+                 * nested private class for transmit-session init 
+                 * used frequently in to transmit
+                 * */
+                class DtnAppTransmitSessionAssister {
+                    public :
+                        DtnAppTransmitSessionAssister(DtnApp& dp) : out_app_(dp) {
+
+                        }
+
+                        //InitTransmitSession
+
+                        ~DtnAppTransmitSessionAssister() {
+
+                        }
+                    vector<Ptr<Packet>> daemon_retransmission_packet_buffer_vec_;
+                    vector<DaemonTransmissionInfo> daemon_transmission_info_vec_;
+                    vector<DaemonBundleHeaderInfo> daemon_transmission_bh_info_vec_;
+                    int get_need_to_bytes(int index) { return daemon_transmission_info_vec_[index].info_transmission_total_send_bytes_ - daemon_transmission_info_vec_[index].info_transmission_current_sent_acked_bytes_; }
+                    private :
+                        DtnApp& out_app_;
+                };
+                DtnAppTransmitSessionAssister transmit_assister_;
         };
 
         class RoutingMethodInterface {
