@@ -692,8 +692,8 @@ namespace ns3 {
                         j = jj;
                         break;
                     } else {
-                        //Simulator::Schedule(Seconds(NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME * 5), &DtnApp::ToTransmit, this, bh_info, false);
-                        NS_LOG_WARN(LogPrefixMacro << "WARN:to transmit: can't find neighbor or neighbor not recently seen, would cancel this try, waiting for next check buffer." << "j=" << jj << ",last seen time=" << (double)neighbor_info_vec_[jj].info_last_seen_time_ << ";base time=" << Simulator::Now().GetSeconds() - (NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME * 3));
+                        Simulator::Schedule(Seconds(NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME * 3), &DtnApp::ToTransmit, this, bh_info, false);
+                        NS_LOG_WARN(LogPrefixMacro << "WARN:to transmit: can't find neighbor or neighbor not recently seen, would cancel this try, retry next time." << "j=" << jj << ",last seen time=" << (double)neighbor_info_vec_[jj].info_last_seen_time_ << ";base time=" << Simulator::Now().GetSeconds() - (NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME * 3));
                         return;
                     }
                 }
@@ -827,8 +827,8 @@ namespace ns3 {
                 NS_LOG_DEBUG(LogPrefixMacro << "NOTE: before TimeExpanded method");
                 vector<int> available = BPHeaderBasedSendDecisionDetail(ref_bp_header, check_state);
                 // Note that this method just indicate which node the next hop would be,
-                // if the next hop is not available, should wait for it till available
-                result = routing_assister_.RouteIt(s, d);
+                // if the next hop is not available yet, should wait for it till available
+                result = routing_assister_.RouteIt(node_->GetId(), d);
                 if (result == node_->GetId()) {NS_LOG_ERROR(LogPrefixMacro << "Error: routing self! s=" << s << ";d=" << d << ";result = " << result); std::abort();}
                 NS_LOG_DEBUG(LogPrefixMacro << "NOTE: after TimeExpanded method, result =" << result);
                 if (result != -1) {
@@ -934,7 +934,6 @@ namespace ns3 {
             string strrr;
             if (check_state == CheckState::State_2) { strrr = "anti check"; } else if (check_state == CheckState::State_1) {strrr = "bundle check";}
             NS_LOG_INFO(LogPrefixMacro << "enter check buffer()" << strrr);
-
             if (!daemon_socket_handle_) {
                 CreateSocketDetail();
                 if (daemon_socket_handle_) {
@@ -1020,7 +1019,7 @@ namespace ns3 {
                 if (transmist_session_already) {
                     BPHeader bbh;
                     p_pkt->RemoveHeader(bbh);
-                    NS_LOG_INFO(LogPrefixMacro << "transmit-session already exist, head = " << bbh);
+                    NS_LOG_WARN(LogPrefixMacro << "WARN:transmit-session already exist, head = " << bbh);
                     p_pkt->AddHeader(bbh);
                 } else {
                     NS_LOG_INFO(LogPrefixMacro << "transmission session Enqueue");
@@ -1072,7 +1071,7 @@ namespace ns3 {
 
         /* refine
          * Aim :
-         * This is a routing method, just find all avilables.
+         * This is not a routing method, just find all avilables.
          * Detail :
          * handle normal bundle and antipacket send decision
          * bundle_sent if logic included by transmit_session_already 
@@ -1080,78 +1079,50 @@ namespace ns3 {
         vector<int> DtnApp::BPHeaderBasedSendDecisionDetail(BPHeader& ref_bp_header, enum CheckState check_state) {
             NS_LOG_INFO(LogPrefixMacro << "enter BPHeaderBasedSendDecisionDetail()");
             vector<int> result;
-            switch (ref_bp_header.get_bundle_type()) {
-                case BundleType::BundlePacket : { 
-                                                    Ipv4Address dst_ip = ref_bp_header.get_destination_ip();
-                                                    NS_LOG_INFO(LogPrefixMacro << "neighbor_info_vec_.size() =" << neighbor_info_vec_.size());
-                                                    for (int j = 0; j < neighbor_info_vec_.size(); j++) {
-                                                        bool nei_last_seen_bool = Simulator::Now().GetSeconds() - neighbor_info_vec_[j].info_last_seen_time_ < NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME * 2;
-                                                        bool nei_have_space = neighbor_info_vec_[j].info_daemon_baq_available_bytes_ > ref_bp_header.get_payload_size() + ref_bp_header.GetSerializedSize();
-                                                        bool nei_is_not_source = !neighbor_info_vec_[j].info_address_.GetIpv4().IsEqual(ref_bp_header.get_source_ip());
-                                                        // 'transmit_session_already' is true, means that totransmit() has been called and shouldn't init a now one.
-                                                        // 'neighbor_has_bundle is false' maens that neighbor do not carry this bundle
-                                                        // 'bundle_sent is false' means that you haven't send this bundle to this neighbor
-                                                        bool transmit_session_already = false, neighbor_has_bundle = false, bundle_sent = false, pre = nei_last_seen_bool && nei_have_space && nei_is_not_source;
-                                                        {
-                                                            // set transmit_session_already, neighbor_has_bundle, bundle_sent
-                                                            for (int i = 0; i < transmit_assister_.daemon_transmission_bh_info_vec_.size(); i++) {
-                                                                auto no1 = transmit_assister_.daemon_transmission_bh_info_vec_[i].info_source_seqno_;
-                                                                auto no2 = ref_bp_header.get_source_seqno();
-                                                                auto ip1 = transmit_assister_.daemon_transmission_bh_info_vec_[i].info_transmit_addr_.GetIpv4();
-                                                                auto ip2 = neighbor_info_vec_[j].info_address_.GetIpv4();
-                                                                if (no1 == no2 && ip1.IsEqual(ip2)) {
-                                                                    transmit_session_already = true;
-                                                                    break;
-                                                                }
-                                                            }
-                                                            for (int m = 0; !transmit_session_already && m < neighbor_info_vec_[j].info_baq_seqno_vec_.size(); m++) {
-                                                                if (neighbor_info_vec_[j].info_baq_seqno_vec_[m] == ref_bp_header.get_source_seqno()) {
-                                                                    neighbor_has_bundle = true;
-                                                                    break;
-                                                                }
-                                                            }
-                                                            for (int m = 0; (!transmit_session_already) && (!neighbor_has_bundle) && (m < neighbor_info_vec_[j].info_sent_bp_seqno_vec_.size()); m++) {
-                                                                if (neighbor_info_vec_[j].info_sent_bp_seqno_vec_[m] == ref_bp_header.get_source_seqno()) {
-                                                                    bundle_sent = true;
-                                                                    break;
-                                                                }
-                                                            }
-                                                        }
+            NS_LOG_INFO(LogPrefixMacro << "neighbor_info_vec_.size() =" << neighbor_info_vec_.size());
+            for (int j = 0; j < neighbor_info_vec_.size(); j++) {
+                bool nei_last_seen_bool = Simulator::Now().GetSeconds() - neighbor_info_vec_[j].info_last_seen_time_ < NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME * 2;
+                bool nei_have_space = neighbor_info_vec_[j].info_daemon_baq_available_bytes_ > ref_bp_header.get_payload_size() + ref_bp_header.GetSerializedSize();
+                bool nei_is_not_source = !neighbor_info_vec_[j].info_address_.GetIpv4().IsEqual(ref_bp_header.get_source_ip());
+                // 'transmit_session_already' is true, means that totransmit() has been called and shouldn't init a now one.
+                // 'neighbor_has_bundle is false' maens that neighbor do not carry this bundle
+                // 'bundle_sent is false' means that you haven't send this bundle to this neighbor
+                bool transmit_session_already = false, neighbor_has_bundle = false, bundle_sent = false, pre = nei_last_seen_bool && nei_have_space && nei_is_not_source;
+                {
+                    // set transmit_session_already, neighbor_has_bundle, bundle_sent
+                    for (int i = 0; i < transmit_assister_.daemon_transmission_bh_info_vec_.size(); i++) {
+                        auto no1 = transmit_assister_.daemon_transmission_bh_info_vec_[i].info_source_seqno_;
+                        auto no2 = ref_bp_header.get_source_seqno();
+                        auto ip1 = transmit_assister_.daemon_transmission_bh_info_vec_[i].info_transmit_addr_.GetIpv4();
+                        auto ip2 = neighbor_info_vec_[j].info_address_.GetIpv4();
+                        if (no1 == no2 && ip1.IsEqual(ip2)) {
+                            transmit_session_already = true;
+                            break;
+                        }
+                    }
+                    for (int m = 0; !transmit_session_already && m < neighbor_info_vec_[j].info_baq_seqno_vec_.size(); m++) {
+                        if (neighbor_info_vec_[j].info_baq_seqno_vec_[m] == ref_bp_header.get_source_seqno()) {
+                            neighbor_has_bundle = true;
+                            break;
+                        }
+                    }
+                    if (ref_bp_header.get_bundle_type() == BundleType::BundlePacket) {
+                        for (int m = 0; (!transmit_session_already) && (!neighbor_has_bundle) && (m < neighbor_info_vec_[j].info_sent_bp_seqno_vec_.size()); m++) {
+                            if (neighbor_info_vec_[j].info_sent_bp_seqno_vec_[m] == ref_bp_header.get_source_seqno()) { bundle_sent = true; break; }
+                        }
+                    } else if (ref_bp_header.get_bundle_type() == BundleType::AntiPacket) { 
+                        for (int m = 0; (!transmit_session_already) && !neighbor_has_bundle && m < neighbor_info_vec_[j].info_sent_ap_seqno_vec_.size(); m++) {
+                        if (neighbor_info_vec_[j].info_sent_ap_seqno_vec_[m] == ref_bp_header.get_source_seqno()) { bundle_sent = true; break; }
+                        }
+                    }
+                }
 
-                                                        if (pre && (!transmit_session_already) && (!neighbor_has_bundle) && (!bundle_sent)) {
-                                                            NS_LOG_DEBUG(LogPrefixMacro << "neighbor-" << j << "is good, pre, already,has,sent is :" << pre << " " << transmit_session_already << " " << neighbor_has_bundle << " " << bundle_sent);
-                                                            result.push_back(j);
-                                                        } else {
-                                                            NS_LOG_INFO(LogPrefixMacro << "neighbor-" << j << "isn't available" << ",pre, already,has,sent is :" << pre << " " << transmit_session_already << " " << neighbor_has_bundle << " " << bundle_sent);
-                                                        }
-                                                    }
-                                                    break;
-                                                }
-                case BundleType::AntiPacket : {
-                                                  NS_LOG_INFO(LogPrefixMacro << "neighbor_info_vec_.size() =" << neighbor_info_vec_.size());
-                                                  for (int j = 0; j < neighbor_info_vec_.size(); j++) {
-                                                      // neighbor already has this antipacket or this antipacket has been sent to this neighbor else
-                                                      bool neighbor_has_bundle = false, anti_pkt_sent = false; 
-                                                      for (int m = 0; (!neighbor_has_bundle) && (m < neighbor_info_vec_[j].info_baq_seqno_vec_.size()); m++) {
-                                                          if (neighbor_info_vec_[j].info_baq_seqno_vec_[m] == ref_bp_header.get_source_seqno()) {
-                                                              neighbor_has_bundle = true;
-                                                              break;
-                                                          } 
-                                                      }
-                                                      for (int m = 0; (!anti_pkt_sent) && (!neighbor_has_bundle) && m < neighbor_info_vec_[j].info_sent_ap_seqno_vec_.size(); m++) {
-                                                          if (neighbor_info_vec_[j].info_sent_ap_seqno_vec_[m] == ref_bp_header.get_source_seqno() && (Simulator::Now().GetSeconds() - neighbor_info_vec_[j].info_sent_ap_time_vec_[m] > NS3DTNBIT_BUFFER_CHECK_INTERVAL * 2)) {
-                                                              anti_pkt_sent = true;
-                                                              break;
-                                                          }
-                                                      }
-                                                      if (!neighbor_has_bundle && !anti_pkt_sent) {
-                                                          NS_LOG_DEBUG(LogPrefixMacro << "NOTE: anti decision made, has, sent = " << neighbor_has_bundle << " " << anti_pkt_sent);
-                                                          result.push_back(j);
-                                                      }
-                                                  }
-                                                  break;
-                                              }
-                default :   break;
+                if (pre && (!transmit_session_already) && (!neighbor_has_bundle) && (!bundle_sent)) {
+                    NS_LOG_DEBUG(LogPrefixMacro << "neighbor-" << j << "is good, pre, already,has,sent is :" << pre << " " << transmit_session_already << " " << neighbor_has_bundle << " " << bundle_sent);
+                    result.push_back(j);
+                } else {
+                    NS_LOG_INFO(LogPrefixMacro << "neighbor-" << j << "isn't available" << ",pre, already,has,sent is :" << pre << " " << transmit_session_already << " " << neighbor_has_bundle << " " << bundle_sent);
+                }
             }
             return result;
         }
