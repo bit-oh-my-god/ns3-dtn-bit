@@ -121,8 +121,8 @@ namespace ns3 {
                     node_number_ = 5;
                     simulation_duration_ = 802;
                     print_wifi_log_ = false;
-                    ex_rm_ = DtnApp::RoutingMethod::Other;
-                    //ex_rm_ = DtnApp::RoutingMethod::TimeExpanded;
+                    //ex_rm_ = DtnApp::RoutingMethod::Other;
+                    ex_rm_ = DtnApp::RoutingMethod::TimeExpanded;
                     //ex_rm_ = DtnApp::RoutingMethod::SprayAndWait;
                 }
                 void ReportEx(std::ostream& os) override {
@@ -130,8 +130,8 @@ namespace ns3 {
                 }
 
                 std::unique_ptr<RoutingMethodInterface> CreateRouting(DtnApp& dtn) override {
-                    //auto p = new TegRouting(dtn);
-                    auto p = new YouRouting(dtn);
+                    auto p = new TegRouting(dtn);
+                    //auto p = new YouRouting(dtn);
                     return std::unique_ptr<RoutingMethodInterface>(p);
                 }
 

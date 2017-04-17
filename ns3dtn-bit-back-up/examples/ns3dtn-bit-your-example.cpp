@@ -79,16 +79,38 @@ namespace ns3 {
                 // s is source index, d is dest index, return next hop
                 int DoRoute(int s, int d) override {
                     using namespace boost;
-                    const DtnApp::Adob& ref_adob = RoutingMethodInterface::get_adob();
+                    DtnApp::Adob adob = RoutingMethodInterface::get_adob();
+                    DtnApp::Adob& ref_adob = adob;
                     using Graph_T = DtnApp::Adob::Graph;
                     using VeDe_T = DtnApp::Adob::VeDe;
                     using EdDe_T = DtnApp::Adob::EdDe;
-                    using Tegijt_T = DtnApp::Adob::Teg_i_j_t;
+                    using DelayIndex = DtnApp::Adob::DelayIndex;
+                    using RoutingTableIndex = DtnApp::Adob::Teg_i_j_t;
+                    const int c = DtnApp::Adob::hypo_c;
 
                     int tmp_time = Simulator::Now().GetSeconds();
+                    int time_max = ref_adob.t_vec_.size();
+                    RoutingTableIndex rt_index = make_tuple(s, d, tmp_time);
+                    DelayIndex d_index = make_tuple(s, d, tmp_time, c);
 
-                    std::cout << "Error: not implement!" << std::endl;
-                    std::abort();
+                    if (ref_adob.delay_map_[d_index] < time_max) {
+                        std::cout << "WARN:this routing is not possible" << __LINE__ << std::endl; return -1;
+                    } else {
+                        int vk = -1;
+                        bool found_vk = false;
+                        while (!found_vk) {
+                            auto found = ref_adob.teg_routing_table_.find(rt_index);
+                            if (found != ref_adob.teg_routing_table_.end()) {
+                                vk = ref_adob.teg_routing_table_[rt_index];
+                            } else {
+                                vk = std::get<1>(rt_index);
+                                found_vk = true;
+                            }
+                            if (vk < 0 || vk > ref_adob.get_node_number()) { std::cout << "Error: can't be" << __LINE__ << std::endl; std::abort(); }
+                            rt_index = make_tuple(s, vk, tmp_time);
+                        }
+                        return vk;
+                    }
                 }
         };
 
@@ -99,8 +121,8 @@ namespace ns3 {
                     node_number_ = 5;
                     simulation_duration_ = 802;
                     print_wifi_log_ = false;
-                    ex_rm_ = DtnApp::RoutingMethod::Other;
-                    //ex_rm_ = DtnApp::RoutingMethod::TimeExpanded;
+                    //ex_rm_ = DtnApp::RoutingMethod::Other;
+                    ex_rm_ = DtnApp::RoutingMethod::TimeExpanded;
                     //ex_rm_ = DtnApp::RoutingMethod::SprayAndWait;
                 }
                 void ReportEx(std::ostream& os) override {
@@ -108,8 +130,8 @@ namespace ns3 {
                 }
 
                 std::unique_ptr<RoutingMethodInterface> CreateRouting(DtnApp& dtn) override {
-                    //auto p = new TegRouting(dtn);
-                    auto p = new YouRouting(dtn);
+                    auto p = new TegRouting(dtn);
+                    //auto p = new YouRouting(dtn);
                     return std::unique_ptr<RoutingMethodInterface>(p);
                 }
 
@@ -137,9 +159,9 @@ namespace ns3 {
 
 int main(int argc, char *argv[]) {
     //!important LOG control
-    LogComponentEnable ("DtnRunningLog",LOG_LEVEL_WARN);
+    //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_WARN);
     //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_DEBUG);
-    //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_INFO);
+    LogComponentEnable ("DtnRunningLog",LOG_LEVEL_INFO);
     //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_LOGIC);
     LogComponentEnable("Ns2MobilityHelper", LOG_LEVEL_DEBUG);
 
