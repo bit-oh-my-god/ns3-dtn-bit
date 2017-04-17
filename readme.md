@@ -1,5 +1,5 @@
 # Preface
-This Project is a simulate kit for dtn on ns-3 environment, easy to use for research purples.
+This Project is a simulation for dtn on ns-3 environment, easy to use for research purples, supporting customed routing definition and scenario definition.
 This project is highly inspirited by [Lakkakorpi](https://www.netlab.tkk.fi/tutkimus/dtn/ns/)
 Read this [paper](https://smartech.gatech.edu/bitstream/handle/1853/6492/GIT-CC-04-07.pdf?sequence=1&isAllowed=y) if you want know about TEG(time-expanded graph)
 
@@ -15,11 +15,15 @@ we just need the **.ns_movements** file
 [how to use this combo](https://www.slideshare.net/manasGaur1/bonn-motion-traffic-generation-and-nam)
 
 * CMU setdest
-The [author](https://www.netlab.tkk.fi/tutkimus/dtn/ns/) Lakkakorpi used this CMU setdest program, or should I use CMU setdest program in ns3? [ref](http://www.isi.edu/nsnam/ns/tutorial/nsscript7.html)
-but, I can't get 3d in "setdest", this problem aside, let's focus on how to use this setdest, in my machine, I did this "$sudo apt install ns2"
+The [author of that project](https://www.netlab.tkk.fi/tutkimus/dtn/ns/), Lakkakorpi used this CMU setdest program. [ref](http://www.isi.edu/nsnam/ns/tutorial/nsscript7.html)
+But, we can't get 3d in "setdest", this problem aside, let's focus on how to use this setdest, in my machine, I did this "$sudo apt install ns2"
 so I have the setdest in my "/usr/bin/setdest"
 
 * ns3 and ns3-dtn-bit module
+The main method for DtnApp is 1. checkbuffer 2. receive bundle 3. sendhello - receive hello
+We modify ns2-mobility-helper.cc, to support 3d-parse for us. you can find it at /box
+Also, you can find image in /box
+![ns3-dtn-bit module image][image01]
 
 * jupyter and python-matplotlib
 there is one tutorial that I think may help you [ref](https://www.youtube.com/watch?v=HW29067qVWk&t=1568s)
@@ -52,27 +56,32 @@ you would need to install miniconda first, and install full-package from minicon
 
 # TODO list
 
-    * <s>wireless max range </s> done by 
-            wifiChannel.AddPropagationLoss ("ns3::RangePropagationLossModel",  
-                    "MaxRange", DoubleValue (4000.0));
-    * <s>note that ns2mobilityhelper only have ability to parse velocity 2d, extend it to support 3d </s> done by modify it, copy /box/ns2-mobilityhelp to src/mobility/helper to use it.
-    would support '$ns at $time $node setdest x2 y2 z2 speed' format, and this format only.
-        
-    * <s>relative path </s> done by 
-            config.txt
-    * <s>transmit session </s> done by
-            transmit_assister_
-    * <s>time extented graph like that</s> [paper](https://smartech.gatech.edu/bitstream/handle/1853/6492/GIT-CC-04-07.pdf?sequence=1&isAllowed=y) done by
-            Adob_do02 Adob_do03
+* <s>wireless max range </s> done by 
+        wifiChannel.AddPropagationLoss ("ns3::RangePropagationLossModel",  
+                "MaxRange", DoubleValue (4000.0));
+* <s>note that ns2mobilityhelper only have ability to parse velocity 2d, extend it to support 3d </s> done by modify it, copy /box/ns2-mobilityhelp to src/mobility/helper to use it.
+would support '$ns at $time $node setdest x2 y2 z2 speed' format, and this format only.
+    
+* <s>relative path </s> done by 
+        config.txt
+* <s>transmit session </s> done by
+        transmit_assister_
+* <s>time extented graph like that</s> [paper](https://smartech.gatech.edu/bitstream/handle/1853/6492/GIT-CC-04-07.pdf?sequence=1&isAllowed=y) done by
+        Adob_do02 Adob_do03
+- [ ] to work :(
+- [x] to have a life
 
 # Develpment Annoucement & Publish Log
 
-    * First edition, ns3dtnbit-1.0, we are going to read [this](https://www.netlab.tkk.fi/tutkimus/dtn/ns/), then rename variables methods and do code refactoring.
-    * Second edition, run a real example, and parse the log.
-        * get trace file done 29.Feb
-        * get jupyter to have an animation 5.Mar
-            <s>fine, we got a idle loop, and I can't fix it</s>
-            abstract example-interface
-        * debug a bunch
-            abstract routing-method interface
-    * Third edition, features and anything else for paper.
+* First edition, ns3dtnbit-1.0, we are going to read [this](https://www.netlab.tkk.fi/tutkimus/dtn/ns/), then rename variables methods and do code refactoring.
+* Second edition, run a real example, and parse the log.
+    * get trace file done 29.Feb
+    * get jupyter to have an animation 5.Mar
+        <s>fine, we got a idle loop, and I can't fix it</s>
+        abstract example-interface
+    * debug a bunch
+        abstract routing-method interface
+* Third edition, features and anything else for paper.
+
+
+[image01] : https://github.com/bit-oh-my-god/ns3-dtn-bit/tree/master/box/Diagram1.png
