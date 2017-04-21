@@ -51,9 +51,9 @@ string GetLogStr(string str) {
 
 namespace ns3 {
 
-    NS_LOG_COMPONENT_DEFINE ("DtnRunningLog");
     namespace ns3dtnbit {
 
+    NS_LOG_COMPONENT_DEFINE ("DtnRunningLog");
         /*
          * Can't use CreateObject<>, so do it myself
          */

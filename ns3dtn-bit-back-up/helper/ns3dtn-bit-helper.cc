@@ -19,6 +19,7 @@ namespace ns3 {
         }
 
         void DtnExampleRunner::RunIt(int argc, char** argv) {
+            std::cout << "In DtnExampleRunner, RunIt" << std::endl;
             hold_ex_p->ConfigureEx(argc, argv);
             hold_ex_p->RunEx();
             hold_ex_p->ReportEx(std::cout);

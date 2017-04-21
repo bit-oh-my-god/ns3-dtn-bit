@@ -78,7 +78,6 @@ namespace ns3 {
                 TegRouting(DtnApp& dp) : RoutingMethodInterface(dp) {}
                 // s is source index, d is dest index, return next hop
                 int DoRoute(int s, int d) override {
-                    std::cout << "In TegRouting" << std::endl;
                     using namespace boost;
                     DtnApp::Adob adob = RoutingMethodInterface::get_adob();
                     DtnApp::Adob& ref_adob = adob;
@@ -154,7 +153,6 @@ namespace ns3 {
                     handy_func(54.0, 0, 2);
                     handy_func(66.0, 1, 2);
                     handy_func(423.0, 0, 2);
-                    Simulator::Schedule(Seconds(5), &YourExample::LogCounter, this, 5);
                 }
         };
 

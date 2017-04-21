@@ -85,11 +85,15 @@ namespace ns3 {
                     t_2_adjacent_array[time] = tmp_adjacent_array;
                 }
             }
-            std::cout << "DEBUG:outof608" << std::endl;
-            for (int a = 0; a < node_number_; ++a) {
-                for (int b = 0; b < node_number_; ++b) {
-                    std::cout << "v-" << a << "-" << b << "=" << t_2_adjacent_array[608][a][b] << std::endl;
-                }
+            {
+                /*
+                   std::cout << "DEBUG:outof608" << std::endl;
+                   for (int a = 0; a < node_number_; ++a) {
+                   for (int b = 0; b < node_number_; ++b) {
+                   std::cout << "v-" << a << "-" << b << "=" << t_2_adjacent_array[608][a][b] << std::endl;
+                   }
+                   }
+                   */
             }
             DtnApp::Adob adob_ob = DtnApp::Adob();
             adob_ob.AdobDo_01(t_2_adjacent_array, node_number_);
@@ -165,7 +169,8 @@ namespace ns3 {
                     apps_[i]->ScheduleTx(Seconds(sch_time), dstnode, sch_size);
                 }
             }
-            Simulator::Schedule(Seconds(5), &DtnExampleInterface::LogCounter, this, 5);
+            // this function is not used now
+            //Simulator::Schedule(Seconds(5), &DtnExampleInterface::LogCounter, this, 5);
         }
 
         void DtnExampleInterface::InstallInternetStack() {
@@ -256,7 +261,7 @@ namespace ns3 {
         /* refine 
         */
         void DtnExampleInterface::CreateNodes() {
-        //NS_LOG_COMPONENT_DEFINE ("Ns2MobilityHelper");
+            //NS_LOG_COMPONENT_DEFINE ("Ns2MobilityHelper");
             std::string full_path_str = trace_file_;
             Ns2MobilityHelper ns2_mobi = Ns2MobilityHelper(full_path_str);
             std::cout << "Create " << node_number_ << "nodes." << std::endl;
