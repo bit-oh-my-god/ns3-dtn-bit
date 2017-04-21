@@ -27,11 +27,30 @@ std::string GetLogStr(std::string);
 
 #endif /* ifndef DEBUG */
 
-enum edge_mycost_t {edge_mycost};
+//enum edge_mycost_t {edge_mycost}; 
+//namespace boost { BOOST_INSTALL_PROPERTY(edge, mycost); }
 
 namespace boost {
-    BOOST_INSTALL_PROPERTY(edge, mycost);
-}
+    template <class WeightMap,class CapacityMap>
+        class edge_writer {
+            public:
+                edge_writer(WeightMap w, CapacityMap c) : wm(w),cm(c) {}
+                template <class Edge>
+                    void operator()(std::ostream &out, const Edge& e) const {
+                        out << "[distance_=\"" << wm[e] << "\", message_color_=\"" << cm[e] << "\"]";
+
+                    }
+            private:
+                WeightMap wm;
+                CapacityMap cm;
+
+        };
+
+    template <class WeightMap, class CapacityMap>
+        edge_writer<WeightMap,CapacityMap> make_edge_writer(WeightMap w,CapacityMap c) {
+            return edge_writer<WeightMap,CapacityMap>(w,c);
+        } 
+} /* boost */ 
 
 namespace ns3 {
     namespace ns3dtnbit {
@@ -108,10 +127,13 @@ namespace ns3 {
                         return node_number_;
                     }
 
+                    // timepoint = t_vec_[i'th slice]
                     vector<dtn_time_t> t_vec_;
+                    // static graph = g_vec_[i'th slice]
                     vector<Graph> g_vec_;
+                    // vertex map of i'th slice
                     vector<unordered_map<int, VeDe>> g_vede_m_;
-
+                    // vertex map of teg
                     unordered_map<string, VeDe> name2vd_map;
                     Graph teg_;
                     //                    i     j      t
@@ -119,9 +141,9 @@ namespace ns3 {
                     //                     src   dst   time   color
                     using DelayIndex = tuple<int, int, int, int>;
                     struct key_hash : public std::unary_function<Teg_i_j_t, std::size_t> {
-                         std::size_t operator()(const Teg_i_j_t& k) const {
-                                return std::get<0>(k) ^ std::get<1>(k) ^ std::get<2>(k);
-                         }
+                        std::size_t operator()(const Teg_i_j_t& k) const {
+                            return std::get<0>(k) ^ std::get<1>(k) ^ std::get<2>(k);
+                        }
                     };
                     struct equal_to : public std::binary_function<Teg_i_j_t, Teg_i_j_t, bool> {
                         bool operator()(const Teg_i_j_t& lhs, const Teg_i_j_t& rhs) const {
@@ -129,9 +151,9 @@ namespace ns3 {
                         }
                     };
                     struct key_hash0 : public std::unary_function<DelayIndex, std::size_t> {
-                         std::size_t operator()(const DelayIndex& k) const {
-                                return std::get<0>(k) ^ std::get<1>(k) ^ std::get<2>(k) ^ std::get<3>(k);
-                         }
+                        std::size_t operator()(const DelayIndex& k) const {
+                            return std::get<0>(k) ^ std::get<1>(k) ^ std::get<2>(k) ^ std::get<3>(k);
+                        }
                     };
                     struct equal_to0 : public std::binary_function<DelayIndex, DelayIndex, bool> {
                         bool operator()(const DelayIndex& lhs, const DelayIndex& rhs) const {
@@ -145,6 +167,7 @@ namespace ns3 {
                     // using unordered_map would be more efficient, but I got a compile error, fix this compile error TODO
                     using CustomedMap = map<Teg_i_j_t, int>;
                     using DelayMap = map<DelayIndex, int>;
+                    // color should be equal to the interval of graph
                     const static int hypo_c = 1;
                     CustomedMap teg_routing_table_;
                     DelayMap delay_map_;
@@ -385,10 +408,10 @@ namespace ns3 {
                         ~DtnAppTransmitSessionAssister() {
 
                         }
-                    vector<Ptr<Packet>> daemon_retransmission_packet_buffer_vec_;
-                    vector<DaemonTransmissionInfo> daemon_transmission_info_vec_;
-                    vector<DaemonBundleHeaderInfo> daemon_transmission_bh_info_vec_;
-                    int get_need_to_bytes(int index) { return daemon_transmission_info_vec_[index].info_transmission_total_send_bytes_ - daemon_transmission_info_vec_[index].info_transmission_current_sent_acked_bytes_; }
+                        vector<Ptr<Packet>> daemon_retransmission_packet_buffer_vec_;
+                        vector<DaemonTransmissionInfo> daemon_transmission_info_vec_;
+                        vector<DaemonBundleHeaderInfo> daemon_transmission_bh_info_vec_;
+                        int get_need_to_bytes(int index) { return daemon_transmission_info_vec_[index].info_transmission_total_send_bytes_ - daemon_transmission_info_vec_[index].info_transmission_current_sent_acked_bytes_; }
                     private :
                         DtnApp& out_app_;
                 };

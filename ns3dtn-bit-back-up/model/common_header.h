@@ -33,6 +33,8 @@
 #include <boost/range/algorithm.hpp>
 #include <boost/range/adaptors.hpp>
 #include <boost/graph/bellman_ford_shortest_paths.hpp>
+#include <boost/graph/graphviz.hpp>
+
 
 #define DEBUG
 #define NS3DTNBIT_PORT_NUMBER 1234
@@ -61,8 +63,11 @@ namespace ns3 {
         using std::set;
         using std::tuple;
         using std::to_string;
+        using std::make_pair;
+        using std::tie;
         using std::make_tuple;
         using std::ostream;
+        using std::ofstream;
         using std::ifstream;
         using std::stringstream;
 
@@ -75,4 +80,5 @@ namespace ns3 {
 
     } /* ns3dtnbit */ 
 } /* ns3  */ 
+
 #endif /* ifndef COMMON_HEADER_H */

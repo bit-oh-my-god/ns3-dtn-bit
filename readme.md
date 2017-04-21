@@ -1,13 +1,13 @@
 # Preface
-This Project is a simulation for dtn on ns-3 environment, easy to use for research purples, supporting customed routing definition and scenario definition.
+This Project is a newbie-readable simulation for dtn on ns-3 environment, easy to use for research purples, supporting customed routing definition and scenario definition.
 This project is highly inspirited by [Lakkakorpi](https://www.netlab.tkk.fi/tutkimus/dtn/ns/)
 Read this [paper](https://smartech.gatech.edu/bitstream/handle/1853/6492/GIT-CC-04-07.pdf?sequence=1&isAllowed=y) if you want know about TEG(time-expanded graph)
 
 # structure of this project
 
-* editor tool : editor Vim do I use, if you are using YCM for code complete, remember add pull path include path to ~/.ycm_extra_config.py
+* editor tool : editor Vim do I use, if you are using YCM for code complete, remember add pull path of include to ~/.ycm_extra_config.py
 * bonnmotion 
-it is a software depending on java used to generate location files
+it is a software depending on java used to generate node trace files
 we just need the **.ns_movements** file
 
 * bonnmotion + ns2 + nam + nsg2.1
@@ -30,6 +30,8 @@ there is one tutorial that I think may help you [ref](https://www.youtube.com/wa
 This combo is used to make graph and paper, check /box/jupyter
 if you want use jupyter yourself, install it on org-web, in China, you may not be able to download 0.5 G big file from the web.
 you would need to install miniconda first, and install full-package from miniconda, that's the way I did.
+
+* mendeley + pandoc
 
 # develop log
 

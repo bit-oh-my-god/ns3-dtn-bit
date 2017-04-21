@@ -1,6 +1,8 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 
 #include "ns3dtn-bit.h"
+#include "../config.txt"
+extern std::string root_path;
 
 using std::string;
 using std::endl;
@@ -75,6 +77,28 @@ namespace ns3 {
             auto ip_base_v = ip_base.Get();
             auto ip_v = ip.Get();
             return ip_v - ip_base_v;
+        }
+
+        static int nodeid2neighborvecindex(vector<DtnApp::NeighborInfo>& neighbor_info_vec_, int id) {
+            int indx;
+            auto ip_base = NodeNo2Ipv4(id);
+            for (int i = 0; i < neighbor_info_vec_.size(); i++) {
+                // result to index of neighbor vec
+                auto nip = neighbor_info_vec_[i].info_address_.GetIpv4();
+                if (nip.IsEqual(ip_base)) { indx = i; break; }
+            }
+            return indx;
+        }
+
+        static tuple<int, bool> ip2neighborvecindex(vector<DtnApp::NeighborInfo>& neighbor_info_vec_, Ipv4Address ip_from) {
+            int j = 0;
+            bool neighbor_found = false;
+            for (; j < neighbor_info_vec_.size(); j++) {
+                auto ip_n = neighbor_info_vec_[j].info_address_.GetIpv4();
+                neighbor_found = (ip_n.IsEqual(ip_from)) ? true : false;
+                if (neighbor_found) {break;}
+            }
+            return tuple<int, bool>(j, neighbor_found);
         }
 
         std::string DtnApp::LogPrefix() {
@@ -239,12 +263,14 @@ namespace ns3 {
                 addr.SetPort(NS3DTNBIT_PORT_NUMBER);
                 bool neighbor_found = false;
                 int j = 0;
-                for (; j < neighbor_info_vec_.size(); j++) {
-                    auto ip_n = neighbor_info_vec_[j].info_address_.GetIpv4();
-                    neighbor_found = (ip_n.IsEqual(ip_from)) ? true : false;
-                    if (neighbor_found) {break;}
-                }
-                //NS_LOG_LOGIC(LogPrefixMacro << "here,j=" << j << ";ip_from=" << ip_from << ";found=" << neighbor_found);
+                /*
+                   for (; j < neighbor_info_vec_.size(); j++) {
+                   auto ip_n = neighbor_info_vec_[j].info_address_.GetIpv4();
+                   neighbor_found = (ip_n.IsEqual(ip_from)) ? true : false;
+                   if (neighbor_found) {break;}
+                   }
+                   */
+                tie(j, neighbor_found) = ip2neighborvecindex(neighbor_info_vec_, ip_from);
                 if (!neighbor_found) {
                     NeighborInfo tmp_neighbor_info = {
                         addr,
@@ -269,7 +295,7 @@ namespace ns3 {
                 int pkt_seqno_number;
                 // the rest seqno is the seqno for antipacket
                 pkt_str_stream >> pkt_seqno_number;
-                NS_LOG_INFO(LogPrefixMacro << "receive hello, node-" << Ipv42NodeNo(ip_from) << " to node-" << node_->GetId() << ", ip=" << ip_from << ";found =" << neighbor_found << ";j=" << j << ";pkt_seqno_number=" << pkt_seqno_number << ";Available_bytes_=" << neighbor_info_vec_[j].info_daemon_baq_available_bytes_ << ";avli_s=" << avli_s << ";size()=" << bp_header.get_payload_size());
+                NS_LOG_INFO(LogPrefixMacro << "receive hello, node-" << Ipv42NodeNo(ip_from) << " to node-" << node_->GetId() << ", ip=" << ip_from << ";found =" << neighbor_found << "; found node id=" <<  Ipv42NodeNo(neighbor_info_vec_[j].info_address_.GetIpv4()) << ";pkt_seqno_number=" << pkt_seqno_number << ";Available_bytes_=" << neighbor_info_vec_[j].info_daemon_baq_available_bytes_ << ";avli_s=" << avli_s << ";size()=" << bp_header.get_payload_size());
                 {
                     // going to fill baq
                     auto tmpbaq_vec = vector<dtn_seqno_t>();
@@ -638,7 +664,7 @@ namespace ns3 {
                     return;
                 }
                 if (bp_header.get_destination_ip().IsEqual(own_ip_)) {
-                    NS_LOG_DEBUG(LogPrefixMacro << "NOTE:Great! one bundle arrive destination! seqno=" << bp_header.get_source_seqno());
+                    NS_LOG_DEBUG(LogPrefixMacro << "NOTE:Great! one bundle arrive destination! bp_header is" << bp_header);
                     ToSendAntipacketBundle(bp_header);
                     tmp_p_pkt->AddHeader(bp_header);
                     daemon_consume_bundle_queue_->Enqueue(Packet2Queueit(tmp_p_pkt->Copy()));
@@ -787,11 +813,14 @@ namespace ns3 {
                 if (result == node_->GetId()) {NS_LOG_WARN(LogPrefixMacro << "WARN: routing self! s=" << s << ";d=" << d << ";result = " << result);}
                 NS_LOG_DEBUG(LogPrefixMacro << "NOTE: after YouRouting method, result =" << result << "source =" << s << "dest=" << d);
                 if (result != -1) {
-                    auto ip_base = NodeNo2Ipv4(result);
-                    for (int i = 0; i < neighbor_info_vec_.size(); i++) {
-                        auto nip = neighbor_info_vec_[i].info_address_.GetIpv4();
-                        if (nip.IsEqual(ip_base)) { indx = i; break; }
-                    }
+                    /*
+                       auto ip_base = NodeNo2Ipv4(result);
+                       for (int i = 0; i < neighbor_info_vec_.size(); i++) {
+                       auto nip = neighbor_info_vec_[i].info_address_.GetIpv4();
+                       if (nip.IsEqual(ip_base)) { indx = i; break; }
+                       }
+                       */
+                    indx = nodeid2neighborvecindex(neighbor_info_vec_, result);
                     vector<int> available = BPHeaderBasedSendDecisionDetail(ref_bp_header, check_state);
                     for (auto v : available) {
                         if (v == indx) {
@@ -824,30 +853,38 @@ namespace ns3 {
                     s = Ipv42NodeNo(ip_s);
                     d = Ipv42NodeNo(ip_d);
                 }
-                NS_LOG_DEBUG(LogPrefixMacro << "NOTE: before TimeExpanded method");
                 vector<int> available = BPHeaderBasedSendDecisionDetail(ref_bp_header, check_state);
                 // Note that this method just indicate which node the next hop would be,
                 // if the next hop is not available yet, should wait for it till available
+                NS_LOG_DEBUG(LogPrefixMacro << ">>NOTE: before TimeExpanded method");
                 result = routing_assister_.RouteIt(node_->GetId(), d);
-                if (result == node_->GetId()) {NS_LOG_ERROR(LogPrefixMacro << "Error: routing self! s=" << s << ";d=" << d << ";result = " << result); std::abort();}
-                NS_LOG_DEBUG(LogPrefixMacro << "NOTE: after TimeExpanded method, result =" << result);
+                NS_LOG_DEBUG(LogPrefixMacro << ">>NOTE: after TimeExpanded method, result =" << result);
+                if (result == node_->GetId()) {NS_LOG_ERROR(LogPrefixMacro << "Error: routing ! s=" << s << ";d=" << d << ";result = " << result); std::abort();}
                 if (result != -1) {
-                    auto ip_base = NodeNo2Ipv4(result);
-                    for (int i = 0; i < neighbor_info_vec_.size(); i++) {
-                        auto nip = neighbor_info_vec_[i].info_address_.GetIpv4();
-                        if (nip.IsEqual(ip_base)) { indx = i; break; }
+                    /*
+                       auto ip_base = NodeNo2Ipv4(result);
+                       for (int i = 0; i < neighbor_info_vec_.size(); i++) {
+                    // result to index of neighbor vec
+                    auto nip = neighbor_info_vec_[i].info_address_.GetIpv4();
+                    if (nip.IsEqual(ip_base)) { indx = i; break; }
                     }
+                    */
+                    indx = nodeid2neighborvecindex(neighbor_info_vec_, result);
+                    bool result_is_in_available = false;
                     for (auto v : available) {
                         if (v == indx) {
+                            result_is_in_available = true;
                             return_index_of_neighbor_you_dedicate = indx;
-                            NS_LOG_DEBUG(LogPrefixMacro << "NOTE:your decision is made, to-node-id =" << result << "; index of neighbor_info_vec_ is = " << indx);
-                            return true;
                         }
                     }
-                    NS_LOG_INFO(LogPrefixMacro << "routing decision is not available, or have be sent;" << " to-node-id =" << result << "; index of neighbor_info_vec_ is = " << indx << "all available is: ");
                     if (available.size() == 0) { NS_LOG_WARN(LogPrefixMacro << "WARN: available is none."); return false; }
-                    return_index_of_neighbor_you_dedicate = available[0];
-                    return true;
+                    if (result_is_in_available) {
+                        NS_LOG_DEBUG(LogPrefixMacro << "NOTE:your decision is made, to-node-id =" << result << "; index of neighbor_info_vec_ is = " << indx);
+                        return true;
+                    } else {
+                        NS_LOG_INFO(LogPrefixMacro << "routing decision is not available, or have been sent;" << " to-node-id =" << result << "; index of neighbor_info_vec_ is = " << indx << "all available is: ");
+                        return false;
+                    }
                 } else {
                     return false;
                 }
@@ -957,13 +994,15 @@ namespace ns3 {
                     // go through daemon_antipacket_queue_ to find whether real_send_boolean should be set true
                     NS_LOG_DEBUG(LogPrefixMacro << "we have NPackets = " << daemon_antipacket_queue_->GetNPackets());
                     for (int n = 0; n < daemon_antipacket_queue_->GetNPackets() && !real_send_boolean; n++) {
-                        NS_LOG_INFO("p-" << n);
                         p_pkt = daemon_antipacket_queue_->Dequeue()->GetPacket();
                         p_pkt->RemoveHeader(bp_header);
+                        NS_LOG_INFO("p-" << n << bp_header);
                         bool anti_good_check = SprayGoodDetail(bp_header, 0);
                         bool anti_lazy_transmit_check = Simulator::Now().GetSeconds() - bp_header.get_hop_time_stamp().GetSeconds() > 2 * NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME;
                         if (anti_good_check && anti_lazy_transmit_check) {
                             real_send_boolean = FindTheNeighborThisBPHeaderTo(bp_header, decision_neighbor, check_state);
+                        } else {
+                            NS_LOG_INFO("pkt not available, anti_good_check, anti_lazy_transmit_check=" << anti_good_check << anti_lazy_transmit_check);
                         }
                         p_pkt->AddHeader(bp_header);
                         Ptr<Packet> p_pkt_copy = p_pkt->Copy();
@@ -973,15 +1012,17 @@ namespace ns3 {
                     // go though daemon_bundle_queue_ to find whether real_send_boolean should be set true
                     NS_LOG_DEBUG(LogPrefixMacro << "we have NPackets = " << daemon_bundle_queue_->GetNPackets());
                     for (int n = 0; n < daemon_bundle_queue_->GetNPackets() && !real_send_boolean; n++) {
-                        NS_LOG_INFO("p-" << n);
                         p_pkt = daemon_bundle_queue_->Dequeue()->GetPacket();
                         p_pkt->RemoveHeader(bp_header);
+                        NS_LOG_INFO("p-" << n << bp_header);
                         if (Simulator::Now().GetSeconds() - bp_header.get_src_time_stamp().GetSeconds() < NS3DTNBIT_HYPOTHETIC_BUNDLE_EXPIRED_TIME) {
                             bool bundle_check_good = (SprayGoodDetail(bp_header, 0));
-                            bool bundle_lazy_transmit_check = Simulator::Now().GetSeconds() - bp_header.get_hop_time_stamp().GetSeconds() > 2 * NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME;
+                            bool bundle_lazy_transmit_check = Simulator::Now().GetSeconds() - bp_header.get_hop_time_stamp().GetSeconds() > 1 * NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME;
                             bool bundle_dest_not_this_check = !bp_header.get_destination_ip().IsEqual(own_ip_);
                             if (bundle_check_good && bundle_dest_not_this_check && bundle_lazy_transmit_check) {
                                 real_send_boolean = FindTheNeighborThisBPHeaderTo(bp_header, decision_neighbor, check_state);
+                            } else {
+                                NS_LOG_INFO("pkt not available, bundle_check_good, bundle_dest_not_this_check, bundle_lazy_transmit_check=" << bundle_check_good << bundle_dest_not_this_check << bundle_lazy_transmit_check);
                             }
                         } else {
                             NS_LOG_ERROR(LogPrefixMacro << "Error:expired pkt, should be removed before reach here"); std::abort();
@@ -1118,10 +1159,10 @@ namespace ns3 {
                 }
 
                 if (pre && (!transmit_session_already) && (!neighbor_has_bundle) && (!bundle_sent)) {
-                    NS_LOG_DEBUG(LogPrefixMacro << "neighbor-" << j << "is good, pre, already,has,sent is :" << pre << " " << transmit_session_already << " " << neighbor_has_bundle << " " << bundle_sent);
+                    NS_LOG_DEBUG(LogPrefixMacro << "neighbor, node id=" << Ipv42NodeNo(neighbor_info_vec_[j].info_address_.GetIpv4()) << "is good, pre, already,has,sent is :" << pre << " " << transmit_session_already << " " << neighbor_has_bundle << " " << bundle_sent);
                     result.push_back(j);
                 } else {
-                    NS_LOG_INFO(LogPrefixMacro << "neighbor-" << j << "isn't available" << ",pre, already,has,sent is :" << pre << " " << transmit_session_already << " " << neighbor_has_bundle << " " << bundle_sent);
+                    NS_LOG_INFO(LogPrefixMacro << "neighbor, node id =" << Ipv42NodeNo(neighbor_info_vec_[j].info_address_.GetIpv4()) << "isn't available" << ",pre, already,has,sent is :" << pre << " " << transmit_session_already << " " << neighbor_has_bundle << " " << bundle_sent);
                 }
             }
             return result;
@@ -1550,15 +1591,15 @@ namespace ns3 {
                             auto ed = e_p.first;
                             auto ed_other = e_p_other.first;
                             if (tmp_g[ed].distance_ < max_range && tmp_g_other[ed_other].distance_ < max_range) {
-                                auto tmp_id_of_g = g_vede_m_[t][i];
-                                auto tmp_id_of_g_other = g_vede_m_[t + 1][i];
-                                auto tmp_jd_of_g = g_vede_m_[t][j];
-                                auto tmp_jd_of_g_other = g_vede_m_[t + 1][j];
-                                // to simplify the problem, we just let color to be 1, If you want more specified or more accurate, you can do like this :
-                                // switch(distance / (max_range / 8)) : 
-                                // case 1 : { color = 1; break; }
-                                // case 2 : { color = 2; break; }
-                                // ...
+                                string ix_name = "node-" + to_string(i) + "-" + to_string(t);
+                                string jx_name = "node-" + to_string(j) + "-" + to_string(t);
+                                string iy_name = "node-" + to_string(i) + "-" + to_string(t + 1);
+                                string jy_name = "node-" + to_string(j) + "-" + to_string(t + 1);
+                                auto tmp_id_of_g = name2vd_map[ix_name];
+                                auto tmp_jd_of_g = name2vd_map[jx_name];
+                                auto tmp_id_of_g_other = name2vd_map[iy_name];
+                                auto tmp_jd_of_g_other = name2vd_map[jy_name];
+
                                 auto tmp_edge_of_g = add_edge(tmp_id_of_g, tmp_jd_of_g_other, EdgeProperties(
                                             (tmp_g[ed].distance_ / 2) + (tmp_g_other[ed_other].distance_ / 2), 1), teg_);
                                 auto tmp_edge_of_g_other = add_edge(tmp_jd_of_g, tmp_id_of_g_other, EdgeProperties(
@@ -1579,6 +1620,7 @@ namespace ns3 {
 
         void DtnApp::Adob::AdobDo_03() {
             assert(get_teg_size() > get_g_vec_size() * get_node_number());
+            string teg_viz_filename = root_path + "/box/dtn_simulation_result/teg_viz.txt";
             // get round time 
             int rounded_time = Simulator::Now().GetSeconds();
             int t_max = g_vec_.size();
@@ -1590,8 +1632,8 @@ namespace ns3 {
             for (int t = t_max - 2; t >= 0; t--) {
                 for (int i = 0; i < get_node_number(); i++) {
                     for (int j = 0; j < get_node_number(); j++) {
-                        string v_i_t_name = "node-" + to_string(i)+ "-" + to_string(t);
-                        string v_j_t_plus_c_name = "node-" + to_string(j)+ "-" + to_string(t + c);
+                        string v_i_t_name = "node-" + to_string(i) + "-" + to_string(t);
+                        string v_j_t_plus_c_name = "node-" + to_string(j) + "-" + to_string(t + c);
                         auto ep = edge(name2vd_map[v_i_t_name], name2vd_map[v_j_t_plus_c_name], teg_);
                         if (ep.second) {
                             int edge_delay_color = teg_[ep.first].message_color_;
@@ -1640,6 +1682,13 @@ namespace ns3 {
                     }
                 }
             }
+            std::cout << "NOTE: write viz for teg" << std::endl;
+            ofstream dot(teg_viz_filename);
+            using EdgeProperties = ns3::ns3dtnbit::DtnApp::Adob::EdgeProperties;
+            using VertexProperties = ns3::ns3dtnbit::DtnApp::Adob::VertexProperties;
+            boost::write_graphviz(dot, teg_, 
+                    boost::make_label_writer(boost::get(&VertexProperties::name_, teg_)),
+                    boost::make_edge_writer(boost::get(&EdgeProperties::distance_, teg_), boost::get(&EdgeProperties::message_color_, teg_)));
             std::cout << "NOTE:in AdobDo_03, after shortest delay path" << std::endl;
         }
 

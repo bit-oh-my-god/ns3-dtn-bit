@@ -2,7 +2,6 @@
 */
 #include "ns3dtn-bit-example-interface.h"
 #include "../config.txt"
-
 extern std::string root_path;
 
 namespace ns3 {
@@ -51,7 +50,7 @@ namespace ns3 {
                     string str_tmp;
                     int node_v, time_v, x_v, y_v, z_v;
                     iss >> str_tmp >> node_v >> str_tmp >> time_v >> str_tmp >> x_v >> y_v >> z_v;
-                    vector<int> ntpos = {node_v, time_v, x_v, y_v, z_v};
+                    vector<int> ntpos = {x_v, y_v, z_v, node_v, time_v};
                     ntpos_map[time_v][node_v] = ntpos;
                 }
             }
@@ -60,13 +59,17 @@ namespace ns3 {
             {
                 // calculate code
                 auto distance_func = [](std::map<int, vector<int>>& m, int i, int j) -> int {
-                    long reint = 0;
-                    auto pos1 = m[i];
-                    auto pos2 = m[j];
-                    reint = (pos1[0] - pos2[0]) * (pos1[0] - pos2[0]) 
-                        + (pos1[1] - pos2[1]) * (pos1[1] - pos2[1])
-                        + (pos1[2] - pos2[2]) *(pos1[2] - pos2[2]);
+                    double reint = 0.0;
+                    auto posi = m[i];
+                    auto posj = m[j];
+                    reint = ((double)(posi[0] - posj[0]) * (double)(posi[0] - posj[0]))
+                        + ((double)(posi[1] - posj[1]) * (double)(posi[1] - posj[1]))
+                        + ((double)(posi[2] - posj[2]) * (double)(posi[2] - posj[2]));
                     reint = sqrt(reint);
+                    if (reint == 0) {
+                        std::cout << "DEBUG time=" << posi[4] << ",i =" << i << ", pos=" << posi[0] << "-" << posi[1] << "-" << posi[2] 
+                            << ", j = " << j << ", pos=" << posj[0] << "-" << posj[1] << "-" << posj[2] << std::endl;
+                    }
                     return reint;
                 };
                 for (auto& m1 : ntpos_map) {
@@ -75,10 +78,17 @@ namespace ns3 {
                     auto tmp_adjacent_array = vector<vector<int>>(node_number_, vector<int>(node_number_, -1));
                     for (int i = 0; i < node_number_; i++) {
                         for (int j = 0; j < node_number_; ++j) {
+                            if (i == j) {continue;}
                             tmp_adjacent_array[i][j] = distance_func(m2, i, j);
                         }
                     }
                     t_2_adjacent_array[time] = tmp_adjacent_array;
+                }
+            }
+            std::cout << "DEBUG:outof608" << std::endl;
+            for (int a = 0; a < node_number_; ++a) {
+                for (int b = 0; b < node_number_; ++b) {
+                    std::cout << "v-" << a << "-" << b << "=" << t_2_adjacent_array[608][a][b] << std::endl;
                 }
             }
             DtnApp::Adob adob_ob = DtnApp::Adob();

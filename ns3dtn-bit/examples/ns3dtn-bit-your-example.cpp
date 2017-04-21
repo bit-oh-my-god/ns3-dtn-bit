@@ -78,6 +78,7 @@ namespace ns3 {
                 TegRouting(DtnApp& dp) : RoutingMethodInterface(dp) {}
                 // s is source index, d is dest index, return next hop
                 int DoRoute(int s, int d) override {
+                    std::cout << "In TegRouting" << std::endl;
                     using namespace boost;
                     DtnApp::Adob adob = RoutingMethodInterface::get_adob();
                     DtnApp::Adob& ref_adob = adob;
@@ -93,8 +94,11 @@ namespace ns3 {
                     RoutingTableIndex rt_index = make_tuple(s, d, tmp_time);
                     DelayIndex d_index = make_tuple(s, d, tmp_time, c);
 
-                    if (ref_adob.delay_map_[d_index] < time_max) {
-                        std::cout << "WARN:this routing is not possible" << __LINE__ << std::endl; return -1;
+                    if (ref_adob.delay_map_[d_index] > time_max - tmp_time) {
+                        std::cout << "WARN:this routing is not possible" << __LINE__ << ":" 
+                            << "\nremain time= " << time_max - tmp_time 
+                            << "\ndelay time= " << ref_adob.delay_map_[d_index] 
+                            << std::endl; return -1;
                     } else {
                         int vk = -1;
                         bool found_vk = false;
@@ -109,6 +113,7 @@ namespace ns3 {
                             if (vk < 0 || vk > ref_adob.get_node_number()) { std::cout << "Error: can't be" << __LINE__ << std::endl; std::abort(); }
                             rt_index = make_tuple(s, vk, tmp_time);
                         }
+                        if (vk == -1) { std::abort(); }
                         return vk;
                     }
                 }
