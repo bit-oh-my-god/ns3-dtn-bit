@@ -73,6 +73,29 @@ namespace ns3 {
                 }
         };
 
+        class CGRRouting : public RoutingMethodInterface {
+            using node_id_t = int;
+            public :
+                CGRRouting(DtnApp& dp) : RoutingMethodInterface(dp) { }
+                // s is source index, d is dest index, return next hop
+                int DoRoute(int s, int d) override {
+
+                    return -1;
+                }
+
+                void GetInfo(node_id_t destination_id, node_id_t from_id, std::vector<node_id_t> vec_of_current_neighbor
+                        ) {
+
+                }
+            private :
+                node_id_t destination_id_;
+                dtn_time_t expired_time_;
+                std::vector<node_id_t> proximate_vec_;
+                std::vector<node_id_t> excluded_vec_;
+                dtn_time_t forfeit_time_;
+                dtn_time_t best_delivery_time_;
+        };
+
         class TegRouting : public RoutingMethodInterface {
             public :
                 TegRouting(DtnApp& dp) : RoutingMethodInterface(dp) {}
@@ -126,7 +149,8 @@ namespace ns3 {
                     simulation_duration_ = 802;
                     print_wifi_log_ = false;
                     //ex_rm_ = DtnApp::RoutingMethod::Other;
-                    ex_rm_ = DtnApp::RoutingMethod::TimeExpanded;
+                    //ex_rm_ = DtnApp::RoutingMethod::TimeExpanded;
+                    ex_rm_ = DtnApp::RoutingMethod::CGR;
                     //ex_rm_ = DtnApp::RoutingMethod::SprayAndWait;
                 }
                 void ReportEx(std::ostream& os) override {
@@ -134,8 +158,9 @@ namespace ns3 {
                 }
 
                 std::unique_ptr<RoutingMethodInterface> CreateRouting(DtnApp& dtn) override {
-                    auto p = new TegRouting(dtn);
+                    //auto p = new TegRouting(dtn);
                     //auto p = new YouRouting(dtn);
+                    auto p = new CGRRouting(dtn);
                     return std::unique_ptr<RoutingMethodInterface>(p);
                 }
 

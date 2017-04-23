@@ -888,8 +888,11 @@ namespace ns3 {
                 } else {
                     return false;
                 }
+            } else if (routing_assister_.IsSet() && routing_assister_.get_rm() == RoutingMethod::CGR) {
+                NS_LOG_ERROR(LogPrefixMacro << "ERROR:not implemented!");
+                std::abort();
             } else {
-                NS_LOG_ERROR("can't fine the routing method or method not assigned, routing_assister_ is set=" << routing_assister_.IsSet());
+                NS_LOG_ERROR("can't find the routing method or method not assigned, routing_assister_ is set=" << routing_assister_.IsSet());
                 std::abort();
             }
         }

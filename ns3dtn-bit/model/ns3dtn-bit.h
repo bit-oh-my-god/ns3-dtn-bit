@@ -55,6 +55,14 @@ namespace boost {
 namespace ns3 {
     namespace ns3dtnbit {
 
+        struct cgr_xmit {
+            dtn_time_t contact_start_time_;
+            dtn_time_t contact_end_time_;
+            int node_id_of_from_;       // transmission node
+            int node_id_of_to_;         // receiving node
+            double data_transmission_rate_;
+        };
+
         struct my_edge_property {
             my_edge_property () { }
             my_edge_property(int v, int c) {
@@ -104,6 +112,9 @@ namespace ns3 {
                     // get teg_routing_table_ done
                     // the complexity of this function is O(N * N * N * T), please do not use too large argument
                     void AdobDo_03();
+
+                    // get xmit for every nodes
+                    void AdobDo_04();
 
                     Graph get_graph_for_now() const {
                         for (int i = t_vec_.size() - 1; i >= 0 ; i--) {
@@ -172,12 +183,15 @@ namespace ns3 {
                     CustomedMap teg_routing_table_;
                     DelayMap delay_map_;
                     int node_number_;
+                    // for CGR
+                    map<int, vector<cgr_xmit>> node_id2cgr_xmit_vec_map_;
                 };
 
                 enum class RoutingMethod {
                     Epidemic,
                     TimeExpanded,
                     SprayAndWait,
+                    CGR,
                     Other
                 };
 
@@ -312,6 +326,9 @@ namespace ns3 {
                         ~DtnAppRoutingAssister() {
 
                         }
+                        // some thing for CGR
+                        // 
+                        // end of CGR
                     private :
                         friend RoutingMethodInterface;
                         vector<Adob> vec_;
@@ -319,6 +336,9 @@ namespace ns3 {
                         Adob adob_cur_;
                         bool is_init = false;
                         RoutingMethod rm_;
+                        // some thing for CGR
+                        // 
+                        // end of CGR
                 };
 
                 DtnAppRoutingAssister routing_assister_;
@@ -429,12 +449,17 @@ namespace ns3 {
                 // Note : 
                 // use adob in the out_app_
                 virtual int DoRoute(int src, int dst) = 0;
+                /*
+                 * this time I modify this interface for CGR, next time I would do it again! Change RoutingMethodInterface to Generic!!!
+                 * TODO
+                 * */
+                virtual void GetInfo(int destination_id, int from_id, std::vector<int> vec_of_current_neighbor,
+                    int own_id, dtn_time_t expired_time, int bundle_size, int networkconfigurationflag) {} 
             protected :
                 // can only read
                 const DtnApp& out_app_;
-                DtnApp::Adob get_adob() { 
-                    return out_app_.routing_assister_.adob_cur_;
-                }
+                DtnApp::Adob get_adob() { return out_app_.routing_assister_.adob_cur_; }
+                //DtnApp& get_app() {return out_app_;}
         };
 
     } /* ns3dtnbit */ 

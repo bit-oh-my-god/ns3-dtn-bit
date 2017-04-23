@@ -888,8 +888,11 @@ namespace ns3 {
                 } else {
                     return false;
                 }
+            } else if (routing_assister_.IsSet() && routing_assister_.get_rm() == RoutingMethod::CGR) {
+                NS_LOG_ERROR(LogPrefixMacro << "ERROR:not implemented!");
+                routing_assister_.
             } else {
-                NS_LOG_ERROR("can't fine the routing method or method not assigned, routing_assister_ is set=" << routing_assister_.IsSet());
+                NS_LOG_ERROR("can't find the routing method or method not assigned, routing_assister_ is set=" << routing_assister_.IsSet());
                 std::abort();
             }
         }
@@ -1690,6 +1693,13 @@ namespace ns3 {
                     boost::make_label_writer(boost::get(&VertexProperties::name_, teg_)),
                     boost::make_edge_writer(boost::get(&EdgeProperties::distance_, teg_), boost::get(&EdgeProperties::message_color_, teg_)));
             std::cout << "NOTE:in AdobDo_03, after shortest delay path" << std::endl;
+        }
+
+        /*
+         * 
+         * */ 
+        void DtnApp::Adob::AdobDo_04() {
+            // init node_id2cgr_xmit_vec_map_ TODO
         }
 
     } /* ns3dtnbit */ 

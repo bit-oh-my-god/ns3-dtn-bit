@@ -140,7 +140,7 @@ namespace ns3 {
                 recvSink->Bind(local);
                 recvSink->SetRecvCallback(MakeCallback(&DtnApp::ReceiveHello, apps_[i]));
                 // load adob to each app, and load RoutingMethodInterface
-                if (ex_rm_ == DtnApp::RoutingMethod::Other || ex_rm_ == DtnApp::RoutingMethod::TimeExpanded) {
+                if (ex_rm_ == DtnApp::RoutingMethod::Other || ex_rm_ == DtnApp::RoutingMethod::TimeExpanded || ex_rm_ == DtnApp::RoutingMethod::CGR) {
                     std::unique_ptr<RoutingMethodInterface> p_rm_in = CreateRouting(*apps_[i]);
                     apps_[i]->InvokeMeWhenInstallAppToSetupDtnAppRoutingAssister(ex_rm_, std::move(p_rm_in), adob);
                 } else if (ex_rm_ == DtnApp::RoutingMethod::SprayAndWait) {

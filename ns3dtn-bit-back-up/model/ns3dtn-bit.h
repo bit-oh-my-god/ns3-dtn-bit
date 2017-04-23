@@ -178,6 +178,7 @@ namespace ns3 {
                     Epidemic,
                     TimeExpanded,
                     SprayAndWait,
+                    CGR,
                     Other
                 };
 
@@ -312,6 +313,9 @@ namespace ns3 {
                         ~DtnAppRoutingAssister() {
 
                         }
+                        // some thing for CGR
+                        // 
+                        // end of CGR
                     private :
                         friend RoutingMethodInterface;
                         vector<Adob> vec_;
@@ -319,6 +323,9 @@ namespace ns3 {
                         Adob adob_cur_;
                         bool is_init = false;
                         RoutingMethod rm_;
+                        // some thing for CGR
+                        // 
+                        // end of CGR
                 };
 
                 DtnAppRoutingAssister routing_assister_;
@@ -432,9 +439,8 @@ namespace ns3 {
             protected :
                 // can only read
                 const DtnApp& out_app_;
-                DtnApp::Adob get_adob() { 
-                    return out_app_.routing_assister_.adob_cur_;
-                }
+                DtnApp::Adob get_adob() { return out_app_.routing_assister_.adob_cur_; }
+                //DtnApp& get_app() {return out_app_;}
         };
 
     } /* ns3dtnbit */ 

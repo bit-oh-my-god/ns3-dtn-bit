@@ -57,6 +57,7 @@ namespace ns3 {
         using std::vector;
         using std::string;
         using std::endl;
+        using std::cout;
         using std::pair;
         using std::map;
         using std::unordered_map;

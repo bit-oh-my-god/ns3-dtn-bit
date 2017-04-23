@@ -2,6 +2,7 @@
 This Project is a newbie-readable simulation for dtn on ns-3 environment, easy to use for research purples, supporting customed routing definition and scenario definition.
 This project is highly inspirited by [Lakkakorpi](https://www.netlab.tkk.fi/tutkimus/dtn/ns/)
 Read this [paper](https://smartech.gatech.edu/bitstream/handle/1853/6492/GIT-CC-04-07.pdf?sequence=1&isAllowed=y) if you want know about TEG(time-expanded graph)
+Read this [link](https://tools.ietf.org/html/draft-burleigh-dtnrg-cgr-00) if you want know about CGR
 
 # structure of this project
 
@@ -30,8 +31,6 @@ there is one tutorial that I think may help you [ref](https://www.youtube.com/wa
 This combo is used to make graph and paper, check /box/jupyter
 if you want use jupyter yourself, install it on org-web, in China, you may not be able to download 0.5 G big file from the web.
 you would need to install miniconda first, and install full-package from miniconda, that's the way I did.
-
-* mendeley + pandoc
 
 # develop log
 
