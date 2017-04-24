@@ -1,68 +1,22 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 
 #include "ns3dtn-bit.h"
+
 #include "../config.txt"
 extern std::string root_path;
 
-using std::string;
-using std::endl;
-#ifdef DEBUG
-/*
- * by default, get the function name called the logfunc which called this
- */
-string GetCallStack(int i = 2) {
-    int nptrs;
-    void *buffer[200];
-    char **cstrings;
-    char* return_str = new char[200];
-
-    nptrs = backtrace(buffer, 200);
-    sprintf(return_str, "backtrace() returned %d addresses\n", nptrs);
-    /* The call backtrace_symbols_fd(buffer, nptrs, STDOUT_FILENO)
-     *               would produce similar output to the following: */
-
-    cstrings = backtrace_symbols(buffer, nptrs);
-    if (cstrings == NULL || nptrs < 3) {
-        perror("backtrace_symbols");
-        exit(EXIT_FAILURE);
-    }
-    sprintf(return_str, "%s\n", cstrings[i]);
-    free(cstrings);
-    return return_str;
-}
-
-string FilePrint(string str) {
-    std::stringstream ss;
-    char* cs = new char[200];
-    std::sprintf(cs, "file : %s, line : %d,", __FILE__, __LINE__);
-    ss << "====== FilePrint ===== " << cs << "--->>" << str << endl;
-    return ss.str();
-}
-
-string GetLogStr(string str) {
-    std::stringstream ss;
-    string caller = GetCallStack();
-    ss << "==== Caller ====" << caller << "\n---->>" << str << endl;
-    string Filep = FilePrint(ss.str());
-    return Filep;
-}
-
-#endif
-
 namespace ns3 {
-
     namespace ns3dtnbit {
-
-    NS_LOG_COMPONENT_DEFINE ("DtnRunningLog");
+        NS_LOG_COMPONENT_DEFINE ("DtnRunningLog");
         /*
          * Can't use CreateObject<>, so do it myself
          */
-        static Ptr<QueueItem> Packet2Queueit(Ptr<Packet> p_pkt) {
+        Ptr<QueueItem> Packet2Queueit(Ptr<Packet> p_pkt) {
             QueueItem* p = new QueueItem(p_pkt);
             return Ptr<QueueItem>(p);
         }
 
-        static Ipv4Address NodeNo2Ipv4(int node_no) {
+        Ipv4Address NodeNo2Ipv4(int node_no) {
             auto ip_base = Ipv4Address("10.0.0.1");
             auto ip_v = ip_base.Get();
             ip_v += node_no;
@@ -72,14 +26,14 @@ namespace ns3 {
             return result;
         }
 
-        static int Ipv42NodeNo(Ipv4Address ip) {
+        int Ipv42NodeNo(Ipv4Address ip) {
             auto ip_base = Ipv4Address("10.0.0.1");
             auto ip_base_v = ip_base.Get();
             auto ip_v = ip.Get();
             return ip_v - ip_base_v;
         }
 
-        static int nodeid2neighborvecindex(vector<DtnApp::NeighborInfo>& neighbor_info_vec_, int id) {
+        int nodeid2neighborvecindex(vector<DtnApp::NeighborInfo>& neighbor_info_vec_, int id) {
             int indx;
             auto ip_base = NodeNo2Ipv4(id);
             for (int i = 0; i < neighbor_info_vec_.size(); i++) {
@@ -90,7 +44,7 @@ namespace ns3 {
             return indx;
         }
 
-        static tuple<int, bool> ip2neighborvecindex(vector<DtnApp::NeighborInfo>& neighbor_info_vec_, Ipv4Address ip_from) {
+        tuple<int, bool> ip2neighborvecindex(vector<DtnApp::NeighborInfo>& neighbor_info_vec_, Ipv4Address ip_from) {
             int j = 0;
             bool neighbor_found = false;
             for (; j < neighbor_info_vec_.size(); j++) {
@@ -151,7 +105,7 @@ namespace ns3 {
             daemon_consume_bundle_queue_->SetAttribute("MaxPackets", UintegerValue(1000));
             daemon_reorder_buffer_queue_->SetAttribute("MaxPackets", UintegerValue(1000));
 
-            daemon_baq_bytes_max_ = 1375000 + y->GetInteger(0, 1)*9625000;
+            daemon_baq_pkts_max_ = 13753;
         }
 
         /* refine 
@@ -188,7 +142,7 @@ namespace ns3 {
                                 drops_count_ = 0;
                             }
                         }
-                        int32_t tmp_number = ((dtn_seqno_t)(congestion_control_parameter_ * daemon_baq_bytes_max_) - (daemon_bundle_queue_->GetNBytes() + daemon_antipacket_queue_->GetNBytes()));
+                        int32_t tmp_number = ((dtn_seqno_t)(congestion_control_parameter_ * daemon_baq_pkts_max_ * NS3DTNBIT_HYPOTHETIC_CACHE_FACTOR) - (daemon_bundle_queue_->GetNBytes() + daemon_antipacket_queue_->GetNBytes()));
                         if (tmp_number <= 0) {
                             sprintf(tmp_msg_00, "%d ", 0);
                         } else {
@@ -408,7 +362,7 @@ namespace ns3 {
             }
             assert(p_pkt->GetSize() == payload_size);
             p_pkt->AddHeader(bp_header);
-            if ((daemon_antipacket_queue_->GetNBytes() + daemon_bundle_queue_->GetNBytes() + p_pkt->GetSize() <= daemon_baq_bytes_max_)) {
+            if ((daemon_antipacket_queue_->GetNBytes() + daemon_bundle_queue_->GetNBytes() + p_pkt->GetSize() <= daemon_baq_pkts_max_ * NS3DTNBIT_HYPOTHETIC_CACHE_FACTOR)) {
                 daemon_bundle_queue_->Enqueue(Packet2Queueit(p_pkt));
                 // NORMAL LOG
                 NS_LOG_DEBUG(LogPrefixMacro << "out of ToSendBundle()");
@@ -891,6 +845,7 @@ namespace ns3 {
             } else if (routing_assister_.IsSet() && routing_assister_.get_rm() == RoutingMethod::CGR) {
                 NS_LOG_ERROR(LogPrefixMacro << "ERROR:not implemented!");
                 std::abort();
+                //routing_assister_.
             } else {
                 NS_LOG_ERROR("can't find the routing method or method not assigned, routing_assister_ is set=" << routing_assister_.IsSet());
                 std::abort();
@@ -935,7 +890,7 @@ namespace ns3 {
                     daemon_reception_info_vec_.size() +
                     neighbor_info_vec_.size() +
                     transmit_assister_.daemon_transmission_info_vec_.size() +
-                    transmit_assister_.daemon_transmission_bh_info_vec_.size() < 400) {
+                    transmit_assister_.daemon_transmission_bh_info_vec_.size() < daemon_baq_pkts_max_ * 2) {
             } else {
                 NS_LOG_ERROR(LogPrefixMacro << "ERROR: queue and vecotr too big");
                 std::abort();
@@ -1511,7 +1466,18 @@ namespace ns3 {
             return p_rm_in_->DoRoute(s, d);
         }
 
-        void DtnApp::Adob::AdobDo_01(std::map<int, vector<vector<int>>> t_2_adjacent_array, int node_number) {
+        RoutingMethodInterface::RoutingMethodInterface(DtnApp& dp) : out_app_(dp) {}
+        RoutingMethodInterface::~RoutingMethodInterface() {}
+        void RoutingMethodInterface::GetInfo(int destination_id, int from_id, std::vector<int> vec_of_current_neighbor,
+                int own_id, dtn_time_t expired_time, int bundle_size, int networkconfigurationflag) {}
+        Adob RoutingMethodInterface::get_adob() { return out_app_.routing_assister_.vec_[0]; }
+
+    } /* ns3dtnbit */ 
+} /*ns3*/
+
+namespace ns3 {
+    namespace ns3dtnbit {
+        void Adob::AdobDo_01(std::map<int, vector<vector<int>>> t_2_adjacent_array, int node_number) {
             // boost code
             using namespace boost;
             node_number_ = node_number;
@@ -1547,7 +1513,7 @@ namespace ns3 {
             }
         }
 
-        void DtnApp::Adob::AdobDo_02(int node_number, int teg_layer_n, int max_range) {
+        void Adob::AdobDo_02(int node_number, int teg_layer_n, int max_range) {
             // add all node to it node-n-t-i
             using namespace boost;
             for (int n = 0; n < node_number; n++) {
@@ -1621,7 +1587,7 @@ namespace ns3 {
             }
         }
 
-        void DtnApp::Adob::AdobDo_03() {
+        void Adob::AdobDo_03() {
             assert(get_teg_size() > get_g_vec_size() * get_node_number());
             string teg_viz_filename = root_path + "/box/dtn_simulation_result/teg_viz.txt";
             // get round time 
@@ -1687,14 +1653,36 @@ namespace ns3 {
             }
             std::cout << "NOTE: write viz for teg" << std::endl;
             ofstream dot(teg_viz_filename);
-            using EdgeProperties = ns3::ns3dtnbit::DtnApp::Adob::EdgeProperties;
-            using VertexProperties = ns3::ns3dtnbit::DtnApp::Adob::VertexProperties;
+            using EdgeProperties = ns3::ns3dtnbit::Adob::EdgeProperties;
+            using VertexProperties = ns3::ns3dtnbit::Adob::VertexProperties;
             boost::write_graphviz(dot, teg_, 
                     boost::make_label_writer(boost::get(&VertexProperties::name_, teg_)),
                     boost::make_edge_writer(boost::get(&EdgeProperties::distance_, teg_), boost::get(&EdgeProperties::message_color_, teg_)));
             std::cout << "NOTE:in AdobDo_03, after shortest delay path" << std::endl;
         }
 
+        /*
+         * */ 
+        void Adob::AdobDo_04() {
+            // init node_id2cgr_xmit_vec_map_ TODO
+        }
+
+        Adob::Adob() {}
+        Adob::~Adob() {}
+
+        int Adob::get_node_number() { return node_number_; }
+        int Adob::get_teg_size() { return num_edges(teg_); }
+        int Adob::get_g_vec_size() { return g_vec_.size(); }
+
+        Adob::Graph Adob::get_graph_for_now() const {
+            for (int i = t_vec_.size() - 1; i >= 0 ; i--) {
+                if (Simulator::Now().GetSeconds() >= t_vec_[i]) {
+                    auto g_re = g_vec_[i];
+                    return g_re;
+                }
+            }
+            std::cout << "Error:" <<__LINE__ << "can't be, Seconds =" << Simulator::Now().GetSeconds() << "t_vec_" << t_vec_[0] << std::endl;
+            std::abort();
+        }
     } /* ns3dtnbit */ 
-    /* ... */
-}
+} /* ns3  */ 

@@ -38,8 +38,8 @@ namespace ns3 {
         }
 
         // use vector for further modify
-        vector<DtnApp::Adob> DtnExampleInterface::CreateAdjacentList() {
-            vector<DtnApp::Adob> result;
+        vector<Adob> DtnExampleInterface::CreateAdjacentList() {
+            vector<Adob> result;
             std::map<int, std::map<int, vector<int>>> ntpos_map;
             {
                 // regular expression code TODO
@@ -95,7 +95,7 @@ namespace ns3 {
                    }
                    */
             }
-            DtnApp::Adob adob_ob = DtnApp::Adob();
+            Adob adob_ob = Adob();
             adob_ob.AdobDo_01(t_2_adjacent_array, node_number_);
             // default, I recommand to use set teg_layer_n to be time_duration_ / 2
             adob_ob.AdobDo_02(node_number_, simulation_duration_, 4000);

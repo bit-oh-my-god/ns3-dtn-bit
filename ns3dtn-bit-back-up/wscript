@@ -12,6 +12,7 @@ def build(bld):
     module.source = [
         'model/dtn_package.cpp',
         'model/ns3dtn-bit.cc',
+        'model/dtn-pre.cpp',
         'helper/ns3dtn-bit-helper.cc',
         'examples/ns3dtn-bit-example-interface.cpp'
         ]
@@ -22,9 +23,11 @@ def build(bld):
     headers.source = [
         'model/common_header.h',
         'model/dtn_package.h',
+        'model/dtn-pre.h',
         'model/ns3dtn-bit.h',
         'helper/ns3dtn-bit-helper.h',
-        'examples/ns3dtn-bit-example-interface.h'
+        'examples/ns3dtn-bit-example-interface.h',
+        'model/routing.h'
         ]
 
     if bld.env.ENABLE_EXAMPLES:

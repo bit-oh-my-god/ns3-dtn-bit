@@ -1,7 +1,6 @@
 #ifndef COMMON_HEADER_H
 #define COMMON_HEADER_H 
 
-// this file should be the neck of the header dependent graph
 // every header file would need outside dependent should include this one
 
 #include <cassert>
@@ -50,6 +49,7 @@
 #define NS3DTNBIT_HYPOTHETIC_BUNDLE_EXPIRED_TIME 750.0
 #define NS3DTNBIT_ANTIPACKET_EXPIRED_TIME 1000.0
 #define NS3DTNBIT_HYPOTHETIC_INFINITE_DELAY 99999
+#define NS3DTNBIT_HYPOTHETIC_CACHE_FACTOR 978
 
 namespace ns3 {
 
@@ -61,6 +61,7 @@ namespace ns3 {
         using std::pair;
         using std::map;
         using std::unordered_map;
+        using std::min;
         using std::set;
         using std::tuple;
         using std::to_string;
@@ -73,9 +74,6 @@ namespace ns3 {
         using std::stringstream;
 
         using dtn_time_t = double;
-        /* dtn_seqnof_t is used with sign, eg. -(seqno2003) means giving out while (seqno2003) means receiving
-         * Important most time the author only check the sequno but not the IP address, which is ok due to the fact that seqnoes were set as the number of Uid. To us, we should use DaemonBundleHeaderInfo to check a pkt, for now, still using Header Uid.
-         */
         using dtn_seqnof_t = int32_t;
         using dtn_seqno_t = uint32_t;
 

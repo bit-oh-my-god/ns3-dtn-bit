@@ -2,6 +2,7 @@
 #define NS3DTN_BIT_EXAMPLE_INTERFACE_H value
 
 #include "ns3/ns3dtn-bit.h"
+#include "ns3/routing.h"
 
 namespace ns3 {
     namespace ns3dtnbit {
@@ -44,7 +45,7 @@ namespace ns3 {
                 Ipv4InterfaceContainer ip_interface_container_;
                 DtnApp::RoutingMethod ex_rm_;
 
-                vector<DtnApp::Adob> CreateAdjacentList();
+                vector<Adob> CreateAdjacentList();
                 virtual void CreateNodes();
                 virtual void CreateDevices();
                 virtual void InstallInternetStack();

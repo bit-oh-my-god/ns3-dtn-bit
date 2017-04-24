@@ -50,6 +50,7 @@
 #define NS3DTNBIT_HYPOTHETIC_BUNDLE_EXPIRED_TIME 750.0
 #define NS3DTNBIT_ANTIPACKET_EXPIRED_TIME 1000.0
 #define NS3DTNBIT_HYPOTHETIC_INFINITE_DELAY 99999
+#define NS3DTNBIT_HYPOTHETIC_CACHE_FACTOR 978
 
 namespace ns3 {
 
@@ -57,9 +58,11 @@ namespace ns3 {
         using std::vector;
         using std::string;
         using std::endl;
+        using std::cout;
         using std::pair;
         using std::map;
         using std::unordered_map;
+        using std::min;
         using std::set;
         using std::tuple;
         using std::to_string;

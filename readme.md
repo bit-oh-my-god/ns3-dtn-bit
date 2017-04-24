@@ -71,6 +71,7 @@ would support '$ns at $time $node setdest x2 y2 z2 speed' format, and this forma
         Adob_do02 Adob_do03
 - [ ] to work :(
 - [x] to have a life
+- [ ] CGR
 
 # Develpment Annoucement & Publish Log
 
