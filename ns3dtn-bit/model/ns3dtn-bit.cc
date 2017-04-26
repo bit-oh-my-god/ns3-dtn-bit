@@ -627,14 +627,14 @@ namespace ns3 {
                     return;
                 }
                 if (bp_header.get_destination_ip().IsEqual(own_ip_)) {
-                    NS_LOG_DEBUG(LogPrefixMacro << "NOTE:Great! one bundle arrive destination! bp_header is" << bp_header);
+                    NS_LOG_DEBUG(LogPrefixMacro << "NOTE:BundleTrace:Great! one bundle arrive destination! bp_header is" << bp_header);
                     ToSendAntipacketBundle(bp_header);
                     tmp_p_pkt->AddHeader(bp_header);
                     daemon_consume_bundle_queue_->Enqueue(Packet2Queueit(tmp_p_pkt->Copy()));
                     // this is a heuristic method to make hello, to let others know it already has it.
                     daemon_bundle_queue_->Enqueue(Packet2Queueit(tmp_p_pkt->Copy()));
                 } else {
-                    NS_LOG_DEBUG(LogPrefixMacro << "NOTE:good! one bundle recept, it's one hop! seqno=" << bp_header.get_source_seqno());
+                    NS_LOG_DEBUG(LogPrefixMacro << "NOTE:BundleTrace:good! one bundle recept, it's one hop! seqno=" << bp_header.get_source_seqno());
                     tmp_p_pkt->AddHeader(bp_header);
                     daemon_bundle_queue_->Enqueue(Packet2Queueit(tmp_p_pkt->Copy()));
                 }
@@ -750,7 +750,7 @@ namespace ns3 {
         bool DtnApp::FindTheNeighborThisBPHeaderTo(BPHeader& ref_bp_header, int& return_index_of_neighbor_you_dedicate, DtnApp::CheckState check_state) {
             NS_LOG_INFO(LogPrefixMacro << "enter FindTheNeighborThisBPHeaderTo()");
             if (routing_assister_.IsSet() && routing_assister_.get_rm() == RoutingMethod::SprayAndWait) {
-                NS_LOG_INFO(LogPrefixMacro << "It's SprayAndWait");
+                NS_LOG_INFO(LogPrefixMacro << "RoutingMethod is SprayAndWait");
                 auto ip_d = ref_bp_header.get_destination_ip();
                 if (ip_d == own_ip_) {return false;}
                 // this method is default one
@@ -762,7 +762,7 @@ namespace ns3 {
                     return false;
                 }
             } else if (routing_assister_.IsSet() && routing_assister_.get_rm() == RoutingMethod::Other) {
-                NS_LOG_INFO(LogPrefixMacro << "It's Other");
+                NS_LOG_INFO(LogPrefixMacro << "RoutingMethod is Other");
                 int s, d, indx = -1, result;
                 {
                     // init s, d
@@ -807,7 +807,7 @@ namespace ns3 {
                     return false;
                 }
             } else if (routing_assister_.IsSet() && routing_assister_.get_rm() == RoutingMethod::TimeExpanded) {
-                NS_LOG_INFO(LogPrefixMacro << "It's TimeExpanded");
+                NS_LOG_INFO(LogPrefixMacro << "RoutingMethod is TimeExpanded");
                 // s, d is index of node, indx is index of neighbor
                 int s, d, indx = -1, result;
                 {
@@ -854,6 +854,7 @@ namespace ns3 {
                     return false;
                 }
             } else if (routing_assister_.IsSet() && routing_assister_.get_rm() == RoutingMethod::CGR) {
+                NS_LOG_INFO(LogPrefixMacro << "RoutingMethod is CGR");
                 int destination_id = Ipv42NodeNo(ref_bp_header.get_destination_ip());
                 int from_id = -1;
                 auto found = seqno2fromid_map_.find(ref_bp_header.get_source_seqno());
@@ -879,7 +880,7 @@ namespace ns3 {
                     // init s, d
                     auto ip_s = ref_bp_header.get_source_ip();
                     auto ip_d = ref_bp_header.get_destination_ip();
-                    if (ip_d == own_ip_) {NS_LOG_INFO(LogPrefixMacro << "WARN: to self?"); return false;}
+                    if (ip_d == own_ip_) {NS_LOG_INFO(LogPrefixMacro << "WARN: to self, this happens when bundle remains in destination node, so this destination of this bundle is this node. It's purposed."); return false;}
                     s = Ipv42NodeNo(ip_s);
                     d = Ipv42NodeNo(ip_d);
                 }

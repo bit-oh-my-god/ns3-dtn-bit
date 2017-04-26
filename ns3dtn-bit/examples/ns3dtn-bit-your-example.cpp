@@ -1,5 +1,5 @@
 /*
- * 1. generate your trace file
+ * 1. generate your trace file and teg.txt
  * 2. define your example, mainly 3 parts of it
  *      a. constructor of YourExample
  *      b. CreateRouting()
