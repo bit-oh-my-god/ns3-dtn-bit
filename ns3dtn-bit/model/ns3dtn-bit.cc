@@ -68,7 +68,7 @@ namespace ns3 {
          * Aim : inherited method
          * */
         void DtnApp::StartApplication() {
-            NS_LOG_DEBUG(LogPrefixMacro << "NOTE:in startapplication()");
+            NS_LOG_DEBUG(LogPrefixMacro << "NOTE:Enter startapplication()");
             try {
                 if (1 != node_->GetNDevices()) {
                     std::stringstream ss;
@@ -82,6 +82,7 @@ namespace ns3 {
             wifi_ph_p = wifi_d->GetPhy();
             CheckBuffer(CheckState::State_2);
             StateCheckDetail();
+            NS_LOG_LOGIC(LogPrefixMacro << "Out of startapplication()");
         }
 
         /* refine
@@ -112,7 +113,7 @@ namespace ns3 {
          * Aim : send hello
          */
         void DtnApp::ToSendHello(Ptr<Socket> socket, dtn_time_t simulation_end_time, Time hello_interval, bool hello_right_now_boolean) {
-            NS_LOG_LOGIC(LogPrefixMacro << "enter ToSendHello()");
+            NS_LOG_LOGIC(LogPrefixMacro << "Enter ToSendHello()");
             Ptr<Packet> p_pkt; 
             BPHeader bp_header;
             if (hello_right_now_boolean) {
@@ -200,6 +201,7 @@ namespace ns3 {
             } else {
                 Simulator::Schedule(hello_interval, &DtnApp::ToSendHello, this, socket, simulation_end_time, hello_interval, true);
             }
+            NS_LOG_LOGIC(LogPrefixMacro << "Out of " << "ToSendHello()");
         }
 
         /* refine 
@@ -296,6 +298,7 @@ namespace ns3 {
                     neighbor_info_vec_[j].info_baq_seqno_vec_ = tmpbaq_vec;
                 }
             }
+            NS_LOG_LOGIC(LogPrefixMacro << "Out of " << "ReceiveHello()");
         }
 
         /* refine 
@@ -336,6 +339,7 @@ namespace ns3 {
                 std::abort();
             }
             //NS_LOG_INFO("out of ToSendAck()");
+            NS_LOG_LOGIC(LogPrefixMacro << "Out of " << "ToSendAck()");
         };
 
         /* refine 
@@ -371,6 +375,7 @@ namespace ns3 {
                 NS_LOG_ERROR("Error : bundle is too big or no space");
                 std::abort();
             }
+            NS_LOG_LOGIC(LogPrefixMacro << "Out of " << "ToSendBundle()");
         }
 
         /* refine 
@@ -410,6 +415,7 @@ namespace ns3 {
                 // LOG 
                 NS_LOG_DEBUG(LogPrefixMacro << "out of ToSendAntipacketBundle()");
             }
+            NS_LOG_LOGIC(LogPrefixMacro << "Out of " << "ToSendAntipacketBundle()");
         }
 
         /* refine 
@@ -489,6 +495,7 @@ namespace ns3 {
                     NS_LOG_DEBUG(LogPrefixMacro << "here, received anti or bundle, send ack back first, before ToSendAck" << "; ip=" << from_ip 
                             << "; bp_header=" << bp_header);
                     ToSendAck(bp_header, from_ip);
+                    seqno2fromid_map_[bp_header.get_source_seqno()] = Ipv42NodeNo(from_ip);
                     {
                         // process bundle or anti-pkt
                         NS_LOG_DEBUG(LogPrefixMacro << "here; after send ack back, process recept bp_header: " << bp_header);
@@ -561,6 +568,7 @@ namespace ns3 {
                 }
 
             }
+            NS_LOG_LOGIC(LogPrefixMacro << "Out of " << "ReceiveBundle()");
         }
 
         /* refine 
@@ -597,6 +605,7 @@ namespace ns3 {
             } else {
                 daemon_reception_info_vec_[k].info_fragment_pkt_pointer_vec_.pop_back();
             }
+            NS_LOG_LOGIC(LogPrefixMacro << "Out of " << "FragmentReassembleDetail()");
         }
 
         /* refine 
@@ -633,6 +642,7 @@ namespace ns3 {
                 NS_LOG_ERROR(LogPrefixMacro << "fragment not solved!");
                 std::abort();
             }
+            NS_LOG_LOGIC(LogPrefixMacro << "Out of " << "BundleReceptionTailWorkDetail()");
         }
 
         /* refine 
@@ -667,13 +677,13 @@ namespace ns3 {
                 auto ip_n = neighbor_info_vec_[jj].info_address_.GetIpv4();
                 auto ip_to = bh_info.info_transmit_addr_.GetIpv4();
                 if (ip_n.IsEqual(ip_to)) {
-                    if (Simulator::Now().GetSeconds() - neighbor_info_vec_[jj].info_last_seen_time_  < NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME * 3) {
+                    if (neighbor_info_vec_[jj].IsLastSeen()) {
                         real_send_boolean = true;
                         j = jj;
                         break;
                     } else {
-                        Simulator::Schedule(Seconds(NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME * 3), &DtnApp::ToTransmit, this, bh_info, false);
-                        NS_LOG_WARN(LogPrefixMacro << "WARN:to transmit: can't find neighbor or neighbor not recently seen, would cancel this try, retry next time." << "j=" << jj << ",last seen time=" << (double)neighbor_info_vec_[jj].info_last_seen_time_ << ";base time=" << Simulator::Now().GetSeconds() - (NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME * 3));
+                        Simulator::Schedule(Seconds(NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME * 2), &DtnApp::ToTransmit, this, bh_info, false);
+                        NS_LOG_WARN(LogPrefixMacro << "WARN:to transmit: can't find neighbor or neighbor not recently seen, would cancel this try, retry next time." << "j=" << jj << ",last seen time=" << (double)neighbor_info_vec_[jj].info_last_seen_time_ << ";base time=" << Simulator::Now().GetSeconds() - (NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME));
                         return;
                     }
                 }
@@ -729,6 +739,7 @@ namespace ns3 {
                     std::abort();
                 }
             }
+            NS_LOG_LOGIC(LogPrefixMacro << "Out of " << "ToTransmit()");
         }
 
         /*
@@ -843,13 +854,74 @@ namespace ns3 {
                     return false;
                 }
             } else if (routing_assister_.IsSet() && routing_assister_.get_rm() == RoutingMethod::CGR) {
-                NS_LOG_ERROR(LogPrefixMacro << "ERROR:not implemented!");
-                std::abort();
-                //routing_assister_.
+                int destination_id = Ipv42NodeNo(ref_bp_header.get_destination_ip());
+                int from_id = -1;
+                auto found = seqno2fromid_map_.find(ref_bp_header.get_source_seqno());
+                if (found != seqno2fromid_map_.end()) {
+                    from_id = seqno2fromid_map_[ref_bp_header.get_source_seqno()];
+                } else {
+                    from_id = node_->GetId();
+                }
+                vector<int> vec_of_current_neighbor;
+                for (auto nei : neighbor_info_vec_) {
+                    if (nei.IsLastSeen()) {
+                        vec_of_current_neighbor.push_back(Ipv42NodeNo(nei.info_address_.GetIpv4()));
+                    }
+                }
+                int own_id = node_->GetId();
+                dtn_time_t expired_time = ref_bp_header.get_src_time_stamp().GetSeconds();
+                expired_time += NS3DTNBIT_HYPOTHETIC_BUNDLE_EXPIRED_TIME;
+                int bundle_size = ref_bp_header.get_payload_size();
+                int flag = 0;
+
+                int s, d, indx = -1, result;
+                {
+                    // init s, d
+                    auto ip_s = ref_bp_header.get_source_ip();
+                    auto ip_d = ref_bp_header.get_destination_ip();
+                    if (ip_d == own_ip_) {NS_LOG_INFO(LogPrefixMacro << "WARN: to self?"); return false;}
+                    s = Ipv42NodeNo(ip_s);
+                    d = Ipv42NodeNo(ip_d);
+                }
+
+                // -------------- dividing ----------
+                routing_assister_.p_rm_in_->GetInfo(destination_id, from_id, vec_of_current_neighbor, own_id, expired_time, bundle_size, flag, id2cur_exclude_vec_of_id_);
+                vector<int> available = BPHeaderBasedSendDecisionDetail(ref_bp_header, check_state);
+                NS_LOG_DEBUG(LogPrefixMacro << ">>NOTE: Before CGR method");
+                result = routing_assister_.RouteIt(node_->GetId(), d);
+                NS_LOG_DEBUG(LogPrefixMacro << ">>NOTE: After CGR method, result =" << result);
+                // -------------- dividing ----------
+                if (result == node_->GetId()) {NS_LOG_ERROR(LogPrefixMacro << "Error: routing ! s=" << s << ";d=" << d << ";result = " << result); std::abort();}
+                if (result != -1) {
+                    indx = nodeid2neighborvecindex(neighbor_info_vec_, result);
+                    bool result_is_in_available = false;
+                    for (auto v : available) {
+                        if (v == indx) {
+                            result_is_in_available = true;
+                            return_index_of_neighbor_you_dedicate = indx;
+                        }
+                    }
+                    if (available.size() == 0) { NS_LOG_WARN(LogPrefixMacro << "WARN: available is none."); return false; }
+                    if (result_is_in_available) {
+                        NS_LOG_DEBUG(LogPrefixMacro << "NOTE:your decision is made, to-node-id =" << result << "; index of neighbor_info_vec_ is = " << indx);
+                        return true;
+                    } else {
+                        NS_LOG_INFO(LogPrefixMacro << "routing decision is not available, or have been sent;" << " to-node-id =" << result << "; index of neighbor_info_vec_ is = " << indx << "all available is: ");
+                        return false;
+                    }
+                } else {
+                    NS_LOG_WARN(LogPrefixMacro << "WARN:result = -1, not good");
+                    return false;
+                }
             } else {
                 NS_LOG_ERROR("can't find the routing method or method not assigned, routing_assister_ is set=" << routing_assister_.IsSet());
                 std::abort();
             }
+            NS_LOG_LOGIC(LogPrefixMacro << "Out of " << "FindTheNeighborThisBPHeaderTo()");
+        }
+
+        bool DtnApp::NeighborInfo::IsLastSeen() {
+            return Simulator::Now().GetSeconds() - info_last_seen_time_ < NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME;
         }
 
         void DtnApp::StateCheckDetail() {
@@ -897,6 +969,7 @@ namespace ns3 {
             }
             //if (Simulator::Now().GetSeconds() > 150) { std::abort(); }
             Simulator::Schedule(Seconds(10), &DtnApp::StateCheckDetail, this);
+            NS_LOG_LOGIC(LogPrefixMacro << "Out of " << "StateCheckDetail()");
         }
 
         /*
@@ -928,7 +1001,7 @@ namespace ns3 {
         void DtnApp::CheckBuffer(CheckState check_state) {
             string strrr;
             if (check_state == CheckState::State_2) { strrr = "anti check"; } else if (check_state == CheckState::State_1) {strrr = "bundle check";}
-            NS_LOG_INFO(LogPrefixMacro << "enter check buffer()" << strrr);
+            NS_LOG_INFO(LogPrefixMacro << "Enter check buffer()" << strrr);
             if (!daemon_socket_handle_) {
                 CreateSocketDetail();
                 if (daemon_socket_handle_) {
@@ -956,7 +1029,7 @@ namespace ns3 {
                         p_pkt->RemoveHeader(bp_header);
                         NS_LOG_INFO("p-" << n << bp_header);
                         bool anti_good_check = SprayGoodDetail(bp_header, 0);
-                        bool anti_lazy_transmit_check = Simulator::Now().GetSeconds() - bp_header.get_hop_time_stamp().GetSeconds() > 2 * NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME;
+                        bool anti_lazy_transmit_check = Simulator::Now().GetSeconds() - bp_header.get_hop_time_stamp().GetSeconds() > NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME;
                         if (anti_good_check && anti_lazy_transmit_check) {
                             real_send_boolean = FindTheNeighborThisBPHeaderTo(bp_header, decision_neighbor, check_state);
                         } else {
@@ -972,10 +1045,10 @@ namespace ns3 {
                     for (int n = 0; n < daemon_bundle_queue_->GetNPackets() && !real_send_boolean; n++) {
                         p_pkt = daemon_bundle_queue_->Dequeue()->GetPacket();
                         p_pkt->RemoveHeader(bp_header);
-                        NS_LOG_INFO("p-" << n << bp_header);
+                        NS_LOG_INFO("check pkt-" << n << bp_header);
                         if (Simulator::Now().GetSeconds() - bp_header.get_src_time_stamp().GetSeconds() < NS3DTNBIT_HYPOTHETIC_BUNDLE_EXPIRED_TIME) {
                             bool bundle_check_good = (SprayGoodDetail(bp_header, 0));
-                            bool bundle_lazy_transmit_check = Simulator::Now().GetSeconds() - bp_header.get_hop_time_stamp().GetSeconds() > 1 * NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME;
+                            bool bundle_lazy_transmit_check = Simulator::Now().GetSeconds() - bp_header.get_hop_time_stamp().GetSeconds() > NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME;
                             bool bundle_dest_not_this_check = !bp_header.get_destination_ip().IsEqual(own_ip_);
                             if (bundle_check_good && bundle_dest_not_this_check && bundle_lazy_transmit_check) {
                                 real_send_boolean = FindTheNeighborThisBPHeaderTo(bp_header, decision_neighbor, check_state);
@@ -1029,13 +1102,13 @@ namespace ns3 {
                 ToTransmit(tmp_header_info, false);
             }
             CheckBufferSwitchStateDetail(real_send_boolean, check_state);
+            NS_LOG_LOGIC(LogPrefixMacro << "Out of " << "CheckBuffer()");
         }
 
         /*
          * Aim : switch state of app
          * */
         void DtnApp::CheckBufferSwitchStateDetail(bool real_send_boolean, DtnApp::CheckState check_state) {
-            NS_LOG_INFO(LogPrefixMacro << "enter CheckBufferSwitchStateDetail()");
             // refine switch schedule
             switch (check_state) {
                 // switch check_state and reschedule
@@ -1080,7 +1153,8 @@ namespace ns3 {
             vector<int> result;
             NS_LOG_INFO(LogPrefixMacro << "neighbor_info_vec_.size() =" << neighbor_info_vec_.size());
             for (int j = 0; j < neighbor_info_vec_.size(); j++) {
-                bool nei_last_seen_bool = Simulator::Now().GetSeconds() - neighbor_info_vec_[j].info_last_seen_time_ < NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME * 2;
+                //bool nei_last_seen_bool = Simulator::Now().GetSeconds() - neighbor_info_vec_[j].info_last_seen_time_ < NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME;
+                bool nei_last_seen_bool = neighbor_info_vec_[j].IsLastSeen();
                 bool nei_have_space = neighbor_info_vec_[j].info_daemon_baq_available_bytes_ > ref_bp_header.get_payload_size() + ref_bp_header.GetSerializedSize();
                 bool nei_is_not_source = !neighbor_info_vec_[j].info_address_.GetIpv4().IsEqual(ref_bp_header.get_source_ip());
                 // 'transmit_session_already' is true, means that totransmit() has been called and shouldn't init a now one.
@@ -1124,6 +1198,7 @@ namespace ns3 {
                 }
             }
             return result;
+            NS_LOG_LOGIC(LogPrefixMacro << "Out of " << "CheckBuffer()");
         }
 
         /* refine 
@@ -1157,6 +1232,7 @@ namespace ns3 {
                          }
                 default : break;
             }
+            NS_LOG_LOGIC(LogPrefixMacro << "Out of " << "UpdateNeighborInfoDetail()");
         }
 
         /* refine 
@@ -1195,6 +1271,7 @@ namespace ns3 {
                 }
             }
             p_anti_pkt->AddHeader(lhs_bp_header);
+            NS_LOG_LOGIC(LogPrefixMacro << "Out of " << "RemoveBundleFromAntiDetail()");
         }
 
         /* refine 
@@ -1237,6 +1314,7 @@ namespace ns3 {
                 NS_LOG_ERROR(LogPrefixMacro << "ERROR: can't be, must wrong");
             }
             return false;
+            NS_LOG_LOGIC(LogPrefixMacro << "Out of " << "IsDuplicatedDetail()");
         }
 
         /*
@@ -1284,6 +1362,7 @@ namespace ns3 {
                 NS_LOG_ERROR("socket_handle not initialized");
                 std::abort();
             }
+            NS_LOG_LOGIC(LogPrefixMacro << "Out of " << "SocketSendDetail()");
         }
 
         /* refine
@@ -1296,6 +1375,7 @@ namespace ns3 {
             NS_LOG_DEBUG("create bundle send socket,ip=" << ipip << ";port=" << NS3DTNBIT_PORT_NUMBER);
             InetSocketAddress local = InetSocketAddress(ipip, NS3DTNBIT_PORT_NUMBER);
             daemon_socket_handle_->Bind(local);
+            NS_LOG_LOGIC(LogPrefixMacro << "Out of " << "CreateSocketDetail()");
         }
 
         /* NOTE : This function is not used
@@ -1351,6 +1431,7 @@ namespace ns3 {
                     }
                 }
             }
+            NS_LOG_LOGIC(LogPrefixMacro << "Out of " << "PeriodReorderDaemonBundleQueueDetail()");
         }
 
         /* refine
@@ -1372,6 +1453,7 @@ namespace ns3 {
             p_pkt->AddHeader(bp_header);
             //p_pkt->AddPacketTag(QosTag(6));
             broad_cast_skt->Send(p_pkt);
+            NS_LOG_LOGIC(LogPrefixMacro << "Out of " << "CreateHelloBundleAndSendDetail()");
         }
 
         /* refine 
@@ -1428,6 +1510,7 @@ namespace ns3 {
                     }
                 }
             }
+            NS_LOG_LOGIC(LogPrefixMacro << "Out of " << "RemoveExpiredBAQDetail()");
         }
 
         /* refine
@@ -1446,12 +1529,16 @@ namespace ns3 {
                 p_bp_header->set_spray(4);
             } else if (routing_assister_.get_rm() == RoutingMethod::Other) {
                 p_bp_header->set_spray(3);
+            } else if (routing_assister_.get_rm() == RoutingMethod::CGR) {
+                p_bp_header->set_spray(1);
             } else {
-                p_bp_header->set_spray(2);
+                NS_LOG_ERROR(LogPrefixMacro << "ERROR: can't find routing method!");
+                std::abort();
             }
             p_bp_header->set_retransmission_count(0);
             p_bp_header->set_src_time_stamp(Simulator::Now());
             p_bp_header->set_hop_time_stamp(Simulator::Now());
+            NS_LOG_LOGIC(LogPrefixMacro << "Out of " << "SemiFillBPHeaderDetail()");
         }
 
         /* refine
@@ -1468,8 +1555,7 @@ namespace ns3 {
 
         RoutingMethodInterface::RoutingMethodInterface(DtnApp& dp) : out_app_(dp) {}
         RoutingMethodInterface::~RoutingMethodInterface() {}
-        void RoutingMethodInterface::GetInfo(int destination_id, int from_id, std::vector<int> vec_of_current_neighbor,
-                int own_id, dtn_time_t expired_time, int bundle_size, int networkconfigurationflag) {}
+        void RoutingMethodInterface::GetInfo(int destination_id, int from_id, std::vector<int> vec_of_current_neighbor, int own_id, dtn_time_t expired_time, int bundle_size, int networkconfigurationflag, map<int, vector<int>> id2cur_exclude_vec_of_id) {}
         Adob RoutingMethodInterface::get_adob() { return out_app_.routing_assister_.vec_[0]; }
 
     } /* ns3dtnbit */ 
@@ -1502,6 +1588,7 @@ namespace ns3 {
                     for (int j = i; j < node_number; ++j) {
                         if (i == j) {continue;}
                         add_edge(vec_vertex_des[i], vec_vertex_des[j], EdgeProperties(t3[i][j], 1), my_g);
+                        add_edge(vec_vertex_des[j], vec_vertex_des[i], EdgeProperties(t3[i][j], 1), my_g);
                     }
                 }
                 assert(boost::num_edges(my_g)>0);
@@ -1666,6 +1753,7 @@ namespace ns3 {
          * */ 
         void Adob::AdobDo_04() {
             // init node_id2cgr_xmit_vec_map_ TODO
+            cout << "DEBUG_CGR " << "in AdobDo_04" << endl;
             int node_number = get_node_number();
             int time_max = get_g_vec_size();
             for (int d = 0; d < node_number; ++d) {
@@ -1675,9 +1763,9 @@ namespace ns3 {
                     bool no_more_xmits = false;
                     int time_cur = 0;
                     while (!no_more_xmits) {
-                        dtn_time_t contact_start_time_, contact_end_time_;
+                        dtn_time_t contact_start_time, contact_end_time;
                         int node_id_of_to = d, node_id_of_from = s;
-                        double data_transmission_rate = 10000;
+                        double data_transmission_rate = 80000;
                         bool found_xmit = false;
                         {
                             // init -> 0, when find available one, -> 1, when available one become not available -> 2
@@ -1702,7 +1790,7 @@ namespace ns3 {
                                         break;
                                     }
                                 } else {
-                                    cout << "Error:" << __LINE__ << " can't be" << endl;
+                                    cout << "Error:" << __LINE__ << " can't be, s =" << s << ";d =" << d << ";t=" << t << endl;
                                     std::abort();
                                 }
                             }
@@ -1719,6 +1807,8 @@ namespace ns3 {
                         }
                     }
                 }
+                if (vec_of_xmits.size() == 0) { cout << "DEBUG_CGR_WARN : node have no xmit" << ";node-" << d << endl; }
+                if (vec_of_xmits.size() > 0) { cout << "DEBUG_CGR_DEBUG : node have " << vec_of_xmits.size() << " xmits" << ";node-" << d << endl; }
                 node_id2cgr_xmit_vec_map_[d] = vec_of_xmits;
             }
         }

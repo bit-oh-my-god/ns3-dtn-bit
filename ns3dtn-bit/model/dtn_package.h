@@ -35,7 +35,7 @@ namespace ns3 {
                 // own stuff *********
                 // should not define this, maybe a method named semi_equal() TODO
                 //bool operator==(BPHeader const& rh) const;
-
+                
                 // assuming that different BundleType has different payload size, and payload size themselves could be different , used to be todo, now done
                 BundleType get_bundle_type() {return bundle_type_;}
                 void set_bundle_type(BundleType arg) {bundle_type_ = arg;}

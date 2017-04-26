@@ -1,13 +1,25 @@
 # Preface
 This Project is a newbie-readable simulation for dtn on ns-3 environment, easy to use for research purples, supporting customed routing definition and scenario definition.
 This project is highly inspirited by [Lakkakorpi](https://www.netlab.tkk.fi/tutkimus/dtn/ns/)
-Read this [paper](https://smartech.gatech.edu/bitstream/handle/1853/6492/GIT-CC-04-07.pdf?sequence=1&isAllowed=y) if you want know about TEG(time-expanded graph)
+Read this teg-[paper](https://smartech.gatech.edu/bitstream/handle/1853/6492/GIT-CC-04-07.pdf?sequence=1&isAllowed=y) if you want know about TEG(time-expanded graph)
 Read this [link](https://tools.ietf.org/html/draft-burleigh-dtnrg-cgr-00) if you want know about CGR
+
+# Begin
+
+* Install
+  1. download source code
+  2. cp /box/ns2mobilityhelper.cc to /ns-allineone-3.26/src/mobility, this file was modified and would help us parse 3d-motion
+  3. modify your current_trace_file.tcl by your hand or by [bonnmotion](#A) or by ./create_trace_file.sh
+  4. run jupytor notebook animation to generate teg.txt, see [jupytor](#B)
+  5. modify ns3dtn-bit-your-example.cc to set simulation settings, see [example-interface](#C)
+  6. run ./build.sh to run simulation
+  7. run jupytor notebook to parse result, to visualize your simulation result
 
 # structure of this project
 
 * editor tool : editor Vim do I use, if you are using YCM for code complete, remember add pull path of include to ~/.ycm_extra_config.py
-* bonnmotion 
+
+* bonnmotion <a name="A"></a>
 it is a software depending on java used to generate node trace files
 we just need the **.ns_movements** file
 
@@ -20,21 +32,26 @@ The [author of that project](https://www.netlab.tkk.fi/tutkimus/dtn/ns/), Lakkak
 But, we can't get 3d in "setdest", this problem aside, let's focus on how to use this setdest, in my machine, I did this "$sudo apt install ns2"
 so I have the setdest in my "/usr/bin/setdest"
 
-* ns3 and ns3-dtn-bit module
-The main method for DtnApp is 1. checkbuffer 2. receive bundle 3. sendhello - receive hello
+* ns3 example-interface
+This file defines how your scenario structed, how your network configured.
+Make sure that simulation time should be minus or equal to time of teg.txt.
+Note that time-interval of two lines of teg.txt is exactly ** one second ** in real time, which was descripted in current_trace_file.tcl
+
+* ns3 and ns3-dtn-bit module <a name="C"></a>
+The main method for DtnApp is 1. checkbuffer - totransmit 2. receive bundle 3. sendhello - receive hello
 We modify ns2-mobility-helper.cc, to support 3d-parse for us. you can find it at /box
 Also, you can find image in /box
 ![ns3-dtn-bit module image][image01]
 
-* jupyter and python-matplotlib
+* jupyter and python-matplotlib <a name="B"></a>
 there is one tutorial that I think may help you [ref](https://www.youtube.com/watch?v=HW29067qVWk&t=1568s)
 This combo is used to make graph and paper, check /box/jupyter
 if you want use jupyter yourself, install it on org-web, in China, you may not be able to download 0.5 G big file from the web.
 you would need to install miniconda first, and install full-package from miniconda, that's the way I did.
 
-# develop log
+* Acknoeledgement Annoucement, How does this model works.
 
-* Acknoeledgement Annoucement 
+    * transmit & send
 
             following graph are used to name variables in this project
             source_node         from_node               to_node           destination_node
@@ -55,6 +72,9 @@ you would need to install miniconda first, and install full-package from minicon
 
             hello---->  CreateHelloBundleAndSendDetail()
 
+    * If you want to modify code
+        read code directly, everything is in content.
+
 # TODO list
 
 * <s>wireless max range </s> done by 
@@ -71,7 +91,12 @@ would support '$ns at $time $node setdest x2 y2 z2 speed' format, and this forma
         Adob_do02 Adob_do03
 - [ ] to work :(
 - [x] to have a life
-- [ ] CGR
+- [ x ] CGR, main feature, implement it!
+- [  ] running log was printed twice, more specifically NS_LOG_COMPONENT was printed out twice, it's a bug, fix it!
+- [ x ] last seen neighbor, should be 1 * Hello Interval or 2 * Hello Interval
+- [  ] give some senario, and give some result parse script
+- [  ] unordered_map with tuple, bug fix
+- [  ] retransmission : For now we don't have local2neighbor retransmission. What we have is that, if one transmission session is not successed, this session would be remained, and reboot next time when routing decision is made by which transmission session producted had the same 'session value', where normally results to a new transmission session. Should we change it?
 
 # Develpment Annoucement & Publish Log
 
@@ -84,6 +109,6 @@ would support '$ns at $time $node setdest x2 y2 z2 speed' format, and this forma
     * debug a bunch
         abstract routing-method interface
 * Third edition, features and anything else for paper.
-
+* Fourth edition, ready to publish
 
 [image01]: https://github.com/bit-oh-my-god/ns3-dtn-bit/tree/master/box/Diagram1.png

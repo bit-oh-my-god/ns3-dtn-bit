@@ -11,18 +11,24 @@ namespace ns3 {
     namespace ns3dtnbit {
 
 #ifdef DEBUG
+        /*
+         * by default, get the function name called the logfunc which called this
+         */
         std::string GetCallStack(int);
         std::string FilePrint(std::string);
         std::string GetLogStr(std::string);
 #endif /* ifndef DEBUG */
 
-        struct cgr_xmit {
+        struct CgrXmit {
+            // D' list of xmits means that all xmit in list have node_id_of_to_ to be D
             dtn_time_t contact_start_time_;
             dtn_time_t contact_end_time_;
             int node_id_of_from_;       // transmission node
             int node_id_of_to_;         // receiving node
-            double data_transmission_rate_;
+            double data_transmission_rate_; // set it to 80 000
         };
+
+        bool operator<(CgrXmit const & lhs, CgrXmit const & rhs);
 
         struct my_edge_property {
             my_edge_property () { }

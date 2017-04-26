@@ -14,6 +14,7 @@ def build(bld):
         'model/ns3dtn-bit.cc',
         'model/dtn-pre.cpp',
         'helper/ns3dtn-bit-helper.cc',
+        'model/routing.cpp',
         'examples/ns3dtn-bit-example-interface.cpp'
         ]
     module.cxxflags = ['-std=c++11', '-Wall', '-Wextra', '-fpermissive', '-w']

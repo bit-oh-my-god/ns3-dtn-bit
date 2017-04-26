@@ -4,9 +4,6 @@ namespace ns3 {
     namespace ns3dtnbit {
 
 #ifdef DEBUG
-        /*
-         * by default, get the function name called the logfunc which called this
-         */
         string GetCallStack(int i = 2) {
             int nptrs;
             void *buffer[200];
@@ -44,6 +41,7 @@ namespace ns3 {
             return Filep;
         }
 
+        bool operator<(CgrXmit const & lhs, CgrXmit const & rhs) {return lhs.contact_start_time_ < rhs.contact_start_time_;}
 #endif
     } /* ns3dtnbit */ 
 

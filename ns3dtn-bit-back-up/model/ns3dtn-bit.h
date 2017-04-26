@@ -79,6 +79,7 @@ namespace ns3 {
 
             Graph get_graph_for_now() const;
             int get_teg_size(); 
+            int max_range_;
             int get_g_vec_size();
             int get_node_number();
             // timepoint = t_vec_[i'th slice]
@@ -94,6 +95,7 @@ namespace ns3 {
             using Teg_i_j_t = tuple<int, int, int>;
             //                     src   dst   time   color
             using DelayIndex = tuple<int, int, int, int>;
+            // using custom hash for tuple element in unordered_map 
             struct key_hash : public std::unary_function<Teg_i_j_t, std::size_t> {
                 std::size_t operator()(const Teg_i_j_t& k) const {
                     return std::get<0>(k) ^ std::get<1>(k) ^ std::get<2>(k);
@@ -127,9 +129,8 @@ namespace ns3 {
             DelayMap delay_map_;
             int node_number_;
             // for CGR
-            map<int, vector<cgr_xmit>> node_id2cgr_xmit_vec_map_;
+            map<int, vector<CgrXmit>> node_id2cgr_xmit_vec_map_;
         };
-
         
     } /* ns3dtnbit */ 
 
@@ -208,6 +209,7 @@ namespace ns3 {
                     vector<dtn_seqno_t> info_sent_bp_seqno_vec_;
                     vector<dtn_seqno_t> info_sent_ap_seqno_vec_;
                     vector<dtn_time_t> info_sent_ap_time_vec_;
+                    bool IsLastSeen();
                 };
 
                 DtnApp () : transmit_assister_(*this) { }
@@ -226,37 +228,26 @@ namespace ns3 {
                  * */
                 class DtnAppRoutingAssister {
                     public :
-                        DtnAppRoutingAssister() {
-
-                        }
-
+                        DtnAppRoutingAssister() { }
                         void SetIt() { is_init = true; }
                         bool IsSet() {return is_init;}
                         RoutingMethod get_rm() {return rm_;}
                         void set_rm(RoutingMethod rm) {rm_ = rm;}
                         void set_rmob(std::unique_ptr<RoutingMethodInterface> p_rm_in) {p_rm_in_ = std::move(p_rm_in);}
-                        void load_ob(const vector<Adob>& v) {
-                            vec_ = v;
-                        }
-
+                        void load_ob(const vector<Adob>& v) { vec_ = v; }
                         int RouteIt(int src_node_n, int dest_node_n);
-
-                        ~DtnAppRoutingAssister() {
-
-                        }
+                        ~DtnAppRoutingAssister() { }
                         // some thing for CGR
-                        // 
                         // end of CGR
-                    private :
                         friend RoutingMethodInterface;
                         vector<Adob> vec_;
                         std::unique_ptr<RoutingMethodInterface> p_rm_in_;
                         bool is_init = false;
                         RoutingMethod rm_;
                         // some thing for CGR
-                        // 
                         // end of CGR
                 };
+
                 DtnAppRoutingAssister routing_assister_;
 
                 /*
@@ -265,15 +256,8 @@ namespace ns3 {
                  * */
                 class DtnAppTransmitSessionAssister {
                     public :
-                        DtnAppTransmitSessionAssister(DtnApp& dp) : out_app_(dp) {
-
-                        }
-
-                        //InitTransmitSession
-
-                        ~DtnAppTransmitSessionAssister() {
-
-                        }
+                        DtnAppTransmitSessionAssister(DtnApp& dp) : out_app_(dp) { }
+                        ~DtnAppTransmitSessionAssister() { }
                         vector<Ptr<Packet>> daemon_retransmission_packet_buffer_vec_;
                         vector<DaemonTransmissionInfo> daemon_transmission_info_vec_;
                         vector<DaemonBundleHeaderInfo> daemon_transmission_bh_info_vec_;
@@ -330,6 +314,8 @@ namespace ns3 {
 
                 Ptr<WifiPhy> wifi_ph_p;
                 std::map<dtn_seqno_t, int> spray_map_;
+                map<dtn_seqno_t, int> seqno2fromid_map_;
+                map<int, vector<int>> id2cur_exclude_vec_of_id_;    //used for CGR
                 int anti_send_count_ = 0;
                 int ack_send_count_ = 0;
                 int bundle_send_count_ = 0;
@@ -366,8 +352,7 @@ namespace ns3 {
                  * this time I modify this interface for CGR, next time I would do it again! Change RoutingMethodInterface to Generic!!!
                  * TODO
                  * */
-                virtual void GetInfo(int destination_id, int from_id, std::vector<int> vec_of_current_neighbor,
-                        int own_id, dtn_time_t expired_time, int bundle_size, int networkconfigurationflag);
+                virtual void GetInfo(int destination_id, int from_id, std::vector<int> vec_of_current_neighbor, int own_id, dtn_time_t expired_time, int bundle_size, int networkconfigurationflag, map<int, vector<int>> id2cur_exclude_vec_of_id);
             protected :
                 // read only 
                 const DtnApp& out_app_;

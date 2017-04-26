@@ -102,6 +102,8 @@ namespace ns3 {
             std::cout << "NOTE: after AdobDo_02()" <<std::endl;
             adob_ob.AdobDo_03();
             std::cout << "NOTE: after AdobDo_03()" <<std::endl;
+            adob_ob.AdobDo_04();
+            std::cout << "NOTE: after AdobDo_04()" <<std::endl;
             result.emplace_back(std::move(adob_ob));
             return result;
         }
