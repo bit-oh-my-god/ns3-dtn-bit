@@ -627,14 +627,18 @@ namespace ns3 {
                     return;
                 }
                 if (bp_header.get_destination_ip().IsEqual(own_ip_)) {
-                    NS_LOG_DEBUG(LogPrefixMacro << "NOTE:BundleTrace:Great! one bundle arrive destination! bp_header is" << bp_header);
+                    NS_LOG_DEBUG(LogPrefixMacro << "NOTE:BundleTrace:Great! one bundle arrive destination! bp_header=" << bp_header);
                     ToSendAntipacketBundle(bp_header);
                     tmp_p_pkt->AddHeader(bp_header);
                     daemon_consume_bundle_queue_->Enqueue(Packet2Queueit(tmp_p_pkt->Copy()));
                     // this is a heuristic method to make hello, to let others know it already has it.
                     daemon_bundle_queue_->Enqueue(Packet2Queueit(tmp_p_pkt->Copy()));
                 } else {
-                    NS_LOG_DEBUG(LogPrefixMacro << "NOTE:BundleTrace:good! one bundle recept, it's one hop! seqno=" << bp_header.get_source_seqno());
+                    if (bp_header.get_bundle_type() == BundleType::BundlePacket) {
+                        NS_LOG_DEBUG(LogPrefixMacro << "NOTE:BundleTrace:good! one bundle recept, it's one hop! bp_header=" << bp_header);
+                    } else {
+                        NS_LOG_ERROR(LogPrefixMacro << "ERROR: can't be");
+                    }
                     tmp_p_pkt->AddHeader(bp_header);
                     daemon_bundle_queue_->Enqueue(Packet2Queueit(tmp_p_pkt->Copy()));
                 }

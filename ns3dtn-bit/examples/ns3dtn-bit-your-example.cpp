@@ -27,7 +27,9 @@ namespace ns3 {
                     //ex_rm_ = DtnApp::RoutingMethod::SprayAndWait;
                 }
                 void ReportEx(std::ostream& os) override {
-                    os << "Here In DtnExampleInterface::ReportEx" << endl;
+                    os << "Here In DtnExampleInterface::ReportEx" 
+                        << "BundleTrace:node_number_=" << node_number_ 
+                        << ";simulation_duration_=" << simulation_duration_ << endl;
                 }
 
                 std::unique_ptr<RoutingMethodInterface> CreateRouting(DtnApp& dtn) override {
@@ -60,11 +62,10 @@ namespace ns3 {
 
 int main(int argc, char *argv[]) {
     //!important LOG control
-    //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_WARN);
-    //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_DEBUG);
+    LogComponentEnable ("DtnRunningLog",LOG_LEVEL_DEBUG);
     //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_INFO);
     //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_LOGIC);
-    LogComponentEnable ("DtnRunningLog", LOG_LEVEL_ALL);
+    //LogComponentEnable ("DtnRunningLog", LOG_LEVEL_ALL);
     LogComponentEnable("Ns2MobilityHelper", LOG_LEVEL_INFO);
 
     assert(std::is_move_constructible<ns3dtnbit::YourExample>::value);

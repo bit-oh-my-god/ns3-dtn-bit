@@ -10,14 +10,12 @@ namespace ns3 {
 
     namespace ns3dtnbit {
 
-#ifdef DEBUG
         /*
          * by default, get the function name called the logfunc which called this
          */
         std::string GetCallStack(int);
         std::string FilePrint(std::string);
         std::string GetLogStr(std::string);
-#endif /* ifndef DEBUG */
 
         // see RFC - CGR
         struct CgrXmit {

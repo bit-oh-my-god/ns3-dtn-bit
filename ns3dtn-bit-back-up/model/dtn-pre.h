@@ -10,15 +10,14 @@ namespace ns3 {
 
     namespace ns3dtnbit {
 
-#ifdef DEBUG
         /*
          * by default, get the function name called the logfunc which called this
          */
         std::string GetCallStack(int);
         std::string FilePrint(std::string);
         std::string GetLogStr(std::string);
-#endif /* ifndef DEBUG */
 
+        // see RFC - CGR
         struct CgrXmit {
             // D' list of xmits means that all xmit in list have node_id_of_to_ to be D
             dtn_time_t contact_start_time_;
@@ -30,6 +29,7 @@ namespace ns3 {
 
         bool operator<(CgrXmit const & lhs, CgrXmit const & rhs);
 
+        // used for boost graph
         struct my_edge_property {
             my_edge_property () { }
             my_edge_property(int v, int c) {
@@ -38,10 +38,11 @@ namespace ns3 {
             }
             // physic distance
             int distance_;
-            // see that paper
+            // see teg paper
             int message_color_;
         };
 
+        // used for boost graph
         struct my_vertex_property {
             my_vertex_property() {}
             my_vertex_property(string s) {

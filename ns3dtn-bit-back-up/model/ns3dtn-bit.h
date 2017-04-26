@@ -62,7 +62,7 @@ namespace ns3 {
             using EdDe = boost::graph_traits < Graph >::edge_descriptor;
             Adob();
             ~Adob();
-            // generate ob for heuristics routing using 
+            // generate g_vec_, a vector of static graphs for heuristics routing using, also used for other routing
             void AdobDo_01(std::map<int, vector<vector<int>>> t_2_adjacent_array, int node_number);
 
             // Aim : generate ob for time-expanded graph
@@ -70,11 +70,11 @@ namespace ns3 {
             // where N is the number of nodes in a static graph
             void AdobDo_02(int node_number, int teg_layer_n, int max_range);
 
-            // get teg_routing_table_ done
+            // get teg_routing_table_ done for time-expanded graph
             // the complexity of this function is O(N * N * N * T), please do not use too large argument
             void AdobDo_03();
 
-            // get xmit for every nodes
+            // get xmit for every nodes, for cgr
             void AdobDo_04();
 
             Graph get_graph_for_now() const;
@@ -95,6 +95,7 @@ namespace ns3 {
             using Teg_i_j_t = tuple<int, int, int>;
             //                     src   dst   time   color
             using DelayIndex = tuple<int, int, int, int>;
+            // following is something I want to use for unordered_map, but yet bug still
             // using custom hash for tuple element in unordered_map 
             struct key_hash : public std::unary_function<Teg_i_j_t, std::size_t> {
                 std::size_t operator()(const Teg_i_j_t& k) const {
@@ -123,7 +124,7 @@ namespace ns3 {
             // using unordered_map would be more efficient, but I got a compile error, fix this compile error TODO
             using CustomedMap = map<Teg_i_j_t, int>;
             using DelayMap = map<DelayIndex, int>;
-            // color should be equal to the interval of graph
+            // color should be equal to the interval of graph, see teg paper
             const static int hypo_c = 1;
             CustomedMap teg_routing_table_;
             DelayMap delay_map_;
@@ -154,6 +155,7 @@ namespace ns3 {
                     Other
                 };
 
+                // almost useless
                 enum class CongestionControlMethod {
                     NoControl,
                     StaticControl,
@@ -181,7 +183,7 @@ namespace ns3 {
                     vector<Ptr<Packet>> info_fragment_pkt_pointer_vec_;
                 };
 
-                // use BPHeader to compare is an ambiguity
+                // use BPHeader to compare is an ambiguity, so use this to compare
                 struct DaemonBundleHeaderInfo {
                     InetSocketAddress info_transmit_addr_;
                     uint32_t info_retransmission_count_;
@@ -224,7 +226,6 @@ namespace ns3 {
             private :
                 /*
                  * nested private class, just a implement usage
-                 * not implement yet, should used to hold user define, routing method.
                  * */
                 class DtnAppRoutingAssister {
                     public :
@@ -252,7 +253,7 @@ namespace ns3 {
 
                 /*
                  * nested private class for transmit-session init 
-                 * used frequently in to transmit
+                 * used frequently in totransmit()
                  * */
                 class DtnAppTransmitSessionAssister {
                     public :
@@ -286,33 +287,50 @@ namespace ns3 {
                 friend RoutingMethodInterface;
 
             private :
+                // control the times of transmit from this node for one identical pkt
                 bool SprayGoodDetail(BPHeader bp_header, int flag);
+                // put anti in queue
                 void ToSendAntipacketBundle(BPHeader& ref_bp_header);
+                // response for bundle & anti
                 void ToSendAck(BPHeader& ref_bp_header, Ipv4Address response_ip);
+                // put bundle in queue
                 void ToSendBundle(uint32_t dstnode_number, uint32_t payload_size);
+                // the behavior is that when receive anti, corresponding bundle would be destroied, anti would remain until expired
                 void RemoveBundleFromAntiDetail(Ptr<Packet> p_pkt);
                 void StartApplication() override;
+                // not used yet
                 void PeriodReorderDaemonBundleQueueDetail();
+                // send hello
                 void CreateHelloBundleAndSendDetail(string msg_str, Ptr<Socket> broad_cast_skt);
                 void BundleReceptionTailWorkDetail();
                 void SemiFillBPHeaderDetail(BPHeader* p_bp_header);
+                // not test yet TODO
                 void FragmentReassembleDetail(int k);
+                // find all available neighbor
                 vector<int> BPHeaderBasedSendDecisionDetail(BPHeader& ref_bp_header, enum CheckState check_state);
+                // invoke routing method, and check if result is in available neighbor, if do, decision is done, if not, decision is aborted
                 bool FindTheNeighborThisBPHeaderTo(BPHeader& ref_bp_header, int& return_index_of_neighbor_you_dedicate, enum CheckState check_state);
                 void CreateSocketDetail();
+                // maintain info
                 void UpdateNeighborInfoDetail(int which_info, int which_neighbor, int which_pkt_index);
+                // remove expired pkt
                 void RemoveExpiredBAQDetail();
                 void ReceiveHelloBundleDetail(Ptr<Packet> p_pkt, std::string msg);
                 bool SocketSendDetail(Ptr<Packet> p_pkt, uint32_t flags, InetSocketAddress trans_addr);
                 bool IsDuplicatedDetail(BPHeader& bp_header);
+                // log out state of app
                 void StateCheckDetail();
                 bool IsAntipacketExistDetail();
+                // periodly check the state of this app, and check if available pkt can be routing
                 void CheckBuffer(CheckState check_state);
                 void CheckBufferSwitchStateDetail(bool real_send_boolean, CheckState check_state);
+                // after routing decision is made, handle local to neighbor transmit
+                // retransmission : For now we don't have local2neighbor retransmission. What we have is that, if one transmission session is not successed, this session would be remained, and reboot next time when routing decision is made by which transmission session producted had the same 'session value', where normally results to a new transmission session. Should we change it?
                 void ToTransmit(DaemonBundleHeaderInfo bh_info, bool is_retransmit);
                 std::string LogPrefix();
-
+                // to check state of wireless device
                 Ptr<WifiPhy> wifi_ph_p;
+                // for SprayGoodDetail
                 std::map<dtn_seqno_t, int> spray_map_;
                 map<dtn_seqno_t, int> seqno2fromid_map_;
                 map<int, vector<int>> id2cur_exclude_vec_of_id_;    //used for CGR
