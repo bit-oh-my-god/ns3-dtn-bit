@@ -10,10 +10,20 @@ Read this [link](https://tools.ietf.org/html/draft-burleigh-dtnrg-cgr-00) if you
   1. download source code
   2. cp /box/ns2mobilityhelper.cc to /ns-allineone-3.26/src/mobility, this file was modified and would help us parse 3d-motion
   3. modify your current_trace_file.tcl by your hand or by [bonnmotion](#A) or by ./create_trace_file.sh
-  4. run jupytor notebook animation to generate teg.txt, see [jupytor](#B)
-  5. modify ns3dtn-bit-your-example.cc to set simulation settings, see [example-interface](#C)
-  6. run ./build.sh to run simulation
-  7. run jupytor notebook to parse result, to visualize your simulation result
+  4. set node_number and simulation_time to jupytor and your-example.cc
+        
+        # in jupytor PreparSimulation
+        T_max = 802                #change me !!!!!!!
+        teg_slice_n = 802          #change me !!!!!!!
+
+        // in ns3dtn-bit-your-example.cc
+        node_number_ = 5;           // change me!!
+        simulation_duration_ = 802;         // change me!!!
+
+  5. run jupytor notebook animation to generate teg.txt, see [jupytor](#B)
+  6. modify ns3dtn-bit-your-example.cc to set simulation settings, see [example-interface](#C)
+  7. run ./build.sh to run simulation
+  8. run jupytor notebook to parse result, to visualize your simulation result
 
 # structure of this project
 
@@ -92,7 +102,7 @@ would support '$ns at $time $node setdest x2 y2 z2 speed' format, and this forma
 - [ ] to work :(
 - [x] to have a life
 - [ x ] CGR, main feature, implement it!
-- [  ] running log was printed twice, more specifically NS_LOG_COMPONENT was printed out twice, it's a bug, fix it!
+- [  ] <s>running log was printed twice, more specifically NS_LOG_COMPONENT was printed out twice, it's a bug, fix it!</s> **we don't want to fix this bug** because jupyter parse script has depends on this bug
 - [ x ] last seen neighbor, should be 1 * Hello Interval or 2 * Hello Interval
 - [  ] give some senario, and give some result parse script
 - [  ] unordered_map with tuple, bug fix
@@ -108,7 +118,7 @@ would support '$ns at $time $node setdest x2 y2 z2 speed' format, and this forma
         abstract example-interface
     * debug a bunch
         abstract routing-method interface
-* Third edition, features and anything else for paper.
+* Third edition, features and anything else for research.
 * Fourth edition, ready to publish
 
 [image01]: https://github.com/bit-oh-my-god/ns3-dtn-bit/tree/master/box/Diagram1.png
