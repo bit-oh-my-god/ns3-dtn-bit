@@ -7,14 +7,7 @@
 namespace ns3 {
     namespace ns3dtnbit {
 
-        class EmptyRouting : public RoutingMethodInterface {
-            public :
-                EmptyRouting(DtnApp& dp) : RoutingMethodInterface(dp) {}
-                int DoRoute(int s, int d) override {
-                    std::cout << " empty method, abort!" << std::endl;
-                    std::abort();
-                }
-        };
+        
 
         class DtnExampleInterface {
             public :
@@ -49,10 +42,7 @@ namespace ns3 {
                 virtual void CreateNodes();
                 virtual void CreateDevices();
                 virtual void InstallInternetStack();
-                virtual std::unique_ptr<RoutingMethodInterface> CreateRouting(DtnApp& dtn) {
-                    auto p = new EmptyRouting(dtn);
-                    return std::unique_ptr<RoutingMethodInterface>(p);
-                }
+                virtual std::unique_ptr<RoutingMethodInterface> CreateRouting(DtnApp& dtn);
 
                 virtual void InstallApplications();
                 virtual void ScheduleTask();

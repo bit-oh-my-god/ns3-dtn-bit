@@ -60,11 +60,11 @@ namespace ns3 {
                 //Time get_src_time_stamp() {return Time(MilliSeconds(src_time_stamp_));}
                 Time get_src_time_stamp() {return Time(Seconds(src_time_stamp_));}
                 //void set_src_time_stamp(Time arg) {src_time_stamp_ = arg.GetMilliSeconds();}
-                void set_src_time_stamp(Time arg) {src_time_stamp_ = arg.GetSeconds();}
+                void set_src_time_stamp(Time arg) {src_time_stamp_ = (double)arg.GetMilliSeconds() / 1000;}
                 //Time get_hop_time_stamp() {return Time(Seconds(hop_time_stamp_));}
                 Time get_hop_time_stamp() {return Time(Seconds(hop_time_stamp_));}
                 //void set_hop_time_stamp(Time arg) {hop_time_stamp_ = arg.GetMilliSeconds();}
-                void set_hop_time_stamp(Time arg) {hop_time_stamp_ = arg.GetSeconds();}
+                void set_hop_time_stamp(Time arg) {hop_time_stamp_ = (double)arg.GetMilliSeconds() / 1000;}
 
             private :
 

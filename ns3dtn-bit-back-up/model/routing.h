@@ -65,7 +65,11 @@ namespace ns3 {
                 int DoRoute(int s, int d) override;     
         };
 
-
+        class EmptyRouting : public RoutingMethodInterface {
+            public :
+                EmptyRouting(DtnApp& dp);
+                int DoRoute(int s, int d) override;
+        };
     } /* ns3dtnbit */ 
 
 } /* ns3  */ 

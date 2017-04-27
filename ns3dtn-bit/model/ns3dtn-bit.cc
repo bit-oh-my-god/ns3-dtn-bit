@@ -980,7 +980,7 @@ namespace ns3 {
         /*
          *  real send flags == 1
          * */
-        bool DtnApp::SprayGoodDetail(BPHeader bp_header, int flag) {
+        bool DtnApp::SprayGoodDetail(BPHeader& bp_header, int flag) {
             int v = bp_header.get_source_seqno();
             if (flag == 1) {bp_header.set_hop_time_stamp(Simulator::Now());}
             auto found = spray_map_.find(v);

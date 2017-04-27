@@ -32,13 +32,6 @@ namespace ns3 {
                         << ";simulation_duration_=" << simulation_duration_ << endl;
                 }
 
-                std::unique_ptr<RoutingMethodInterface> CreateRouting(DtnApp& dtn) override {
-                    //auto p = new TegRouting(dtn);
-                    //auto p = new YouRouting(dtn);
-                    auto p = new CGRRouting(dtn);
-                    return std::unique_ptr<RoutingMethodInterface>(p);
-                }
-
                 void ScheduleTask() override {
                     int sch_size = 345;
                     auto handy_func = [sch_size, this](int sch_time, int dstnode, int i) {

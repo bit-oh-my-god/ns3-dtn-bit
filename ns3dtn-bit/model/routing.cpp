@@ -257,6 +257,12 @@ namespace ns3 {
             return proximate_vec_[0];
         }
 
+        EmptyRouting::EmptyRouting(DtnApp& dp) : RoutingMethodInterface(dp) {}
+
+        int EmptyRouting::DoRoute(int s, int d)  {
+            std::cout << " empty method, using spray and wait won't arrive here!" << std::endl;
+            std::abort();
+        }
     } /* ns3dtnbit */ 
 
 } /* ns3  */ 
