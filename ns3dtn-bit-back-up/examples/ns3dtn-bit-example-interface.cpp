@@ -305,15 +305,19 @@ namespace ns3 {
         std::unique_ptr<RoutingMethodInterface> DtnExampleInterface::CreateRouting(DtnApp& dtn) {
             if (ex_rm_ == DtnApp::RoutingMethod::SprayAndWait) {
                 auto p = new EmptyRouting(dtn);
+                cout << "BundleTrace:Itisnotonedeliverymethon\n" << endl;
                 return std::unique_ptr<RoutingMethodInterface>(p);
             } else if (ex_rm_ == DtnApp::RoutingMethod::TimeExpanded) {
                 auto p = new TegRouting(dtn);
+                cout << "BundleTrace:Itisonedeliverymethon\n" << endl;
                 return std::unique_ptr<RoutingMethodInterface>(p);
             } else if (ex_rm_ == DtnApp::RoutingMethod::CGR) {
                 auto p = new CGRRouting(dtn);
+                cout << "BundleTrace:Itisonedeliverymethon\n" << endl;
                 return std::unique_ptr<RoutingMethodInterface>(p);
             } else if (ex_rm_ == DtnApp::RoutingMethod::Other) {
                 auto p = new YouRouting(dtn);
+                cout << "BundleTrace:Itisnotonedeliverymethon\n" << endl;
                 return std::unique_ptr<RoutingMethodInterface>(p);
             } else {
                 cout << "error: can't find routing" << endl;

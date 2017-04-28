@@ -33,6 +33,7 @@ namespace ns3 {
             start.WriteU32(offset_size_);
             start.WriteU32(src_time_stamp_);
             start.WriteU32(hop_time_stamp_);
+            WriteTo(start, hop_ip_);
         }
 
         uint32_t BPHeader::Deserialize(Buffer::Iterator start) {
@@ -58,6 +59,7 @@ namespace ns3 {
             offset_size_ = i.ReadU32();
             src_time_stamp_ = i.ReadU32();
             hop_time_stamp_ = i.ReadU32();
+            ReadFrom(i, hop_ip_);
 
             uint32_t dist = i.GetDistanceFrom(start);
             //std::cerr << "dist = " << dist << ", GetSeri = " << GetSerializedSize();
@@ -80,7 +82,7 @@ namespace ns3 {
                sizeof(BPHeader::src_time_stamp_) +
                sizeof(BPHeader::hop_time_stamp_));
                */
-            return 44;
+            return 48;
         }
 
         void BPHeader::Print(std::ostream& os) const {
@@ -98,6 +100,7 @@ namespace ns3 {
                 << ",offset size=" << offset_size_
                 << ",src time stamp=" << src_time_stamp_
                 << ",hop time stamp=" << hop_time_stamp_
+                << ",hop ip=" << hop_ip_
                 << ",bundle type=" << bt
                 << std::endl;
         }

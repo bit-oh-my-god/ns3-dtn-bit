@@ -18,13 +18,13 @@ namespace ns3 {
             public :
                 YourExample() : DtnExampleInterface() {
                     // simulation time should be less than trace_file_ time !Important
-                    node_number_ = 5;           // change me!!
+                    node_number_ = 20;           // change me!!
                     simulation_duration_ = 802;     // change me!!
                     print_wifi_log_ = false;
                     //ex_rm_ = DtnApp::RoutingMethod::Other;
                     //ex_rm_ = DtnApp::RoutingMethod::TimeExpanded;
-                    ex_rm_ = DtnApp::RoutingMethod::CGR;
-                    //ex_rm_ = DtnApp::RoutingMethod::SprayAndWait;
+                    //ex_rm_ = DtnApp::RoutingMethod::CGR;
+                    ex_rm_ = DtnApp::RoutingMethod::SprayAndWait;
                 }
                 void ReportEx(std::ostream& os) override {
                     os << "Here In DtnExampleInterface::ReportEx" 
@@ -39,13 +39,13 @@ namespace ns3 {
                         this->apps_[i]->ScheduleTx(Seconds(sch_time), dstnode, sch_size);
                     };
                     // this three would be transmit to node-1, and carry to node-2
-                    handy_func(3.0, 1, 0);
-                    handy_func(5.0, 2, 0);
-                    handy_func(22.0, 2, 0);
+                    handy_func(3, 9, 4);
+                    //handy_func(5.0, 2, 0);
+                    //handy_func(22.0, 2, 0);
                     // this two would wait node-1 to transmit
-                    handy_func(54.0, 0, 2);
-                    handy_func(66.0, 1, 2);
-                    handy_func(423.0, 0, 2);
+                    //handy_func(54.0, 0, 2);
+                    //handy_func(66.0, 1, 2);
+                    //handy_func(423.0, 0, 2);
                 }
         };
 
@@ -55,10 +55,10 @@ namespace ns3 {
 
 int main(int argc, char *argv[]) {
     //!important LOG control
-    LogComponentEnable ("DtnRunningLog",LOG_LEVEL_DEBUG);
+    //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_DEBUG);
     //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_INFO);
     //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_LOGIC);
-    //LogComponentEnable ("DtnRunningLog", LOG_LEVEL_ALL);
+    LogComponentEnable ("DtnRunningLog", LOG_LEVEL_ALL);
     LogComponentEnable("Ns2MobilityHelper", LOG_LEVEL_INFO);
 
     assert(std::is_move_constructible<ns3dtnbit::YourExample>::value);

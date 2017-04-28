@@ -65,6 +65,8 @@ namespace ns3 {
                 Time get_hop_time_stamp() {return Time(Seconds(hop_time_stamp_));}
                 //void set_hop_time_stamp(Time arg) {hop_time_stamp_ = arg.GetMilliSeconds();}
                 void set_hop_time_stamp(Time arg) {hop_time_stamp_ = (double)arg.GetMilliSeconds() / 1000;}
+                void set_hop_ip(Ipv4Address ip) {hop_ip_ = ip;}
+                Ipv4Address get_hop_ip() {return hop_ip_;}
 
             private :
 
@@ -84,6 +86,7 @@ namespace ns3 {
                 uint32_t offset_size_;
                 dtn_time_t src_time_stamp_;
                 dtn_time_t hop_time_stamp_;
+                Ipv4Address hop_ip_;
         }; 
 
         std::ostream& operator<< (std::ostream& os, BPHeader const& rh);

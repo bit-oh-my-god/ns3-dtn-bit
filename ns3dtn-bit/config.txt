@@ -1,1 +1,1 @@
-static std::string root_path = "/home/dtn-012345/ns-3_build/ns3-dtn-bit";
+static std::string root_path = "/home/dtn-012345/ns-3_build/ns3/ns3-dtn-bit";

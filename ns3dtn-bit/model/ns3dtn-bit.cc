@@ -506,7 +506,10 @@ namespace ns3 {
                             p_pkt->AddHeader(bp_header);
                             if (!IsDuplicatedDetail(tmp_bp_header)) {
                                 daemon_antipacket_queue_->Enqueue(Packet2Queueit(p_pkt->Copy()));
-                                RemoveBundleFromAntiDetail(p_pkt);
+                                // this would tell neighbor send the pkt-A after one anti-A arrived, when the next hello do not shows
+                                // seqno fo pkt-A, and in this pkt-A receive time, it would remove bundle, again and again
+                                // It's a design bug, fix it!!! TODO
+                                //RemoveBundleFromAntiDetail(p_pkt);
                             } else {
                                 NS_LOG_WARN(LogPrefixMacro << "WARN:duplicate anti-pkt, may happen");
                             }
@@ -982,7 +985,10 @@ namespace ns3 {
          * */
         bool DtnApp::SprayGoodDetail(BPHeader& bp_header, int flag) {
             int v = bp_header.get_source_seqno();
-            if (flag == 1) {bp_header.set_hop_time_stamp(Simulator::Now());}
+            if (flag == 1) {
+                bp_header.set_hop_time_stamp(Simulator::Now());
+                bp_header.set_hop_ip(NodeNo2Ipv4(node_->GetId()));
+            }
             auto found = spray_map_.find(v);
             if (found == spray_map_.end()) {
                 spray_map_[v] = bp_header.get_spray();
@@ -1543,6 +1549,7 @@ namespace ns3 {
             p_bp_header->set_retransmission_count(0);
             p_bp_header->set_src_time_stamp(Simulator::Now());
             p_bp_header->set_hop_time_stamp(Simulator::Now());
+            p_bp_header->set_hop_ip(NodeNo2Ipv4(node_->GetId()));
             NS_LOG_LOGIC(LogPrefixMacro << "Out of " << "SemiFillBPHeaderDetail()");
         }
 
