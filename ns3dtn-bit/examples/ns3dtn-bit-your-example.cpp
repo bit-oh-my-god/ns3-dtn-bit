@@ -18,13 +18,13 @@ namespace ns3 {
             public :
                 YourExample() : DtnExampleInterface() {
                     // simulation time should be less than trace_file_ time !Important
-                    node_number_ = 20;           // change me!!
+                    node_number_ = 10;           // change me!!
                     simulation_duration_ = 802;     // change me!!
                     print_wifi_log_ = false;
                     //ex_rm_ = DtnApp::RoutingMethod::Other;
-                    //ex_rm_ = DtnApp::RoutingMethod::TimeExpanded;
+                    ex_rm_ = DtnApp::RoutingMethod::TimeExpanded;
                     //ex_rm_ = DtnApp::RoutingMethod::CGR;
-                    ex_rm_ = DtnApp::RoutingMethod::SprayAndWait;
+                    //ex_rm_ = DtnApp::RoutingMethod::SprayAndWait;
                 }
                 void ReportEx(std::ostream& os) override {
                     os << "Here In DtnExampleInterface::ReportEx" 
@@ -32,6 +32,7 @@ namespace ns3 {
                         << ";simulation_duration_=" << simulation_duration_ << endl;
                 }
 
+                /*
                 void ScheduleTask() override {
                     int sch_size = 345;
                     auto handy_func = [sch_size, this](int sch_time, int dstnode, int i) {
@@ -47,6 +48,7 @@ namespace ns3 {
                     //handy_func(66.0, 1, 2);
                     //handy_func(423.0, 0, 2);
                 }
+                */
         };
 
     } /* ns3dtnbit */ 

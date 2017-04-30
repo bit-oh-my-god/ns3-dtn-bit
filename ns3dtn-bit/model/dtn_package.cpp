@@ -98,8 +98,8 @@ namespace ns3 {
                 << ",source seqno=" << source_seqno_
                 << ",payload size=" << payload_size_
                 << ",offset size=" << offset_size_
-                << ",src time stamp=" << src_time_stamp_
-                << ",hop time stamp=" << hop_time_stamp_
+                << ",src time stamp=" << get_src_time_stamp().GetSeconds()
+                << ",hop time stamp=" << get_hop_time_stamp().GetSeconds()
                 << ",hop ip=" << hop_ip_
                 << ",bundle type=" << bt
                 << std::endl;

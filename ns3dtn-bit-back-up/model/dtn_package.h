@@ -58,13 +58,13 @@ namespace ns3 {
                 uint32_t get_offset() {return offset_size_;}
                 void set_offset(uint32_t arg) {offset_size_ = arg;}
                 //Time get_src_time_stamp() {return Time(MilliSeconds(src_time_stamp_));}
-                Time get_src_time_stamp() {return Time(Seconds(src_time_stamp_));}
+                Time get_src_time_stamp() const {return Time(NanoSeconds(src_time_stamp_));}
                 //void set_src_time_stamp(Time arg) {src_time_stamp_ = arg.GetMilliSeconds();}
-                void set_src_time_stamp(Time arg) {src_time_stamp_ = (double)arg.GetMilliSeconds() / 1000;}
+                void set_src_time_stamp(Time arg) {src_time_stamp_ = (double)arg.GetNanoSeconds();}
                 //Time get_hop_time_stamp() {return Time(Seconds(hop_time_stamp_));}
-                Time get_hop_time_stamp() {return Time(Seconds(hop_time_stamp_));}
+                Time get_hop_time_stamp() const {return Time(NanoSeconds(hop_time_stamp_));}
                 //void set_hop_time_stamp(Time arg) {hop_time_stamp_ = arg.GetMilliSeconds();}
-                void set_hop_time_stamp(Time arg) {hop_time_stamp_ = (double)arg.GetMilliSeconds() / 1000;}
+                void set_hop_time_stamp(Time arg) {hop_time_stamp_ = (double)arg.GetNanoSeconds();}
                 void set_hop_ip(Ipv4Address ip) {hop_ip_ = ip;}
                 Ipv4Address get_hop_ip() {return hop_ip_;}
 

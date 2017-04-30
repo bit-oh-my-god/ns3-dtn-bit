@@ -101,12 +101,13 @@ would support '$ns at $time $node setdest x2 y2 z2 speed' format, and this forma
         Adob_do02 Adob_do03
 - [ ] to work :(
 - [x] to have a life
-- [ x ] CGR, main feature, implement it!
-- [  ] <s>running log was printed twice, more specifically NS_LOG_COMPONENT was printed out twice, it's a bug, fix it!</s> **we don't want to fix this bug** because jupyter parse script has depends on this bug
-- [ x ] last seen neighbor, should be 1 * Hello Interval or 2 * Hello Interval
-- [  ] give some senario, and give some result parse script
-- [  ] unordered_map with tuple, bug fix
-- [  ] retransmission : For now we don't have local2neighbor retransmission. What we have is that, if one transmission session is not successed, this session would be remained, and reboot next time when routing decision is made by which transmission session producted had the same 'session value', where normally results to a new transmission session. Should we change it?
+- [x] CGR, main feature, implement it!
+- [ ] <s>running log was printed twice, more specifically NS_LOG_COMPONENT was printed out twice, it's a bug, fix it!</s> **we don't want to fix this bug** because jupyter parse script has depends on this bug
+- [ ] relative path for script
+- [x] last seen neighbor, should be 1 * Hello Interval or 2 * Hello Interval
+- [ ] give some senario, and give some result parse script
+- [ ] unordered_map with tuple, bug fix
+- [ ] retransmission : For now we don't have local2neighbor retransmission. What we have is that, if one transmission session is not successed, this session would be remained, and reboot next time when routing decision is made by which transmission session producted had the same 'session value', where normally results to a new transmission session. Should we change it?
 
 # Develpment Annoucement & Publish Log
 
