@@ -5,7 +5,7 @@ function function1 {
 ./bm -hm RandomWaypoint
 # what the hell that bonnmotion had bugs?? TODO, speed is higher than the number -h dedicate where is contract to the help doc.
 echo '========================= Important command ============='
-./bm -f default_scenario RandomWaypoint -n 10 -d 1600 -i 600 -x 29999 -y 29999 -z 29999 -h 80 -l 20 -o 5 > /dev/null
+./bm -f default_scenario RandomWaypoint -n 20 -d 1600 -i 600 -x 39999 -y 39999 -z 39999 -h 80 -l 20 -o 5 > /dev/null
 ./bm NSFile -f default_scenario > /dev/null
 mv *.ns_movements ~/ns-3_build/ns3-dtn-bit/box/current_trace/
 cd ~/ns-3_build/ns3-dtn-bit/box/current_trace

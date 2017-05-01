@@ -108,6 +108,8 @@ would support '$ns at $time $node setdest x2 y2 z2 speed' format, and this forma
 - [ ] give some senario, and give some result parse script
 - [ ] unordered_map with tuple, bug fix
 - [ ] retransmission : For now we don't have local2neighbor retransmission. What we have is that, if one transmission session is not successed, this session would be remained, and reboot next time when routing decision is made by which transmission session producted had the same 'session value', where normally results to a new transmission session. Should we change it?
+- [ ] hello range is bigger than bundle range
+- [ ] routing decision bug
 
 # Develpment Annoucement & Publish Log
 

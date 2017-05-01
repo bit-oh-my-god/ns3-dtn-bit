@@ -365,11 +365,12 @@ namespace ns3 {
                 bp_header.set_offset(tmp_payload_str.size());
             }
             assert(p_pkt->GetSize() == payload_size);
+            NS_LOG_DEBUG(LogPrefixMacro << "ScheduleTx,inToSendBundle(),bp_header=" << bp_header);
             p_pkt->AddHeader(bp_header);
             if ((daemon_antipacket_queue_->GetNBytes() + daemon_bundle_queue_->GetNBytes() + p_pkt->GetSize() <= daemon_baq_pkts_max_ * NS3DTNBIT_HYPOTHETIC_CACHE_FACTOR)) {
                 daemon_bundle_queue_->Enqueue(Packet2Queueit(p_pkt));
                 // NORMAL LOG
-                NS_LOG_DEBUG(LogPrefixMacro << "out of ToSendBundle()");
+                NS_LOG_DEBUG(LogPrefixMacro << "normal out of ToSendBundle()");
             } else {
                 // ERROR LOG
                 NS_LOG_ERROR("Error : bundle is too big or no space");
@@ -506,10 +507,7 @@ namespace ns3 {
                             p_pkt->AddHeader(bp_header);
                             if (!IsDuplicatedDetail(tmp_bp_header)) {
                                 daemon_antipacket_queue_->Enqueue(Packet2Queueit(p_pkt->Copy()));
-                                // this would tell neighbor send the pkt-A after one anti-A arrived, when the next hello do not shows
-                                // seqno fo pkt-A, and in this pkt-A receive time, it would remove bundle, again and again
-                                // It's a design bug, fix it!!! TODO
-                                //RemoveBundleFromAntiDetail(p_pkt);
+                                RemoveBundleFromAntiDetail(p_pkt);
                             } else {
                                 NS_LOG_WARN(LogPrefixMacro << "WARN:duplicate anti-pkt, may happen");
                             }

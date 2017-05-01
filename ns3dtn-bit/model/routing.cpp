@@ -84,7 +84,9 @@ namespace ns3 {
             } else {
                 int vk = -1;
                 bool found_vk = false;
-                while (!found_vk) {
+                int finding_count = 0;
+                while (!found_vk && finding_count < 100) {
+                    finding_count += 1;
                     auto found = ref_adob.teg_routing_table_.find(rt_index);
                     if (found != ref_adob.teg_routing_table_.end()) {
                         vk = ref_adob.teg_routing_table_[rt_index];
@@ -94,6 +96,10 @@ namespace ns3 {
                     }
                     if (vk < 0 || vk > ref_adob.get_node_number()) { std::cout << "Error: can't be" << __LINE__ << std::endl; std::abort(); }
                     rt_index = make_tuple(s, vk, tmp_time);
+                }
+                if (finding_count > 99) {
+                    cout << "error: finding routing table too much time, abort()" << endl;
+                    std::abort();
                 }
                 if (vk == -1) { std::abort(); }
                 return vk;

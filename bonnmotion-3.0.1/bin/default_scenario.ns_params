@@ -1,5 +1,5 @@
-set val(x) 10019.0
-set val(y) 10019.0
-set val(z) 10019.0
-set val(nn) 10
+set val(x) 40019.0
+set val(y) 40019.0
+set val(z) 40019.0
+set val(nn) 20
 set val(duration) 1600.0

@@ -85,6 +85,12 @@ namespace ns3 {
                     t_2_adjacent_array[time] = tmp_adjacent_array;
                 }
             }
+            int time_of_simulation = simulation_duration_;
+            int count_of_slice_of_adob = t_2_adjacent_array.size();
+            if (time_of_simulation != count_of_slice_of_adob) {
+                cout << "Error: time of simulation should be the same as count of slice of adob, the inequality would cause routing method undefined works. Please change your simulation time as your teg.txt time" << endl;
+                std::abort();
+            }
             {
                 /*
                    std::cout << "DEBUG:outof608" << std::endl;
