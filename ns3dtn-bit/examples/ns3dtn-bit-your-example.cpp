@@ -36,6 +36,11 @@ namespace ns3 {
                     } else if (schdule_for_n_trace == 6) {
                         node_number_ = 20;
                         simulation_duration_ = 802;
+                    } else if (schdule_for_n_trace == 4) {
+                        node_number_ = 10;
+                        simulation_duration_ = 802;
+                    } else {
+                        cout << "warn: " << __FILE__ << __LINE__ << endl;
                     }
                 }
                 void ReportEx(std::ostream& os) override {
@@ -60,14 +65,17 @@ namespace ns3 {
                         handy_func(54.0, 0, 2);
                         handy_func(66.0, 1, 2);
                     } else if (schdule_for_n_trace == 7) {
+                        // Do more schedule TODO
                         handy_func(22.1, 10, 1);
                         handy_func(70.1, 10, 2);
                         handy_func(32.1, 10, 1);
                         handy_func(42.1, 10, 5);
                     } else if (schdule_for_n_trace == 6) {
                         DtnExampleInterface::ScheduleTask();
+                    } else if (schdule_for_n_trace == 4) {
+                        DtnExampleInterface::ScheduleTask();
                     } else {
-                        cout << "WARN: can't find schdule, define it or use default random one by comment this method" << endl;
+                        cout << "WARN: can't find schdule, define it or use default random one " << endl;
                     }
                 }
         };
