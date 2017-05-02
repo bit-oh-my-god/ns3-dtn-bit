@@ -91,7 +91,7 @@ namespace ns3 {
         void DtnApp::SetUp(Ptr<Node> node) {
             node_ = node;
             congestion_control_parameter_ = 1;
-            retransmission_interval_ = 15.0;
+            retransmission_interval_ = NS3DTNBIT_RETRANSMISSION_INTERVAL;
             congestion_control_method_ = CongestionControlMethod::NoControl; 
 
             daemon_antipacket_queue_ = CreateObject<DropTailQueue>();
@@ -467,7 +467,7 @@ namespace ns3 {
                         retransmit_count,
                         seqno_was_acked
                     };
-                    NS_LOG_LOGIC(LogPrefixMacro << "tmp_bh_info - seqno" << tmp_bh_info.info_source_seqno_);
+                    NS_LOG_LOGIC(LogPrefixMacro << "tmp_bh_info - seqno=" << tmp_bh_info.info_source_seqno_);
                     int k = 0;
                     for (int kk = 0; kk < transmit_assister_.daemon_transmission_info_vec_.size(); kk++) {
                         if (tmp_bh_info == transmit_assister_.daemon_transmission_bh_info_vec_[kk]) { k = kk; break; }
@@ -650,6 +650,29 @@ namespace ns3 {
             NS_LOG_LOGIC(LogPrefixMacro << "Out of " << "BundleReceptionTailWorkDetail()");
         }
 
+        void DtnApp::TransmitSessionFailCheck(DaemonBundleHeaderInfo bh_info, int last_time_current) {
+            NS_LOG_INFO(LogPrefixMacro << "Enter TransmitSessionFailCheck");
+            bool this_session_was_acked = false;
+            int index = 0;
+            for (auto v : transmit_assister_.daemon_transmission_bh_info_vec_) {
+                if (v == bh_info) {
+                    if (last_time_current < transmit_assister_.daemon_transmission_info_vec_[index].info_transmission_current_sent_acked_bytes_) {
+                        this_session_was_acked = true;
+                    }
+                    break;
+                } else {
+                    index += 1;
+                }
+            }
+            if (this_session_was_acked) {
+                NS_LOG_DEBUG(LogPrefixMacro << "seqno=" << bh_info.info_source_seqno_ << "; this is acked, successed! ; detail is : last_time_current =" << last_time_current << "; now_current =" << transmit_assister_.daemon_transmission_info_vec_[index].info_transmission_current_sent_acked_bytes_ );
+            } else {
+                // we don't need to roll back spray_map_, here
+                NS_LOG_DEBUG(LogPrefixMacro << "seqno=" << bh_info.info_source_seqno_ << "; this is not acked, retransmit!");
+                ToTransmit(bh_info, true);
+            }
+            NS_LOG_LOGIC(LogPrefixMacro << "Out of " << "TransmitSessionFailCheck()");
+        }
         /* refine 
          * Aim : handle send bundle stuff after checkbuffer
          * Detail :
@@ -663,6 +686,7 @@ namespace ns3 {
          */
         void DtnApp::ToTransmit(DaemonBundleHeaderInfo bh_info, bool is_retransmit) {
             NS_LOG_DEBUG(LogPrefixMacro << "enter ToTransmit()");
+            NS_LOG_DEBUG("----- seqno=" << bh_info.info_source_seqno_);
             bool real_send_boolean = false;
             int index = 0, j = 0;
             for (int ii = 0; ii < transmit_assister_.daemon_transmission_bh_info_vec_.size(); ii++) {
@@ -677,6 +701,12 @@ namespace ns3 {
                         << "; if this transmit-to-ip is equal to last, the robin-round schedule may not work");
                 return;
             }
+            if (transmit_assister_.daemon_transmission_bh_info_vec_[index].info_retransmission_count_ > NS3DTNBIT_MAX_RETRANSMISSION) {
+                NS_LOG_DEBUG(LogPrefixMacro << "this transmit-session is over max-retranmission time , would drop this transmit." 
+                        << "transmit-to-ip=" << bh_info.info_transmit_addr_.GetIpv4()
+                        << ";seqno=" << bh_info.info_source_seqno_);
+                return;
+            }
             for (int jj = 0; jj < neighbor_info_vec_.size(); jj++) {
                 // find the neighbor should be transmit, if this neighbor was not recently seen, schedule 'ToTransmit' later, otherwise, set real_send_boolean
                 auto ip_n = neighbor_info_vec_[jj].info_address_.GetIpv4();
@@ -687,49 +717,53 @@ namespace ns3 {
                         j = jj;
                         break;
                     } else {
-                        Simulator::Schedule(Seconds(NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME * 2), &DtnApp::ToTransmit, this, bh_info, false);
-                        NS_LOG_WARN(LogPrefixMacro << "WARN:to transmit: can't find neighbor or neighbor not recently seen, would cancel this try, retry next time." << "j=" << jj << ",last seen time=" << (double)neighbor_info_vec_[jj].info_last_seen_time_ << ";base time=" << Simulator::Now().GetSeconds() - (NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME));
+                        Simulator::Schedule(Seconds(NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME * 3), &DtnApp::ToTransmit, this, bh_info, is_retransmit);
+                        NS_LOG_WARN(LogPrefixMacro << "WARN:to transmit: can't find neighbor or neighbor not recently seen. This might happen when ToTransmit() with is_retransmit = true, we would cancel this try, and retry next time." << "j=" << jj << ",last seen time=" << (double)neighbor_info_vec_[jj].info_last_seen_time_ << ";base time=" << Simulator::Now().GetSeconds() - (NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME));
                         return;
                     }
                 }
             }
-            Ptr<Packet> tran_p_pkt;
             BPHeader tran_bp_header;
             int offset_value;
             if (real_send_boolean) {
-                tran_p_pkt = transmit_assister_.daemon_retransmission_packet_buffer_vec_[index]->Copy(); 
-                tran_p_pkt->RemoveHeader(tran_bp_header);
+                //ref_tran_p_pkt = transmit_assister_.daemon_retransmission_packet_buffer_vec_[index]->Copy(); 
+                Ptr<Packet>& ref_tran_p_pkt= transmit_assister_.daemon_retransmission_packet_buffer_vec_[index];
+                if (is_retransmit) {
+                    NS_LOG_DEBUG("---- seqno=" << bh_info.info_source_seqno_ << ";retransmit_count  = " << transmit_assister_.daemon_transmission_bh_info_vec_[index].info_retransmission_count_);
+                }
+                ref_tran_p_pkt->RemoveHeader(tran_bp_header);
                 if (transmit_assister_.daemon_transmission_info_vec_[index].info_transmission_total_send_bytes_ > NS3DTNBIT_HYPOTHETIC_TRANS_SIZE_FRAGMENT_MAX) {
                     NS_LOG_WARN(LogPrefixMacro << "WARN:fragment may have error");
                     {
                         // prepare bytes
                         int need_to_bytes = transmit_assister_.get_need_to_bytes(index);
                         NS_LOG_INFO(LogPrefixMacro << "here" << ";daemon_reception_packet_buffer_vec_.size()" << daemon_reception_packet_buffer_vec_.size() << ";index" << index);
-                        tran_p_pkt->RemoveAtStart(transmit_assister_.daemon_transmission_info_vec_[index].info_transmission_current_sent_acked_bytes_);
+                        ref_tran_p_pkt->RemoveAtStart(transmit_assister_.daemon_transmission_info_vec_[index].info_transmission_current_sent_acked_bytes_);
                         if (need_to_bytes > NS3DTNBIT_HYPOTHETIC_TRANS_SIZE_FRAGMENT_MAX) {
-                            tran_p_pkt->RemoveAtEnd(need_to_bytes - NS3DTNBIT_HYPOTHETIC_TRANS_SIZE_FRAGMENT_MAX);
+                            ref_tran_p_pkt->RemoveAtEnd(need_to_bytes - NS3DTNBIT_HYPOTHETIC_TRANS_SIZE_FRAGMENT_MAX);
                         }
-                        tran_bp_header.set_offset(transmit_assister_.daemon_transmission_info_vec_[index].info_transmission_current_sent_acked_bytes_ + tran_p_pkt->GetSize());
+                        tran_bp_header.set_offset(transmit_assister_.daemon_transmission_info_vec_[index].info_transmission_current_sent_acked_bytes_ + ref_tran_p_pkt->GetSize());
                         if (is_retransmit) {
                             tran_bp_header.set_retransmission_count(tran_bp_header.get_retransmission_count() + 1);
+                            transmit_assister_.daemon_transmission_bh_info_vec_[index].info_retransmission_count_ += 1;
                         }
-                        offset_value = tran_p_pkt->GetSize() + transmit_assister_.daemon_transmission_info_vec_[index].info_transmission_current_sent_acked_bytes_;
+                        offset_value = ref_tran_p_pkt->GetSize() + transmit_assister_.daemon_transmission_info_vec_[index].info_transmission_current_sent_acked_bytes_;
                     }
                 } else {
-                    offset_value = tran_p_pkt->GetSize();
+                    offset_value = ref_tran_p_pkt->GetSize();
                     assert(offset_value == tran_bp_header.get_payload_size());
                     if (offset_value == 0) {
-                        NS_LOG_ERROR(LogPrefixMacro << "tran_p_pkt.size() = 0" << " bp_header :" << tran_bp_header);
+                        NS_LOG_ERROR(LogPrefixMacro << "ref_tran_p_pkt.size() = 0" << " bp_header :" << tran_bp_header);
                         std::abort();
                     }
                 }
-                assert(tran_p_pkt->GetSize()!=0);
+                assert(ref_tran_p_pkt->GetSize()!=0);
                 tran_bp_header.set_offset(offset_value);
-                tran_p_pkt->AddHeader(tran_bp_header);
+                ref_tran_p_pkt->AddHeader(tran_bp_header);
                 {
                     // update state
                     transmit_assister_.daemon_transmission_info_vec_[index].info_transmission_bundle_last_sent_time_ = Simulator::Now().GetSeconds();
-                    transmit_assister_.daemon_transmission_info_vec_[index].info_transmission_bundle_last_sent_bytes_ = tran_p_pkt->GetSize();
+                    transmit_assister_.daemon_transmission_info_vec_[index].info_transmission_bundle_last_sent_bytes_ = ref_tran_p_pkt->GetSize();
                     transmit_assister_.daemon_transmission_bh_info_vec_[index].info_retransmission_count_ = tran_bp_header.get_retransmission_count();
                     if (tran_bp_header.get_bundle_type() == BundleType::AntiPacket) {
                         neighbor_info_vec_[j].info_sent_ap_seqno_vec_.push_back(tran_bp_header.get_source_seqno());
@@ -738,8 +772,13 @@ namespace ns3 {
                         neighbor_info_vec_[j].info_sent_bp_seqno_vec_.push_back(tran_bp_header.get_source_seqno());
                     }
                 }
-                NS_LOG_DEBUG(LogPrefixMacro << "before SocketSendDetail,tran_p_pkt.size()=" << tran_p_pkt->GetSize() << ";transmit ip=" << neighbor_info_vec_[j].info_address_.GetIpv4() << ";tran_bp_header : " << tran_bp_header);
-                if (!SocketSendDetail(tran_p_pkt, 0, neighbor_info_vec_[j].info_address_)) {
+                {
+                    // fail check
+                    int last_time_current = transmit_assister_.daemon_transmission_info_vec_[index].info_transmission_current_sent_acked_bytes_;
+                    Simulator::Schedule(Seconds(retransmission_interval_), &DtnApp::TransmitSessionFailCheck, this, bh_info, last_time_current);
+                }
+                NS_LOG_DEBUG(LogPrefixMacro << "before SocketSendDetail,ref_tran_p_pkt.size()=" << ref_tran_p_pkt->GetSize() << ";transmit ip=" << neighbor_info_vec_[j].info_address_.GetIpv4() << ";tran_bp_header : " << tran_bp_header);
+                if (!SocketSendDetail(ref_tran_p_pkt, 0, neighbor_info_vec_[j].info_address_)) {
                     NS_LOG_ERROR("SocketSendDetail fail");
                     std::abort();
                 }

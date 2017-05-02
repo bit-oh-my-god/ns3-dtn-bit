@@ -289,6 +289,8 @@ namespace ns3 {
             private :
                 // control the times of transmit from this node for one identical pkt
                 bool SprayGoodDetail(BPHeader& bp_header, int flag);
+                // control local2neighbor failed transmit
+                void TransmitSessionFailCheck(DaemonBundleHeaderInfo bh_info, int last_current);
                 // put anti in queue
                 void ToSendAntipacketBundle(BPHeader& ref_bp_header);
                 // response for bundle & anti

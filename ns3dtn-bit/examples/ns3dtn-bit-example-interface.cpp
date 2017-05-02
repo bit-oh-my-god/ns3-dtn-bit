@@ -162,7 +162,7 @@ namespace ns3 {
 
         void DtnExampleInterface::ScheduleTask() {
             Ptr<UniformRandomVariable> x = CreateObject<UniformRandomVariable> ();
-            unsigned int pkts_total = 3;
+            unsigned int pkts_total = 2;
             double xinterval = simulation_duration_ / (2 * node_number_);
             for (uint32_t i = 0; i < node_number_; ++i) { 
                 for (uint32_t j = 0; j < pkts_total; ++j) { 

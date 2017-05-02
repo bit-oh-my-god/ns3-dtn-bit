@@ -17,14 +17,23 @@ namespace ns3 {
         class YourExample : public DtnExampleInterface {
             public :
                 YourExample() : DtnExampleInterface() {
+                    const int schdule_for_n_trace = 7;
                     // simulation time should be less than trace_file_ time !Important
-                    node_number_ = 20;           // change me!!
+                    node_number_ = 10;           // change me!!
                     simulation_duration_ = 802;     // change me!!
                     print_wifi_log_ = false;
                     //ex_rm_ = DtnApp::RoutingMethod::Other;
                     ex_rm_ = DtnApp::RoutingMethod::TimeExpanded;
                     //ex_rm_ = DtnApp::RoutingMethod::CGR;
                     //ex_rm_ = DtnApp::RoutingMethod::SprayAndWait;
+                    
+                    if (schdule_for_n_trace == 3) {
+                        node_number_ = 5;
+                        simulation_duration_ = 802;
+                    } else if (schdule_for_n_trace == 7) {
+                        node_number_ = 11;
+                        simulation_duration_ = 802;
+                    }
                 }
                 void ReportEx(std::ostream& os) override {
                     os << "Here In DtnExampleInterface::ReportEx" 
@@ -32,23 +41,30 @@ namespace ns3 {
                         << ";simulation_duration_=" << simulation_duration_ << endl;
                 }
 
-                /*
                 void ScheduleTask() override {
                     int sch_size = 345;
-                    auto handy_func = [sch_size, this](int sch_time, int dstnode, int i) {
+                    auto handy_func = [sch_size, this](double sch_time, int dstnode, int i) {
                         std::cout << "bundle send schedule: time=" << sch_time << ";node-" << i << "send " << sch_size << " size-pkt to node-" << dstnode << std::endl;
                         this->apps_[i]->ScheduleTx(Seconds(sch_time), dstnode, sch_size);
                     };
-                    // this three would be transmit to node-1, and carry to node-2
-                    handy_func(3, 9, 4);
-                    //handy_func(5.0, 2, 0);
-                    //handy_func(22.0, 2, 0);
-                    // this two would wait node-1 to transmit
-                    //handy_func(54.0, 0, 2);
-                    //handy_func(66.0, 1, 2);
-                    //handy_func(423.0, 0, 2);
+                    const int schdule_for_n_trace = 7;
+                    if (schdule_for_n_trace == 3) {
+                        // this three would be transmit to node-1, and carry to node-2
+                        handy_func(3, 9, 4);
+                        handy_func(5.0, 2, 0);
+                        handy_func(22.0, 2, 0);
+                        // this two would wait node-1 to transmit
+                        handy_func(54.0, 0, 2);
+                        handy_func(66.0, 1, 2);
+                    } else if (schdule_for_n_trace == 7) {
+                        handy_func(22.1, 10, 1);
+                        handy_func(70.1, 10, 2);
+                        handy_func(32.1, 10, 1);
+                        handy_func(42.1, 10, 5);
+                    } else {
+                        cout << "WARN: can't find schdule, define it or use default random one by comment this method" << endl;
+                    }
                 }
-                */
         };
 
     } /* ns3dtnbit */ 
