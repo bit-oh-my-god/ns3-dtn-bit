@@ -17,7 +17,7 @@ namespace ns3 {
         class YourExample : public DtnExampleInterface {
             public :
                 YourExample() : DtnExampleInterface() {
-                    const int schdule_for_n_trace = 7;
+                    const int schdule_for_n_trace = 6;
                     // simulation time should be less than trace_file_ time !Important
                     node_number_ = 10;           // change me!!
                     simulation_duration_ = 802;     // change me!!
@@ -33,6 +33,9 @@ namespace ns3 {
                     } else if (schdule_for_n_trace == 7) {
                         node_number_ = 11;
                         simulation_duration_ = 802;
+                    } else if (schdule_for_n_trace == 6) {
+                        node_number_ = 20;
+                        simulation_duration_ = 802;
                     }
                 }
                 void ReportEx(std::ostream& os) override {
@@ -47,7 +50,7 @@ namespace ns3 {
                         std::cout << "bundle send schedule: time=" << sch_time << ";node-" << i << "send " << sch_size << " size-pkt to node-" << dstnode << std::endl;
                         this->apps_[i]->ScheduleTx(Seconds(sch_time), dstnode, sch_size);
                     };
-                    const int schdule_for_n_trace = 7;
+                    const int schdule_for_n_trace = 6;
                     if (schdule_for_n_trace == 3) {
                         // this three would be transmit to node-1, and carry to node-2
                         handy_func(3, 9, 4);
@@ -61,6 +64,8 @@ namespace ns3 {
                         handy_func(70.1, 10, 2);
                         handy_func(32.1, 10, 1);
                         handy_func(42.1, 10, 5);
+                    } else if (schdule_for_n_trace == 6) {
+                        DtnExampleInterface::ScheduleTask();
                     } else {
                         cout << "WARN: can't find schdule, define it or use default random one by comment this method" << endl;
                     }

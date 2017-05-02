@@ -483,11 +483,12 @@ namespace ns3 {
                                 << current << "\nlast_sent=" << last);
                         ToTransmit(tmp_bh_info, false);
                     } else {
-                        NS_LOG_ERROR(LogPrefixMacro << "can't be true, total, cur, last =" << total << " " << current << " " << last 
+                        NS_LOG_WARN(LogPrefixMacro << "WARN:can be true when retransmit and original transmit both success, following code would handle this, total, cur, last =" << total << " " << current << " " << last 
                                 << "\n k =" << k  << " " << transmit_assister_.daemon_transmission_info_vec_.size() 
                                 << " " << transmit_assister_.daemon_retransmission_packet_buffer_vec_.size() 
                                 << " " << transmit_assister_.daemon_transmission_bh_info_vec_.size()
                                 << "\n" << "from_ip = " << transmit_assister_.daemon_transmission_bh_info_vec_[k].info_transmit_addr_);
+                        NS_LOG_ERROR("error: we don't have handling code, please change NS3DTNBIT_RETRANSMISSION_INTERVAL to bigger one, if max_range is 4,000 interval of value 1.7 would be enough");
                         std::abort();
                     }
                     return;
