@@ -14,6 +14,7 @@ namespace ns3 {
 
         // read this :
         // https://tools.ietf.org/html/draft-burleigh-dtnrg-cgr-00
+        // not this is not a CGR-EB (which can be found in here: Analysis of the contact graph routing algorithm: Bounding interplanetary paths)
         class CGRRouting : public RoutingMethodInterface {
             using node_id_t = int;
             public :
@@ -21,7 +22,7 @@ namespace ns3 {
             // s is source index, d is dest index, return next hop
             int DoRoute(int s, int d) override;
 
-            void GetInfo(node_id_t destination_id, node_id_t from_id, std::vector<node_id_t> vec_of_current_neighbor, node_id_t own_id, dtn_time_t expired_time, int bundle_size, int networkconfigurationflag, map<int, vector<int>> id2cur_exclude_vec_of_id) override;
+            void GetInfo(node_id_t destination_id, node_id_t from_id, std::vector<node_id_t> vec_of_current_neighbor, node_id_t own_id, dtn_time_t expired_time, int bundle_size, int networkconfigurationflag, map<int, vector<int>> id2cur_exclude_vec_of_id, dtn_time_t local_time) override;
 
             private :
             void Init();
@@ -46,6 +47,17 @@ namespace ns3 {
             private :
             node_id_t destination_id_; 
             node_id_t own_id_;
+            dtn_time_t local_time_;
+            bool cgr_find_one_proximate_;
+            int debug_recurrsive_deep_;
+            int debug_crp_enter_count_;
+            map<int, int> debug_node_access_count_map_;
+            stack<int> debug_recurrsive_path_stack_;
+            int debug_abort_count_;
+            bool debug_cgr_this_exhausted_search_not_found_;
+            vector<node_id_t> exhausted_search_target_list_;
+            //           dest  /   forfeit time  / best delivery time / hop
+            vector<tuple<node_id_t, dtn_time_t, dtn_time_t, node_id_t>> routed_table_;
             int ecc_;
             int networkconfigurationflag_;
             node_id_t node_id_transmit_from_;

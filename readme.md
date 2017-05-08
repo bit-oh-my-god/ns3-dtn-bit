@@ -2,7 +2,7 @@
 This Project is a newbie-readable simulation for dtn on ns-3 environment, easy to use for research purples, supporting customed routing definition and scenario definition.
 This project is highly inspirited by [Lakkakorpi](https://www.netlab.tkk.fi/tutkimus/dtn/ns/)
 Read this teg-[paper](https://smartech.gatech.edu/bitstream/handle/1853/6492/GIT-CC-04-07.pdf?sequence=1&isAllowed=y) if you want know about TEG(time-expanded graph)
-Read this [link](https://tools.ietf.org/html/draft-burleigh-dtnrg-cgr-00) if you want know about CGR
+Read this [paper](http://www.sciencedirect.com/science/article/pii/S0094576512000288) [link](https://tools.ietf.org/html/draft-burleigh-dtnrg-cgr-00) if you want know about CGR
 
 # Begin
 
@@ -12,18 +12,22 @@ Read this [link](https://tools.ietf.org/html/draft-burleigh-dtnrg-cgr-00) if you
   3. modify your current_trace_file.tcl by your hand or by [bonnmotion](#A) or by ./create_trace_file.sh
   4. set node_number and simulation_time to jupytor and your-example.cc
         
-        # in jupytor PreparSimulation
-        T_max = 802                #change me !!!!!!!
-        teg_slice_n = 802          #change me !!!!!!!
+            // in jupytor PreparSimulation
+            T_max = 802                #change me !!!!!!!
+            teg_slice_n = 802          #change me !!!!!!!
 
-        // in ns3dtn-bit-your-example.cc
-        node_number_ = 5;           // change me!!
-        simulation_duration_ = 802;         // change me!!!
+            // in ns3dtn-bit-your-example.cc
+            node_number_ = 5;           // change me!!
+            simulation_duration_ = 802;         // change me!!!
 
   5. run jupytor notebook animation to generate teg.txt, see [jupytor](#B)
   6. modify ns3dtn-bit-your-example.cc to set simulation settings, see [example-interface](#C)
   7. run ./build.sh to run simulation
-  8. run jupytor notebook to parse result, to visualize your simulation result
+  8. run jupytor notebook to parse result to json file, and visualize your simulation result
+
+            // in jupyter ParseSimulationResult
+            x_jsonfile_name = 'please_change_this_name'   // change me!!!
+  9. run jupytor other script to get compare between scenario
 
 # structure of this project
 
@@ -110,6 +114,9 @@ would support '$ns at $time $node setdest x2 y2 z2 speed' format, and this forma
 - [x] retransmission : For now we don't have local2neighbor retransmission. What we have is that, if one transmission session is not successed, this session would be remained, and reboot next time when routing decision is made by which transmission session producted had the same 'session value', where normally results to a new transmission session. Problem is that sprayandgood(), used for control transmit times, would block next time pkt check.
 - [x] hello range is bigger than bundle range
 - [x] routing decision bug
+- [x] fatal bug !! CGR would fall into a deep recursive in group moving senario.  This backtracking algorithm would decay into brute force in this senario, 
+which have a complexity of O(M * logN * N!) which N is amount of nodes that can have a link to each other at same time-window, M is the amount of time-windows.
+This may happen, because CGR has a assumption of topology it was applied on, a topology graph with density of sparseness not density of tightness. Read 'Analysis of the contact graph routing algorithm Bounding interplanetary paths 5.6 section'
 
 # Develpment Annoucement & Publish Log
 

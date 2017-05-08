@@ -22,7 +22,6 @@ namespace ns3 {
             ip_v += node_no;
             Ipv4Address result;
             result.Set(ip_v);
-            std::cout << result << std::endl;
             return result;
         }
 
@@ -68,7 +67,7 @@ namespace ns3 {
          * Aim : inherited method
          * */
         void DtnApp::StartApplication() {
-            NS_LOG_DEBUG(LogPrefixMacro << "NOTE:Enter startapplication()");
+            NS_LOG_INFO(LogPrefixMacro << "NOTE:Enter startapplication()");
             try {
                 if (1 != node_->GetNDevices()) {
                     std::stringstream ss;
@@ -76,7 +75,7 @@ namespace ns3 {
                     throw std::runtime_error(ss.str());
                 }
             } catch (const std::exception& r_e) {
-                NS_LOG_DEBUG(LogPrefixMacro << "NOTE:" << r_e.what()); 
+                NS_LOG_INFO(LogPrefixMacro << "NOTE:" << r_e.what()); 
             }
             Ptr<WifiNetDevice> wifi_d = DynamicCast<WifiNetDevice> (node_->GetDevice(0));
             wifi_ph_p = wifi_d->GetPhy();
@@ -347,7 +346,7 @@ namespace ns3 {
          * Aim : enqueue bundle
          */
         void DtnApp::ToSendBundle(uint32_t dstnode_number, uint32_t payload_size) {
-            NS_LOG_DEBUG(LogPrefixMacro << "enter ToSendBundle()");
+            NS_LOG_INFO(LogPrefixMacro << "enter ToSendBundle()");
             // fill up payload 
             std::string tmp_payload_str;
             tmp_payload_str = std::string(payload_size, 'x');
@@ -370,7 +369,7 @@ namespace ns3 {
             if ((daemon_antipacket_queue_->GetNBytes() + daemon_bundle_queue_->GetNBytes() + p_pkt->GetSize() <= daemon_baq_pkts_max_ * NS3DTNBIT_HYPOTHETIC_CACHE_FACTOR)) {
                 daemon_bundle_queue_->Enqueue(Packet2Queueit(p_pkt));
                 // NORMAL LOG
-                NS_LOG_DEBUG(LogPrefixMacro << "normal out of ToSendBundle()");
+                NS_LOG_INFO(LogPrefixMacro << "normal out of ToSendBundle()");
             } else {
                 // ERROR LOG
                 NS_LOG_ERROR("Error : bundle is too big or no space");
@@ -384,7 +383,7 @@ namespace ns3 {
          * create and fill up antipacket-bundle then enqueue
          */
         void DtnApp::ToSendAntipacketBundle(BPHeader& ref_bp_header) {
-            NS_LOG_DEBUG(LogPrefixMacro << "enter ToSendAntipacketBundle()");
+            NS_LOG_INFO(LogPrefixMacro << "enter ToSendAntipacketBundle()");
             string anti_packet_payload_str;
             {
                 // fill up payload buffer
@@ -397,7 +396,7 @@ namespace ns3 {
                 msg << " ";
                 msg << ref_bp_header.get_source_seqno();
                 anti_packet_payload_str = msg.str();
-                NS_LOG_DEBUG(LogPrefixMacro << "NOTE: anti content is : " << anti_packet_payload_str);
+                NS_LOG_INFO(LogPrefixMacro << "NOTE: anti content is : " << anti_packet_payload_str);
             }
             Ptr<Packet> p_pkt = Create<Packet>(anti_packet_payload_str.c_str(), anti_packet_payload_str.size());
             BPHeader bp_header;
@@ -414,7 +413,7 @@ namespace ns3 {
             daemon_antipacket_queue_->Enqueue(Packet2Queueit(p_pkt));
             {
                 // LOG 
-                NS_LOG_DEBUG(LogPrefixMacro << "out of ToSendAntipacketBundle()");
+                NS_LOG_INFO(LogPrefixMacro << "out of ToSendAntipacketBundle()");
             }
             NS_LOG_LOGIC(LogPrefixMacro << "Out of " << "ToSendAntipacketBundle()");
         }
@@ -430,14 +429,14 @@ namespace ns3 {
          * use daemon_reception_info_vec_ and daemon_reception_packet_buffer_vec_
          */
         void DtnApp::ReceiveBundle(Ptr<Socket> socket) {
-            NS_LOG_DEBUG(LogPrefixMacro << "enter ReceiveBundle()");
+            NS_LOG_INFO(LogPrefixMacro << "enter ReceiveBundle()");
             Address own_addr;
             socket->GetSockName(own_addr);
             InetSocketAddress tmp_own_s = InetSocketAddress::ConvertFrom(own_addr);
             own_ip_ = tmp_own_s.GetIpv4();
             int loop_count = 0;
             while (socket->GetRxAvailable() > 0) {
-                NS_LOG_DEBUG(LogPrefixMacro << "ReceiveBundle(), loop_count =" << loop_count++
+                NS_LOG_INFO(LogPrefixMacro << "ReceiveBundle(), loop_count =" << loop_count++
                         << ";socket->GetRxAvailable =" << socket->GetRxAvailable());
                 Address from_addr;
                 Ptr<Packet> p_pkt = socket->RecvFrom(from_addr);
@@ -474,33 +473,32 @@ namespace ns3 {
                     }
                     int total = transmit_assister_.daemon_transmission_info_vec_[k].info_transmission_total_send_bytes_, current = transmit_assister_.daemon_transmission_info_vec_[k].info_transmission_current_sent_acked_bytes_, last =transmit_assister_.daemon_transmission_info_vec_[k].info_transmission_bundle_last_sent_bytes_;
                     if (total ==  current + last) {
-                        NS_LOG_DEBUG(LogPrefixMacro << "good! we know the bundle has been accept, this transmit-session can be close");
+                        NS_LOG_DEBUG(LogPrefixMacro << "well! we know the bundle has been accept, this transmit-session can be close");
                         transmit_assister_.daemon_transmission_info_vec_[k].info_transmission_current_sent_acked_bytes_ += last;
                     } else if (total > current + last){
                         transmit_assister_.daemon_transmission_info_vec_[k].info_transmission_current_sent_acked_bytes_ += last;
-                        NS_LOG_DEBUG(LogPrefixMacro << "here, before ToTransmit(), to transmit more"
+                        NS_LOG_INFO(LogPrefixMacro << "here, before ToTransmit(), to transmit more"
                                 << "\ntotal =" << total << "\ncurrent_sent=" 
                                 << current << "\nlast_sent=" << last);
                         ToTransmit(tmp_bh_info, false);
                     } else {
-                        NS_LOG_WARN(LogPrefixMacro << "WARN:can be true when retransmit and original transmit both success, following code would handle this, total, cur, last =" << total << " " << current << " " << last 
+                        NS_LOG_WARN(LogPrefixMacro << "WARN:can be true when transmit-fail-retransmit and original transmit both success, following code would handle this, total, cur, last =" << total << " " << current << " " << last 
                                 << "\n k =" << k  << " " << transmit_assister_.daemon_transmission_info_vec_.size() 
                                 << " " << transmit_assister_.daemon_retransmission_packet_buffer_vec_.size() 
                                 << " " << transmit_assister_.daemon_transmission_bh_info_vec_.size()
                                 << "\n" << "from_ip = " << transmit_assister_.daemon_transmission_bh_info_vec_[k].info_transmit_addr_);
-                        NS_LOG_ERROR("error: we don't have handling code, please change NS3DTNBIT_RETRANSMISSION_INTERVAL to bigger one, if max_range is 4,000 interval of value 1.7 would be enough");
-                        std::abort();
+                        NS_LOG_ERROR("not fatal error: we don't have handling code, please change NS3DTNBIT_RETRANSMISSION_INTERVAL to bigger one, if max_range is 4,000 interval of value 1.7 would be enough");
                     }
                     return;
                 } else {
                     // if not, send 'transmission ack' first
-                    NS_LOG_DEBUG(LogPrefixMacro << "here, received anti or bundle, send ack back first, before ToSendAck" << "; ip=" << from_ip 
+                    NS_LOG_INFO(LogPrefixMacro << "here, received anti or bundle, send ack back first, before ToSendAck" << "; ip=" << from_ip 
                             << "; bp_header=" << bp_header);
                     ToSendAck(bp_header, from_ip);
                     seqno2fromid_map_[bp_header.get_source_seqno()] = Ipv42NodeNo(from_ip);
                     {
                         // process bundle or anti-pkt
-                        NS_LOG_DEBUG(LogPrefixMacro << "here; after send ack back, process recept bp_header: " << bp_header);
+                        NS_LOG_INFO(LogPrefixMacro << "here; after send ack back, process recept bp_header: " << bp_header);
                         if (bp_header.get_bundle_type() == BundleType::AntiPacket) {
                             // antipacket must not be fragment, it's safe to directly process
                             // keep antipacket and remove the bundle 'corresponded to'
@@ -565,7 +563,7 @@ namespace ns3 {
                             NS_LOG_ERROR(LogPrefixMacro << "ERROR:error! no possible");
                             std::abort();
                         } // later usage
-                        NS_LOG_DEBUG(LogPrefixMacro << "out of recervebundle");
+                        NS_LOG_INFO(LogPrefixMacro << "out of recervebundle");
                     }
                 }
 
@@ -666,10 +664,10 @@ namespace ns3 {
                 }
             }
             if (this_session_was_acked) {
-                NS_LOG_DEBUG(LogPrefixMacro << "seqno=" << bh_info.info_source_seqno_ << "; this is acked, successed! ; detail is : last_time_current =" << last_time_current << "; now_current =" << transmit_assister_.daemon_transmission_info_vec_[index].info_transmission_current_sent_acked_bytes_ );
+                NS_LOG_INFO(LogPrefixMacro << "seqno=" << bh_info.info_source_seqno_ << "; this is acked, successed! ; detail is : last_time_current =" << last_time_current << "; now_current =" << transmit_assister_.daemon_transmission_info_vec_[index].info_transmission_current_sent_acked_bytes_ );
             } else {
                 // we don't need to roll back spray_map_, here
-                NS_LOG_DEBUG(LogPrefixMacro << "seqno=" << bh_info.info_source_seqno_ << "; this is not acked, retransmit!");
+                NS_LOG_INFO(LogPrefixMacro << "seqno=" << bh_info.info_source_seqno_ << "; this is not acked, retransmit!");
                 ToTransmit(bh_info, true);
             }
             NS_LOG_LOGIC(LogPrefixMacro << "Out of " << "TransmitSessionFailCheck()");
@@ -686,8 +684,8 @@ namespace ns3 {
          * anti-pkt or bundle-pkt
          */
         void DtnApp::ToTransmit(DaemonBundleHeaderInfo bh_info, bool is_retransmit) {
-            NS_LOG_DEBUG(LogPrefixMacro << "enter ToTransmit()");
-            NS_LOG_DEBUG("----- seqno=" << bh_info.info_source_seqno_);
+            NS_LOG_INFO(LogPrefixMacro << "enter ToTransmit()");
+            NS_LOG_INFO("----- seqno=" << bh_info.info_source_seqno_);
             bool real_send_boolean = false;
             int index = 0, j = 0;
             for (int ii = 0; ii < transmit_assister_.daemon_transmission_bh_info_vec_.size(); ii++) {
@@ -696,14 +694,14 @@ namespace ns3 {
             }
             // check state, cancel transmission if condition
             if (transmit_assister_.daemon_transmission_info_vec_[index].info_transmission_total_send_bytes_ == transmit_assister_.daemon_transmission_info_vec_[index].info_transmission_current_sent_acked_bytes_) {
-                NS_LOG_DEBUG(LogPrefixMacro << "this transmit-session has been done! we would return and drop this transmit." 
+                NS_LOG_INFO(LogPrefixMacro << "this transmit-session has been done! we would return and drop this transmit." 
                         << "transmit-to-ip=" << bh_info.info_transmit_addr_.GetIpv4()
                         << ";seqno=" << bh_info.info_source_seqno_
                         << "; if this transmit-to-ip is equal to last, the robin-round schedule may not work");
                 return;
             }
             if (transmit_assister_.daemon_transmission_bh_info_vec_[index].info_retransmission_count_ > NS3DTNBIT_MAX_RETRANSMISSION) {
-                NS_LOG_DEBUG(LogPrefixMacro << "this transmit-session is over max-retranmission time , would drop this transmit." 
+                NS_LOG_INFO(LogPrefixMacro << "this transmit-session is over max-retranmission time , would drop this transmit." 
                         << "transmit-to-ip=" << bh_info.info_transmit_addr_.GetIpv4()
                         << ";seqno=" << bh_info.info_source_seqno_);
                 return;
@@ -730,7 +728,7 @@ namespace ns3 {
                 //ref_tran_p_pkt = transmit_assister_.daemon_retransmission_packet_buffer_vec_[index]->Copy(); 
                 Ptr<Packet>& ref_tran_p_pkt= transmit_assister_.daemon_retransmission_packet_buffer_vec_[index];
                 if (is_retransmit) {
-                    NS_LOG_DEBUG("---- seqno=" << bh_info.info_source_seqno_ << ";retransmit_count  = " << transmit_assister_.daemon_transmission_bh_info_vec_[index].info_retransmission_count_);
+                    NS_LOG_INFO("---- seqno=" << bh_info.info_source_seqno_ << ";retransmit_count  = " << transmit_assister_.daemon_transmission_bh_info_vec_[index].info_retransmission_count_);
                 }
                 ref_tran_p_pkt->RemoveHeader(tran_bp_header);
                 if (transmit_assister_.daemon_transmission_info_vec_[index].info_transmission_total_send_bytes_ > NS3DTNBIT_HYPOTHETIC_TRANS_SIZE_FRAGMENT_MAX) {
@@ -778,7 +776,7 @@ namespace ns3 {
                     int last_time_current = transmit_assister_.daemon_transmission_info_vec_[index].info_transmission_current_sent_acked_bytes_;
                     Simulator::Schedule(Seconds(retransmission_interval_), &DtnApp::TransmitSessionFailCheck, this, bh_info, last_time_current);
                 }
-                NS_LOG_DEBUG(LogPrefixMacro << "before SocketSendDetail,ref_tran_p_pkt.size()=" << ref_tran_p_pkt->GetSize() << ";transmit ip=" << neighbor_info_vec_[j].info_address_.GetIpv4() << ";tran_bp_header : " << tran_bp_header);
+                NS_LOG_INFO(LogPrefixMacro << "before SocketSendDetail,ref_tran_p_pkt.size()=" << ref_tran_p_pkt->GetSize() << ";transmit ip=" << neighbor_info_vec_[j].info_address_.GetIpv4() << ";tran_bp_header : " << tran_bp_header);
                 if (!SocketSendDetail(ref_tran_p_pkt, 0, neighbor_info_vec_[j].info_address_)) {
                     NS_LOG_ERROR("SocketSendDetail fail");
                     std::abort();
@@ -794,6 +792,11 @@ namespace ns3 {
          */
         bool DtnApp::FindTheNeighborThisBPHeaderTo(BPHeader& ref_bp_header, int& return_index_of_neighbor_you_dedicate, DtnApp::CheckState check_state) {
             NS_LOG_INFO(LogPrefixMacro << "enter FindTheNeighborThisBPHeaderTo()");
+            if (ref_bp_header.get_bundle_type() == BundleType::AntiPacket && routing_assister_.get_rm() == RoutingMethod::CGR) {
+                NS_LOG_DEBUG(LogPrefixMacro << "would do something for antipacket routing, to avoid CGR deep recursive for anti");
+                // TODO , check hop ip and give back
+                return false;
+            }
             if (routing_assister_.IsSet() && routing_assister_.get_rm() == RoutingMethod::SprayAndWait) {
                 NS_LOG_INFO(LogPrefixMacro << "RoutingMethod is SprayAndWait");
                 auto ip_d = ref_bp_header.get_destination_ip();
@@ -864,6 +867,7 @@ namespace ns3 {
                     d = Ipv42NodeNo(ip_d);
                 }
                 vector<int> available = BPHeaderBasedSendDecisionDetail(ref_bp_header, check_state);
+                if (available.empty()) {NS_LOG_DEBUG(LogPrefixMacro << "available is empty"); return false;}
                 // Note that this method just indicate which node the next hop would be,
                 // if the next hop is not available yet, should wait for it till available
                 NS_LOG_DEBUG(LogPrefixMacro << ">>NOTE: before TimeExpanded method");
@@ -931,8 +935,10 @@ namespace ns3 {
                 }
 
                 // -------------- dividing ----------
-                routing_assister_.p_rm_in_->GetInfo(destination_id, from_id, vec_of_current_neighbor, own_id, expired_time, bundle_size, flag, id2cur_exclude_vec_of_id_);
+                dtn_time_t current_time = Simulator::Now().GetSeconds();
                 vector<int> available = BPHeaderBasedSendDecisionDetail(ref_bp_header, check_state);
+                if (available.empty()) {NS_LOG_INFO(LogPrefixMacro << "available is none, return false"); return false;}
+                routing_assister_.p_rm_in_->GetInfo(destination_id, from_id, vec_of_current_neighbor, own_id, expired_time, bundle_size, flag, id2cur_exclude_vec_of_id_, current_time);
                 NS_LOG_DEBUG(LogPrefixMacro << ">>NOTE: Before CGR method");
                 result = routing_assister_.RouteIt(node_->GetId(), d);
                 NS_LOG_DEBUG(LogPrefixMacro << ">>NOTE: After CGR method, result =" << result);
@@ -971,7 +977,7 @@ namespace ns3 {
         }
 
         void DtnApp::StateCheckDetail() {
-            NS_LOG_DEBUG(LogPrefixMacro << "NOTE: Statecheck :"
+            NS_LOG_INFO(LogPrefixMacro << "NOTE: Statecheck :"
                     << "\nneighbor_info_vec_.size()=" <<neighbor_info_vec_.size()
                     // TODO not using PeriodReorderDaemonBundleQueueDetail yet
                     << "\ndaemon_reorder_buffer_queue_->GetNPackets()=" << daemon_reorder_buffer_queue_->GetNPackets()
@@ -995,7 +1001,7 @@ namespace ns3 {
                 Ptr<Packet> cp = daemon_bundle_queue_->Dequeue()->GetPacket();
                 BPHeader ch;
                 cp->RemoveHeader(ch);
-                NS_LOG_DEBUG("daemon bundle queue - bundle header : " << ch);
+                NS_LOG_INFO("daemon bundle queue - bundle header : " << ch);
                 cp->AddHeader(ch);
                 daemon_bundle_queue_->Enqueue(Packet2Queueit(cp));
             }
@@ -1166,7 +1172,7 @@ namespace ns3 {
                                                    NS_LOG_ERROR(LogPrefixMacro << "error, check state can't be state_0 when real_send_boolean is set true");
                                                    std::abort();
                                                } else {
-                                                   Simulator::Schedule(Seconds(NS3DTNBIT_BUFFER_CHECK_INTERVAL), &DtnApp::CheckBuffer, this, CheckState::State_2);
+                                                   Simulator::Schedule(Seconds(NS3DTNBIT_BUFFER_CHECK_INTERVAL), &DtnApp::CheckBuffer, this, CheckState::State_1);
                                                }
                                                break;
                                            }
@@ -1300,7 +1306,7 @@ namespace ns3 {
             std::string source_ip, destination_ip;
             dtn_seqno_t lhs_seqno_value;
             lhs_ss >> source_ip >> destination_ip >> lhs_seqno_value;
-            NS_LOG_DEBUG(LogPrefixMacro << "anti-pkt : anti- source ip=" << source_ip
+            NS_LOG_INFO(LogPrefixMacro << "anti-pkt : anti- source ip=" << source_ip
                     << ";anti-destination_ip=" << destination_ip
                     << ";anti-seqno=" << lhs_seqno_value);
             Ipv4Address lhs_source_ip(source_ip.c_str()), lhs_destination_ip(destination_ip.c_str());
@@ -1311,7 +1317,7 @@ namespace ns3 {
                 if (lhs_source_ip.IsEqual(rhs_bp_header.get_source_ip())
                         && lhs_destination_ip.IsEqual(rhs_bp_header.get_destination_ip())
                         && lhs_seqno_value == rhs_bp_header.get_source_seqno()) {
-                    NS_LOG_DEBUG(LogPrefixMacro << "NOTE: ANTI remove bundle");
+                    NS_LOG_INFO(LogPrefixMacro << "NOTE: ANTI remove bundle");
                     break;
                 } else {
                     assert(rhs_bp_header.get_bundle_type() == BundleType::BundlePacket);
@@ -1417,11 +1423,11 @@ namespace ns3 {
         /* refine
         */
         void DtnApp::CreateSocketDetail() {
-            NS_LOG_DEBUG(LogPrefixMacro << "enter CreateSocketDetail()");
+            NS_LOG_INFO(LogPrefixMacro << "enter CreateSocketDetail()");
             daemon_socket_handle_ = Socket::CreateSocket(node_, TypeId::LookupByName("ns3::UdpSocketFactory"));
             Ptr<Ipv4> ipv4 = node_->GetObject<Ipv4>();
             Ipv4Address ipip = (ipv4->GetAddress(1, 0)).GetLocal();
-            NS_LOG_DEBUG("create bundle send socket,ip=" << ipip << ";port=" << NS3DTNBIT_PORT_NUMBER);
+            NS_LOG_INFO("create bundle send socket,ip=" << ipip << ";port=" << NS3DTNBIT_PORT_NUMBER);
             InetSocketAddress local = InetSocketAddress(ipip, NS3DTNBIT_PORT_NUMBER);
             daemon_socket_handle_->Bind(local);
             NS_LOG_LOGIC(LogPrefixMacro << "Out of " << "CreateSocketDetail()");
@@ -1575,9 +1581,9 @@ namespace ns3 {
                 // because TimeExpanded routing is accurate, so, every node need only one transmition for every bundle-pkt
                 p_bp_header->set_spray(1);
             } else if (routing_assister_.get_rm() == RoutingMethod::SprayAndWait) {
-                p_bp_header->set_spray(4);
-            } else if (routing_assister_.get_rm() == RoutingMethod::Other) {
                 p_bp_header->set_spray(3);
+            } else if (routing_assister_.get_rm() == RoutingMethod::Other) {
+                p_bp_header->set_spray(2);
             } else if (routing_assister_.get_rm() == RoutingMethod::CGR) {
                 p_bp_header->set_spray(1);
             } else {
@@ -1605,7 +1611,7 @@ namespace ns3 {
 
         RoutingMethodInterface::RoutingMethodInterface(DtnApp& dp) : out_app_(dp) {}
         RoutingMethodInterface::~RoutingMethodInterface() {}
-        void RoutingMethodInterface::GetInfo(int destination_id, int from_id, std::vector<int> vec_of_current_neighbor, int own_id, dtn_time_t expired_time, int bundle_size, int networkconfigurationflag, map<int, vector<int>> id2cur_exclude_vec_of_id) {}
+        void RoutingMethodInterface::GetInfo(int destination_id, int from_id, std::vector<int> vec_of_current_neighbor, int own_id, dtn_time_t expired_time, int bundle_size, int networkconfigurationflag, map<int, vector<int>> id2cur_exclude_vec_of_id, dtn_time_t local_time) {}
         Adob RoutingMethodInterface::get_adob() { return out_app_.routing_assister_.vec_[0]; }
 
     } /* ns3dtnbit */ 

@@ -10,6 +10,7 @@
 #include <type_traits>
 #include <execinfo.h>
 #include <cmath>
+#include <stack>
 #include <limits>
 #include <vector>
 #include <cstdio>
@@ -35,7 +36,7 @@
 #include <boost/graph/graphviz.hpp>
 
 
-//#define DEBUG
+#define DEBUG
 #define NS3DTNBIT_PORT_NUMBER 1234
 #define NS3DTNBIT_HELLO_PORT_NUMBER 80
 #define NS3DTNBIT_MAC_MTU 2296  
@@ -46,7 +47,7 @@
 #define NS3DTNBIT_BUFFER_CHECK_INTERVAL 0.3
 #define NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME 0.2
 #define NS3DTNBIT_RETRANSMISSION_INTERVAL 1.7
-#define NS3DTNBIT_MAX_RETRANSMISSION 5
+#define NS3DTNBIT_MAX_RETRANSMISSION 3
 #define NS3DTNBIT_HYPOTHETIC_BUNDLE_EXPIRED_TIME 650.0
 #define NS3DTNBIT_ANTIPACKET_EXPIRED_TIME 650.0
 #define NS3DTNBIT_HYPOTHETIC_INFINITE_DELAY (std::numeric_limits<int>::max()/2)
@@ -67,6 +68,7 @@ namespace ns3 {
         using std::tuple;
         using std::to_string;
         using std::make_pair;
+        using std::stack;
         using std::tie;
         using std::make_tuple;
         using std::ostream;

@@ -372,7 +372,7 @@ namespace ns3 {
                  * this time I modify this interface for CGR, next time I would do it again! Change RoutingMethodInterface to Generic!!!
                  * TODO
                  * */
-                virtual void GetInfo(int destination_id, int from_id, std::vector<int> vec_of_current_neighbor, int own_id, dtn_time_t expired_time, int bundle_size, int networkconfigurationflag, map<int, vector<int>> id2cur_exclude_vec_of_id);
+                virtual void GetInfo(int destination_id, int from_id, std::vector<int> vec_of_current_neighbor, int own_id, dtn_time_t expired_time, int bundle_size, int networkconfigurationflag, map<int, vector<int>> id2cur_exclude_vec_of_id, dtn_time_t local_time);
             protected :
                 // read only 
                 const DtnApp& out_app_;

@@ -94,7 +94,7 @@ namespace ns3 {
                         vk = std::get<1>(rt_index);
                         found_vk = true;
                     }
-                    if (vk < 0 || vk > ref_adob.get_node_number()) { std::cout << "Error: can't be" << __LINE__ << std::endl; std::abort(); }
+                    if (vk < 0 || vk > ref_adob.get_node_number()) { std::cout << "Error: can't be, vk=" << vk << "file,line:" << __FILE__ << __LINE__ << std::endl; std::abort(); }
                     rt_index = make_tuple(s, vk, tmp_time);
                 }
                 if (finding_count > 99) {
@@ -112,8 +112,40 @@ namespace ns3 {
             Init();
             assert(d == destination_id_);
             assert(s == own_id_);
+#ifdef DEBUG
+            cout << "DEBUG_CGR:" << "before ContactReviewProcedure()" << endl;
+#endif
+            auto founds = find(exhausted_search_target_list_.begin(), exhausted_search_target_list_.end(), d);
+            auto foundsx = find_if(routed_table_.begin(), routed_table_.end(), [this](tuple<node_id_t, dtn_time_t, dtn_time_t, node_id_t> rtele){
+                    if (get<0>(rtele) == destination_id_ && get<1>(rtele) - (NS3DTNBIT_BUFFER_CHECK_INTERVAL * 5) > Simulator::Now().GetSeconds()) {
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    });
+            if (founds != exhausted_search_target_list_.end()) {
+                cout << "DEBUG_CGR:" << "this dest is searched before, and no available one is found, " 
+                    << "so this time it would exhausted search possiblity too. we would return a -1" 
+                    << " .This won't affect routing result, but can reduce simulation time." << endl;
+                return -1;
+            } else if (foundsx != routed_table_.end()) {
+                cout << "DEBUG_CGR:" << "reuse routing result, reduce routing time" << endl;
+                tuple<node_id_t, dtn_time_t, dtn_time_t, node_id_t> tmpfsx = *foundsx;
+                return get<3>(tmpfsx);
+            }
             ContactReviewProcedure(destination_id_, expired_time_);
+#ifdef DEBUG
+            cout << "DEBUG_CGR:" << "before ForwardDecision()" << endl;
+            cout << "BundleTrace:entertimes=" << debug_crp_enter_count_ << "times" << endl;
+#endif
             int result = ForwardDecision();
+            if (debug_cgr_this_exhausted_search_not_found_) {
+                exhausted_search_target_list_.push_back(d);
+            }
+            if (result != -1) {
+                tuple<node_id_t, dtn_time_t, dtn_time_t, node_id_t> tmprvec = make_tuple(destination_id_, forfeit_time_, best_delivery_time_, result);
+                routed_table_.push_back(tmprvec);
+            }
             assert(result < 100);
 #ifdef DEBUG
             {
@@ -124,8 +156,9 @@ namespace ns3 {
             return result;
         }
 
-        void CGRRouting::GetInfo(node_id_t destination_id, node_id_t from_id, std::vector<node_id_t> vec_of_current_neighbor, node_id_t own_id, dtn_time_t expired_time, int bundle_size, int networkconfigurationflag, map<int, vector<int>> id2cur_exclude_vec_of_id) {
+        void CGRRouting::GetInfo(node_id_t destination_id, node_id_t from_id, std::vector<node_id_t> vec_of_current_neighbor, node_id_t own_id, dtn_time_t expired_time, int bundle_size, int networkconfigurationflag, map<int, vector<int>> id2cur_exclude_vec_of_id, dtn_time_t local_time) {
             swap(id_of_d2cur_excluded_vec_of_d_, id2cur_exclude_vec_of_id); // a more efficent assignment
+            local_time_ = local_time;
             destination_id_ = destination_id;
             node_id_transmit_from_ = from_id;
             expired_time_ = expired_time;
@@ -136,6 +169,13 @@ namespace ns3 {
         }
 
         void CGRRouting::Init() {
+            cgr_find_one_proximate_ = false;
+            debug_recurrsive_deep_ = 0;
+            debug_crp_enter_count_ = 0;
+            debug_cgr_this_exhausted_search_not_found_ = false;
+            debug_node_access_count_map_ = map<int, int>();
+            debug_recurrsive_path_stack_ = stack<int>();
+            debug_abort_count_ = 0;
             excluded_vec_ = vector<int>();
             proximate_vec_ = vector<int>();
             excluded_vec_.push_back(node_id_transmit_from_);
@@ -160,6 +200,37 @@ namespace ns3 {
          *  ---- best_delivery_time_
          * */
         void CGRRouting::ContactReviewProcedure(node_id_t cur_d, dtn_time_t cur_deadline) {
+#ifdef DEBUG
+            {
+                debug_recurrsive_path_stack_.push(cur_d);
+                debug_crp_enter_count_ += 1;
+                debug_recurrsive_deep_ += 1;
+                auto found = debug_node_access_count_map_.find(cur_d);
+                if (found != debug_node_access_count_map_.end()) {
+                    debug_node_access_count_map_[cur_d] += 1;
+                } else {
+                    debug_node_access_count_map_[cur_d] = 1;
+                }
+                if (debug_recurrsive_deep_ > 7) {
+                    debug_abort_count_ += 1;
+                    //if (debug_abort_count_ > 200 || debug_crp_enter_count_ > 600000) {
+                    if (debug_crp_enter_count_ > 60000) {
+                        cout << "Error: this CGR is missing in deep recurrsive, we would print all access map and abort, enter this function " << debug_crp_enter_count_ << " times, check readme.md to know what happens" << endl;
+                        while (!debug_recurrsive_path_stack_.empty()) {
+                            cout << "node-" << debug_recurrsive_path_stack_.top() << " to" << endl;
+                            debug_recurrsive_path_stack_.pop();
+                        }
+                        for (auto mv : debug_node_access_count_map_) {
+                            int idn = get<0>(mv);
+                            int count = get<1>(mv);
+                            cout << "node-" << idn << " access " << count << "times" << endl;
+                        }
+                        abort();
+                    }
+                }
+            }
+#endif
+            if (cgr_find_one_proximate_) {debug_recurrsive_deep_ -= 1; return;}
             auto previous_of_forfeit_time = forfeit_time_;
             auto previous_of_best_delivery_time = best_delivery_time_;
             // 1.
@@ -168,7 +239,9 @@ namespace ns3 {
             auto cgr_xmit_vec = ref_adob.node_id2cgr_xmit_vec_map_[cur_d];
 #ifdef DEBUG
             {
-                cout << "DEBUG_CGR" << ": ====== for node-" << cur_d << " ======" << endl;
+                cout << "DEBUG_CGR:" << " ====== for node-" << cur_d 
+                    << " ====== debug_recurrsive_deep_ =" << debug_recurrsive_deep_ << endl;
+                /*
                 for (auto m : cgr_xmit_vec) {
                     cout << "\n m ==> m.contact_start_time_ =" << m.contact_start_time_
                         << ";m.contact_end_time_=" << m.contact_end_time_
@@ -177,12 +250,14 @@ namespace ns3 {
                         << ";m.data_transmission_rate_=" << m.data_transmission_rate_ << endl;
                 }
                 cout << "end of DEBUG_CGR" << endl;
+                */
             }
 #endif
             // 2.
             for (auto m : cgr_xmit_vec) {
-                bool start_time_after_deadline = m.contact_start_time_ > cur_deadline;
-                if (start_time_after_deadline) {
+                dtn_time_t last_moment_of_xmit = min(cur_deadline, m.contact_end_time_);
+                bool last_moment_check = local_time_ < last_moment_of_xmit && m.contact_start_time_ < last_moment_of_xmit;
+                if (!last_moment_check) {
                     // 2.A
                     continue;
                 } else {
@@ -190,12 +265,17 @@ namespace ns3 {
                     node_id_t s = m.node_id_of_from_;
                     bool s_is_local_node_with_own_id = s == own_id_;
                     if (s_is_local_node_with_own_id) {
+#ifdef DEBUG
+                        cout << "DEBUG_CGR:" << "in tail of recursive, and, if we find a proximate one,"
+                            << "we would break the search, because the CGR algorithm in RFC would force to find all possible pathes,"
+                            << " which is too big for some senario, mainly the group moving senario " << endl;
+#endif
                         // 2.B.1
                         // compute ECC for this bundle
                         int ecc = ecc_;
                         assert(m.contact_end_time_ - m.contact_start_time_ < 5000);
                         // not accurate, just a hypothetic value,  TODO
-                        int ecc_of_other_bundles = 0;
+                        int ecc_of_other_bundles = 1800;
                         int residual_capacity = ((m.contact_end_time_ - m.contact_start_time_) * m.data_transmission_rate_) - ecc_of_other_bundles;
                         assert(residual_capacity > 1000);
                         auto found_1 = find(proximate_vec_.begin(), proximate_vec_.end(), cur_d);
@@ -212,9 +292,13 @@ namespace ns3 {
                                 best_delivery_time_ = m.contact_start_time_;
                             }
                             proximate_vec_.push_back(cur_d);
+                            cgr_find_one_proximate_ = true;
                             // Note the computed forfeit time and best-case delivery time in the event that the bundle is queued for transmission to D. TODO
                         }
                     } else {
+#ifdef DEBUG
+                        cout << "DEBUG_CGR:" << "in body of recursive" << endl;
+#endif
                         // 2.B.2
                         auto found_2 = find(excluded_vec_.begin(), excluded_vec_.end(), s);
                         bool s_is_in_excluded = found_2 != excluded_vec_.end();
@@ -238,11 +322,18 @@ namespace ns3 {
             excluded_vec_.erase(find(excluded_vec_.begin(), excluded_vec_.end(), cur_d));
             forfeit_time_ = previous_of_forfeit_time;
             best_delivery_time_ = previous_of_best_delivery_time;
+#ifdef DEBUG
+            {
+                debug_recurrsive_deep_ -= 1;
+                debug_recurrsive_path_stack_.pop();
+            }
+#endif
         }
 
         int CGRRouting::ForwardDecision() {
             if (proximate_vec_.empty()) {
                 std::cout << "Warn: cgr can't find one !" << __LINE__ << endl;
+                debug_cgr_this_exhausted_search_not_found_ = true;
                 return -1;
             } else {
                 if (proximate_vec_.size() >= 2) {
