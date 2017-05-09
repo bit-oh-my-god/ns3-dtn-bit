@@ -1,9 +1,21 @@
 {
  "cells": [
   {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": []
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "c = get_config()\n",
+    "\n",
+    "#Export all the notebooks in the current directory to the sphinx_howto format.\n",
+    "c.NbConvertApp.notebooks = ['LifecycleTools.ipynb']\n",
+    "c.NbConvertApp.export_format = 'pdf'\n",
+    "\n",
+    "c.Exporter.template_file = 'citations'"
+   ]
   }
  ],
  "metadata": {

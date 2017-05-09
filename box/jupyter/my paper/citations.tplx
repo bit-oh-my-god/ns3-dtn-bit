@@ -1,0 +1,14 @@
+((*- extends 'article.tplx' -*))
+
+((* block author *))
+\author{wangzhihongji}
+((* endblock author *))
+
+((* block title *))
+\title{Simulation for DTN in NS3 with Time-Expanded-Graph and Contact-Graph Routing}
+((* endblock title *))
+
+((* block bibliography *))
+\bibliographystyle{unsrt}
+\bibliography{ref}
+((* endblock bibliography *))

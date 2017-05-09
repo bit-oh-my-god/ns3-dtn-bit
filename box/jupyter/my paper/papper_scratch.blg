@@ -1,0 +1,49 @@
+This is BibTeX, Version 0.99d (TeX Live 2015/Debian)
+Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
+The top-level auxiliary file: papper_scratch.aux
+The style file: unsrt.bst
+Database file #1: ref.bib
+Warning--empty journal in Merugu2004
+Warning--there's a number but no volume in Merugu2004
+You've used 2 entries,
+            1791 wiz_defined-function locations,
+            460 strings with 3868 characters,
+and the built_in function-call counts, 495 in all, are:
+= -- 44
+> -- 22
+< -- 0
++ -- 8
+- -- 6
+* -- 41
+:= -- 85
+add.period$ -- 6
+call.type$ -- 2
+change.case$ -- 2
+chr.to.int$ -- 0
+cite$ -- 4
+duplicate$ -- 18
+empty$ -- 45
+format.name$ -- 6
+if$ -- 101
+int.to.chr$ -- 0
+int.to.str$ -- 2
+missing$ -- 2
+newline$ -- 13
+num.names$ -- 2
+pop$ -- 5
+preamble$ -- 1
+purify$ -- 0
+quote$ -- 0
+skip$ -- 4
+stack$ -- 0
+substring$ -- 41
+swap$ -- 1
+text.length$ -- 0
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 0
+warning$ -- 2
+while$ -- 6
+width$ -- 3
+write$ -- 23
+(There were 2 warnings)
