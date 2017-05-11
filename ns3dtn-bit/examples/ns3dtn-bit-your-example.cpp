@@ -28,6 +28,7 @@ namespace ns3 {
 
                     {
                         // following code is just handy used, not essential, you can do it yourself
+                        // FIXME
                         const int schdule_for_n_trace = 10;
                         if (schdule_for_n_trace == 3) {
                             node_number_ = 5;
@@ -95,7 +96,7 @@ namespace ns3 {
                             handy_func(258.1, 4, 3);
                         };
                         auto handy_func_x3 = [this]() {
-                            handy_func_x(178.1, 10, 5, 4);
+                            handy_func_x(178.1, 10, 5, 3);
                             handy_func_x(178.1, 10, 3, 3);
                             // 6
                             handy_func(12.0, 1, 6);
@@ -125,12 +126,7 @@ namespace ns3 {
                             handy_func(210, 5, 9);
                             handy_func(270, 4, 9);
                             handy_func(400, 0, 9);
-                            handy_func(470, 1, 9);
-                            handy_func(540, 2, 9);
-                            handy_func(610, 5, 9);
-                            handy_func(670, 4, 9);
-                            handy_func(780, 0, 9);
-                        }
+                        };
                         auto handy_func_x5 = [this]() {
                             // 6
                             handy_func(12.0, 6, 1);
@@ -160,13 +156,19 @@ namespace ns3 {
                             handy_func(610, 9, 5);
                             handy_func(670, 9, 4);
                             handy_func(780, 9, 0);
-                        }
+                            handy_func(470, 1, 9);
+                            handy_func(540, 2, 9);
+                            handy_func(610, 5, 9);
+                            handy_func(670, 4, 9);
+                            handy_func(780, 0, 9);
+                        };
                         auto handy_func_x6 = [this]() {
                             handy_func_x(222, 0, 2, 4);
                             handy_func_x(333, 0, 2, 3);
                             handy_func_x(111, 10, 3, 3);
                             handy_func_x(555, 0, 5, 3);
-                        }
+                        };
+                        //FIXME
                         const int schdule_for_n_trace = 10;
                         if (schdule_for_n_trace == 3) {
                             // line
