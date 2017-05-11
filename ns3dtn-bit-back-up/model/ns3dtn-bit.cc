@@ -801,6 +801,14 @@ namespace ns3 {
                 NS_LOG_INFO(LogPrefixMacro << "RoutingMethod is SprayAndWait");
                 auto ip_d = ref_bp_header.get_destination_ip();
                 if (ip_d == own_ip_) {return false;}
+                if (ref_bp_header.get_src_time_stamp() + 250.0 < Simulator::Now().GetSeconds()) {
+                    // time is over, SprayAndWait enter the phase two of it's routing
+                    int v = ref_bp_header.get_source_seqno();
+                    auto found = spray_map_.find(v);
+                    if (found != spray_map_.end()) {
+                        spray_map_[v] -= 2;
+                    }
+                }
                 // this method is default one
                 vector<int> available = BPHeaderBasedSendDecisionDetail(ref_bp_header, check_state);
                 if (available.size() > 0) {
@@ -1180,7 +1188,7 @@ namespace ns3 {
                                                if (real_send_boolean) {
                                                    Simulator::Schedule(Seconds(NS3DTNBIT_BUFFER_CHECK_INTERVAL), &DtnApp::CheckBuffer, this, CheckState::State_1);
                                                } else {
-                                                   Simulator::Schedule(Seconds(NS3DTNBIT_BUFFER_CHECK_INTERVAL), &DtnApp::CheckBuffer, this, CheckState::State_2);
+                                                   Simulator::Schedule(Seconds(NS3DTNBIT_BUFFER_CHECK_INTERVAL), &DtnApp::CheckBuffer, this, CheckState::State_1);
                                                }
                                                break;
                                            }

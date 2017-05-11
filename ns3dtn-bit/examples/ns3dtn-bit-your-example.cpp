@@ -71,16 +71,16 @@ namespace ns3 {
                             std::cout << "bundle send schedule: time=" << rt << ";node-" << i << "send " << sch_size << " size-pkt to node-" << dstnode << std::endl;
                             this->apps_[i]->ScheduleTx(Seconds(rt), dstnode, sch_size);
                         }
-                    }
+                    };
                     {
                         // following code is just handy used, not essential, you can do it yourself
-                        auto handy_func_x1 = [this]() {
+                        auto handy_func_x1 = [this, handy_func]() {
                             handy_func(22.1, 10, 1);
                             handy_func(32.1, 10, 1);
                             handy_func(71.1, 10, 4);
                             handy_func(255.1, 4, 0);
                         };
-                        auto handy_func_x2 = [this]() {
+                        auto handy_func_x2 = [this, handy_func]() {
                             handy_func(70.1, 10, 2);
                             handy_func(42.1, 10, 5);
                             handy_func(72.1, 10, 4);
@@ -95,7 +95,7 @@ namespace ns3 {
                             handy_func(257.1, 4, 2);
                             handy_func(258.1, 4, 3);
                         };
-                        auto handy_func_x3 = [this]() {
+                        auto handy_func_x3 = [this, handy_func, handy_func_x]() {
                             handy_func_x(178.1, 10, 5, 3);
                             handy_func_x(178.1, 10, 3, 3);
                             // 6
@@ -116,7 +116,7 @@ namespace ns3 {
                             handy_func(430.0, 8, 4);
                             handy_func(560.0, 0, 8);
                         };
-                        auto handy_func_x4 = [this]() {
+                        auto handy_func_x4 = [this, handy_func, handy_func_x]() {
                             handy_func_x(178.1, 5, 0, 4);
                             handy_func_x(8.1, 3, 0, 4);
                             handy_func_x(228.1, 11, 5, 4);
@@ -127,7 +127,7 @@ namespace ns3 {
                             handy_func(270, 4, 9);
                             handy_func(400, 0, 9);
                         };
-                        auto handy_func_x5 = [this]() {
+                        auto handy_func_x5 = [this, handy_func, handy_func_x]() {
                             // 6
                             handy_func(12.0, 6, 1);
                             handy_func(120.0, 3, 6);
@@ -162,7 +162,7 @@ namespace ns3 {
                             handy_func(670, 4, 9);
                             handy_func(780, 0, 9);
                         };
-                        auto handy_func_x6 = [this]() {
+                        auto handy_func_x6 = [this, handy_func_x]() {
                             handy_func_x(222, 0, 2, 4);
                             handy_func_x(333, 0, 2, 3);
                             handy_func_x(111, 10, 3, 3);
