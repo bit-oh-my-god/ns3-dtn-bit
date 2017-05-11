@@ -801,7 +801,7 @@ namespace ns3 {
                 NS_LOG_INFO(LogPrefixMacro << "RoutingMethod is SprayAndWait");
                 auto ip_d = ref_bp_header.get_destination_ip();
                 if (ip_d == own_ip_) {return false;}
-                if (ref_bp_header.get_src_time_stamp() + 100.0 < Simulator::Now().GetSeconds()) {
+                if (ref_bp_header.get_src_time_stamp() + 250.0 < Simulator::Now().GetSeconds()) {
                     // time is over, SprayAndWait enter the phase two of it's routing
                     int v = ref_bp_header.get_source_seqno();
                     auto found = spray_map_.find(v);

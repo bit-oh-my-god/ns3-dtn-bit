@@ -23,8 +23,8 @@ namespace ns3 {
                     print_wifi_log_ = false;
                     //ex_rm_ = DtnApp::RoutingMethod::Other;
                     //ex_rm_ = DtnApp::RoutingMethod::TimeExpanded;
-                    ex_rm_ = DtnApp::RoutingMethod::CGR;
-                    //ex_rm_ = DtnApp::RoutingMethod::SprayAndWait;
+                    //ex_rm_ = DtnApp::RoutingMethod::CGR;
+                    ex_rm_ = DtnApp::RoutingMethod::SprayAndWait;
 
                     {
                         // following code is just handy used, not essential, you can do it yourself
