@@ -22,7 +22,7 @@ namespace ns3 {
             // s is source index, d is dest index, return next hop
             int DoRoute(int s, int d) override;
 
-            void GetInfo(node_id_t destination_id, node_id_t from_id, std::vector<node_id_t> vec_of_current_neighbor, node_id_t own_id, dtn_time_t expired_time, int bundle_size, int networkconfigurationflag, map<int, vector<int>> id2cur_exclude_vec_of_id, dtn_time_t local_time) override;
+            void GetInfo(node_id_t destination_id, node_id_t from_id, std::vector<node_id_t> vec_of_current_neighbor, node_id_t own_id, dtn_time_t expired_time, int bundle_size, int networkconfigurationflag, map<int, vector<int>> id2cur_exclude_vec_of_id, dtn_time_t local_time, dtn_seqno_t that_seqno) override;
 
             private :
             void Init();
@@ -55,9 +55,10 @@ namespace ns3 {
             stack<int> debug_recurrsive_path_stack_;
             int debug_abort_count_;
             bool debug_cgr_this_exhausted_search_not_found_;
-            vector<node_id_t> exhausted_search_target_list_;
-            //           dest  /   forfeit time  / best delivery time / hop
-            vector<tuple<node_id_t, dtn_time_t, dtn_time_t, node_id_t>> routed_table_;
+            dtn_seqno_t debug_cgr_that_seqno_;
+            vector<pair<node_id_t, dtn_seqno_t>> exhausted_search_target_list_;
+            //           dest  /   forfeit time  / best delivery time / hop / seqno
+            vector<tuple<node_id_t, dtn_time_t, dtn_time_t, node_id_t, dtn_seqno_t>> routed_table_;
             int ecc_;
             int networkconfigurationflag_;
             node_id_t node_id_transmit_from_;
@@ -75,6 +76,8 @@ namespace ns3 {
                 TegRouting(DtnApp& dp);
                 // s is source index, d is dest index, return next hop
                 int DoRoute(int s, int d) override;     
+            private :
+                int DoRouteDetail(int s, int d);
         };
 
         class EmptyRouting : public RoutingMethodInterface {

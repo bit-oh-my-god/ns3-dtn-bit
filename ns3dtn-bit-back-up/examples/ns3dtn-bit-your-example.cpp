@@ -22,14 +22,14 @@ namespace ns3 {
                     simulation_duration_ = 802;     // change me!!
                     print_wifi_log_ = false;
                     //ex_rm_ = DtnApp::RoutingMethod::Other;
-                    //ex_rm_ = DtnApp::RoutingMethod::TimeExpanded;
+                    ex_rm_ = DtnApp::RoutingMethod::TimeExpanded;
                     //ex_rm_ = DtnApp::RoutingMethod::CGR;
-                    ex_rm_ = DtnApp::RoutingMethod::SprayAndWait;
+                    //ex_rm_ = DtnApp::RoutingMethod::SprayAndWait;
 
                     {
                         // following code is just handy used, not essential, you can do it yourself
                         // FIXME
-                        const int schdule_for_n_trace = 10;
+                        const int schdule_for_n_trace = 19;
                         if (schdule_for_n_trace == 3) {
                             node_number_ = 5;
                             simulation_duration_ = 802;
@@ -45,7 +45,14 @@ namespace ns3 {
                         } else if (schdule_for_n_trace == 8) {
                             node_number_ = 15;
                             simulation_duration_ = 802;
-                        } else if (schdule_for_n_trace == 10 || schdule_for_n_trace == 17 || schdule_for_n_trace == 9 || schdule_for_n_trace == 11 || schdule_for_n_trace == 12 || schdule_for_n_trace == 15 || schdule_for_n_trace == 16 || schdule_for_n_trace == 19) {
+                        } else if (schdule_for_n_trace == 10    // cycle-traffic1
+                                || schdule_for_n_trace == 17    // cycle-traffic2
+                                || schdule_for_n_trace == 9     // cycle-traffic3
+                                || schdule_for_n_trace == 11    // cycle-traffic4
+                                || schdule_for_n_trace == 12    // cycle-traffic5
+                                || schdule_for_n_trace == 15    // cycle-traffic6
+                                || schdule_for_n_trace == 16    // cycle-traffic7
+                                || schdule_for_n_trace == 19) { // cycle-traffic8
                             node_number_ = 12;
                             simulation_duration_ = 802;
                         } else {
@@ -85,7 +92,6 @@ namespace ns3 {
                             handy_func(42.1, 10, 5);
                             handy_func(72.1, 10, 4);
                             handy_func(75.1, 10, 4);
-                            handy_func(73.1, 10, 4);
                             handy_func(70.1, 10, 4);
                             handy_func(78.1, 10, 4);
                             handy_func(256.1, 11, 4);
@@ -163,13 +169,21 @@ namespace ns3 {
                             handy_func(780, 0, 9);
                         };
                         auto handy_func_x6 = [this, handy_func_x]() {
-                            handy_func_x(222, 0, 2, 4);
+                            handy_func_x(222, 0, 1, 4);
                             handy_func_x(333, 0, 2, 3);
                             handy_func_x(111, 10, 3, 3);
-                            handy_func_x(555, 0, 5, 3);
+                        };
+                        auto handy_func_x7 = [this, handy_func_x]() {
+                            handy_func_x(300, 2, 4, 5);
+                            handy_func_x(300, 1, 5, 4);
+                        };
+                        auto handy_func_x8 = [this, handy_func_x]() {
+                            handy_func_x(300, 0, 10, 4);
+                            handy_func_x(600, 0, 4, 2);
+                            handy_func_x(200, 4, 1, 4);
                         };
                         //FIXME
-                        const int schdule_for_n_trace = 10;
+                        const int schdule_for_n_trace = 19;
                         if (schdule_for_n_trace == 3) {
                             // line
                             // this three would be transmit to node-1, and carry to node-2
@@ -209,10 +223,10 @@ namespace ns3 {
                             handy_func_x3();
                         } else if (schdule_for_n_trace == 11) {
                             // cycle with traffic-4
-                            handy_func_x1();
                             handy_func_x2();
                             handy_func_x3();
                             handy_func_x4();
+                            handy_func_x6();
                         } else if (schdule_for_n_trace == 12) {
                             // cycle with traffic-5
                             handy_func_x1();
@@ -220,34 +234,56 @@ namespace ns3 {
                             handy_func_x3();
                             handy_func_x4();
                             handy_func_x5();
+                            handy_func_x6();
                         } else if (schdule_for_n_trace == 15) {
                             // cycle with traffic-6
                             handy_func_x1();
+                            handy_func_x1();
                             handy_func_x2();
+                            handy_func_x2();
+                            handy_func_x3();
                             handy_func_x3();
                             handy_func_x4();
                             handy_func_x5();
                             handy_func_x6();
+                            handy_func_x7();
+                            handy_func_x7();
                         } else if (schdule_for_n_trace == 16) {
                             // cycle with traffic-7
                             handy_func_x1();
-                            handy_func_x2();
-                            handy_func_x3();
-                            handy_func_x4();
-                            handy_func_x5();
-                            handy_func_x6();
-                            handy_func_x6();
-                        } else if (schdule_for_n_trace == 19) {
-                            // cycle with traffic-8
+                            handy_func_x1();
+                            handy_func_x1();
                             handy_func_x1();
                             handy_func_x2();
+                            handy_func_x2();
+                            handy_func_x2();
+                            handy_func_x2();
+                            handy_func_x3();
                             handy_func_x3();
                             handy_func_x4();
                             handy_func_x5();
                             handy_func_x6();
                             handy_func_x6();
-                            handy_func_x6();
-                            handy_func_x6();
+                            handy_func_x7();
+                            handy_func_x7();
+                            handy_func_x7();
+                            handy_func_x8();
+                            handy_func_x8();
+                        } else if (schdule_for_n_trace == 19) {
+                            // cycle with traffic-8
+                            for (int k = 8; k > 0; k--) {
+                                handy_func_x1();
+                                handy_func_x2();
+                            }
+                            for (int k = 2; k > 0; --k) {
+                                handy_func_x3();
+                                handy_func_x4();
+                                handy_func_x5();
+                                handy_func_x6();
+                                handy_func_x7();
+                                handy_func_x7();
+                                handy_func_x8();
+                            }
                         } else if (schdule_for_n_trace == 6) {
                             // moving group
                             DtnExampleInterface::ScheduleTask();

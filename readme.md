@@ -114,6 +114,7 @@ would support '$ns at $time $node setdest x2 y2 z2 speed' format, and this forma
 - [x] retransmission : For now we don't have local2neighbor retransmission. What we have is that, if one transmission session is not successed, this session would be remained, and reboot next time when routing decision is made by which transmission session producted had the same 'session value', where normally results to a new transmission session. Problem is that sprayandgood(), used for control transmit times, would block next time pkt check.
 - [x] hello range is bigger than bundle range
 - [x] routing decision bug
+- [x] doing some optimal for CGR to reuse successive result, to speed up simulation time.
 - [x] fatal bug !! CGR would fall into a deep recursive in group moving senario.  This backtracking algorithm would decay into brute force in this senario, 
 which have a complexity of O(M * logN * N!) which N is amount of nodes that can have a link to each other at same time-window, M is the amount of time-windows.
 This may happen, because CGR has a assumption of topology it was applied on, a topology graph with density of sparseness not density of tightness. Read 'Analysis of the contact graph routing algorithm Bounding interplanetary paths 5.6 section'

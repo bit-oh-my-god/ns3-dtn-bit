@@ -149,7 +149,7 @@ namespace ns3 {
                             sprintf(tmp_msg_00, "%d ", tmp_number);
                         }
                         msg << tmp_msg_00;
-                        // TODO we shouldn't invoke this call here
+                        // FIXME we shouldn't invoke this call here
                         //PeriodReorderDaemonBundleQueueDetail();
                         // tmp_msg_01
                         char tmp_msg_01[1024] = "";
@@ -157,41 +157,34 @@ namespace ns3 {
                         int anti_pkts = daemon_antipacket_queue_->GetNPackets();
                         sprintf(tmp_msg_01, "%d ", pkts);
                         msg << tmp_msg_01;
-                        // tmp_msg_02
-                        char tmp_msg_02[1024] = "";
                         for (int i = 0; i < pkts; i++) {
+                            // tmp_msg_02
+                            char tmp_msg_02[100] = "";
                             p_pkt = daemon_bundle_queue_->Dequeue()->GetPacket();
-                            if (msg.str().length() < NS3DTNBIT_HELLO_BUNDLE_SIZE_MAX) {
-                                BPHeader bp_header;
-                                p_pkt->RemoveHeader(bp_header);
-                                dtn_seqno_t tmp_seqno = bp_header.get_source_seqno();
-                                sprintf(tmp_msg_02, "%d ", tmp_seqno);
-                                p_pkt->AddHeader(bp_header);
-                            } else {
-                                // ERROR LOG
-                                NS_LOG_ERROR("Error : too big hello");
-                                std::abort();
-                            }
+                            BPHeader bp_header;
+                            p_pkt->RemoveHeader(bp_header);
+                            dtn_seqno_t tmp_seqno = bp_header.get_source_seqno();
+                            sprintf(tmp_msg_02, "%d ", tmp_seqno);
+                            p_pkt->AddHeader(bp_header);
                             daemon_bundle_queue_->Enqueue(Packet2Queueit(p_pkt));
+                            msg << tmp_msg_02;
                         }
-                        msg << tmp_msg_02;
-                        // tmp_msg_03
-                        char tmp_msg_03[1024] = "";
                         for (int i = 0; i < anti_pkts; i++) {
+                            // tmp_msg_03
+                            char tmp_msg_03[100] = "";
                             p_pkt = daemon_antipacket_queue_->Dequeue()->GetPacket();
-                            if (msg.str().length() < NS3DTNBIT_HELLO_BUNDLE_SIZE_MAX) {
-                                p_pkt->RemoveHeader(bp_header);
-                                dtn_seqno_t tmp_seqno = bp_header.get_source_seqno();
-                                sprintf(tmp_msg_03, "%d ", tmp_seqno);
-                                p_pkt->AddHeader(bp_header);
-                            } else {
+                            p_pkt->RemoveHeader(bp_header);
+                            dtn_seqno_t tmp_seqno = bp_header.get_source_seqno();
+                            sprintf(tmp_msg_03, "%d ", tmp_seqno);
+                            p_pkt->AddHeader(bp_header);
+                            daemon_antipacket_queue_->Enqueue(Packet2Queueit(p_pkt));
+                            msg << tmp_msg_03;
+                        }
+                        if (msg.str().length() > NS3DTNBIT_HELLO_BUNDLE_SIZE_MAX) {
                                 // ERROR LOG
                                 NS_LOG_ERROR("too big hello");
-                                std::abort();
-                            }
-                            daemon_antipacket_queue_->Enqueue(Packet2Queueit(p_pkt));
+                                std::abort(); 
                         }
-                        msg << tmp_msg_03;
                     }
                     // this call would use msg.str() as the 'hello content'
                     CreateHelloBundleAndSendDetail(msg.str(), socket);
@@ -254,13 +247,14 @@ namespace ns3 {
                 {
                     // going to fill baq
                     auto tmpbaq_vec = vector<dtn_seqno_t>();
-                    // fill up baq with 'b' pkt
+                    // fill up NeighborInfo baq with 'bundle' pkt
                     if (pkt_seqno_number > 0) {
                         NS_LOG_INFO(LogPrefixMacro << "in Receive hello, string stream has sth to read, for hello bundle-seqno, pkt_seqno_number=" << pkt_seqno_number);
-                        if (pkt_seqno_number > 100) {
-                            NS_LOG_ERROR(LogPrefixMacro << "Error: pkt_seqno_number > 100"
+                        if (pkt_seqno_number > NS3DTNBIT_HELLO_MAX_PKTS) {
+                            NS_LOG_ERROR(LogPrefixMacro << "Error: pkt_seqno_number > 300"
                                     << ",hello packet it receive is " << hello_packet_size
                                     << " bytes,follow info may help you know what happened");
+                            NS_LOG_ERROR("Error:" << pkt_str_stream.str());
                             for (int i = 0; i < pkt_seqno_number; ++i) {
                                 dtn_seqno_t iv;
                                 pkt_str_stream >> iv;
@@ -274,11 +268,14 @@ namespace ns3 {
                             tmpbaq_vec.push_back(tttmp);
                         }
                     }
-                    // fill up baq with 'a' pkt
+                    // fill up NeighborInfo baq with 'anti' pkt
                     // check whether 'stringstream' has sth to read
                     for (int tmppp = pkt_str_stream.rdbuf()->in_avail(); tmppp > 1; tmppp = pkt_str_stream.rdbuf()->in_avail()) {
                         NS_LOG_INFO(LogPrefixMacro << "string stream has sth to read, hello anti seqno, tmppp=" << tmppp);
-                        assert(tmppp < 100);
+                        if (tmppp > NS3DTNBIT_HELLO_MAX_PKTS * sizeof(dtn_seqno_t)) {
+                            NS_LOG_ERROR(LogPrefixMacro << "Error:neighbor's antipkt too much, in that neighbor is " << tmppp / sizeof(dtn_seqno_t) << " amount" << "; bundle is " << pkt_seqno_number << "amount");
+                            std::abort();
+                        }
                         dtn_seqno_t tmp_antipacket_seqno;
                         pkt_str_stream >> tmp_antipacket_seqno;
                         // we need negative to indicate this seqno is from antipacket
@@ -630,9 +627,9 @@ namespace ns3 {
                     NS_LOG_DEBUG(LogPrefixMacro << "NOTE:BundleTrace:Great! one bundle arrive destination! bp_header=" << bp_header);
                     ToSendAntipacketBundle(bp_header);
                     tmp_p_pkt->AddHeader(bp_header);
-                    daemon_consume_bundle_queue_->Enqueue(Packet2Queueit(tmp_p_pkt->Copy()));
+                    daemon_consume_bundle_queue_->Enqueue(Packet2Queueit(tmp_p_pkt));
                     // this is a heuristic method to make hello, to let others know it already has it.
-                    daemon_bundle_queue_->Enqueue(Packet2Queueit(tmp_p_pkt->Copy()));
+                    daemon_bundle_queue_->Enqueue(Packet2Queueit(tmp_p_pkt));
                 } else {
                     if (bp_header.get_bundle_type() == BundleType::BundlePacket) {
                         NS_LOG_DEBUG(LogPrefixMacro << "NOTE:BundleTrace:good! one bundle recept, it's one hop! bp_header=" << bp_header);
@@ -640,7 +637,7 @@ namespace ns3 {
                         NS_LOG_ERROR(LogPrefixMacro << "ERROR: can't be");
                     }
                     tmp_p_pkt->AddHeader(bp_header);
-                    daemon_bundle_queue_->Enqueue(Packet2Queueit(tmp_p_pkt->Copy()));
+                    daemon_bundle_queue_->Enqueue(Packet2Queueit(tmp_p_pkt));
                 }
             } else {
                 NS_LOG_ERROR(LogPrefixMacro << "fragment not solved!");
@@ -801,7 +798,7 @@ namespace ns3 {
                 NS_LOG_INFO(LogPrefixMacro << "RoutingMethod is SprayAndWait");
                 auto ip_d = ref_bp_header.get_destination_ip();
                 if (ip_d == own_ip_) {return false;}
-                if (ref_bp_header.get_src_time_stamp() + 250.0 < Simulator::Now().GetSeconds()) {
+                if (ref_bp_header.get_src_time_stamp().GetSeconds() + NS3DTNBIT_SPRAY_PHASE_TWO_TIME < Simulator::Now().GetSeconds()) {
                     // time is over, SprayAndWait enter the phase two of it's routing
                     int v = ref_bp_header.get_source_seqno();
                     auto found = spray_map_.find(v);
@@ -946,7 +943,8 @@ namespace ns3 {
                 dtn_time_t current_time = Simulator::Now().GetSeconds();
                 vector<int> available = BPHeaderBasedSendDecisionDetail(ref_bp_header, check_state);
                 if (available.empty()) {NS_LOG_INFO(LogPrefixMacro << "available is none, return false"); return false;}
-                routing_assister_.p_rm_in_->GetInfo(destination_id, from_id, vec_of_current_neighbor, own_id, expired_time, bundle_size, flag, id2cur_exclude_vec_of_id_, current_time);
+                dtn_seqno_t that_seqno = ref_bp_header.get_source_seqno();
+                routing_assister_.p_rm_in_->GetInfo(destination_id, from_id, vec_of_current_neighbor, own_id, expired_time, bundle_size, flag, id2cur_exclude_vec_of_id_, current_time, that_seqno);
                 NS_LOG_DEBUG(LogPrefixMacro << ">>NOTE: Before CGR method");
                 result = routing_assister_.RouteIt(node_->GetId(), d);
                 NS_LOG_DEBUG(LogPrefixMacro << ">>NOTE: After CGR method, result =" << result);
@@ -985,7 +983,7 @@ namespace ns3 {
         }
 
         void DtnApp::StateCheckDetail() {
-            NS_LOG_INFO(LogPrefixMacro << "NOTE: Statecheck :"
+            NS_LOG_DEBUG(LogPrefixMacro << "NOTE: Statecheck :"
                     << "\nneighbor_info_vec_.size()=" <<neighbor_info_vec_.size()
                     // TODO not using PeriodReorderDaemonBundleQueueDetail yet
                     << "\ndaemon_reorder_buffer_queue_->GetNPackets()=" << daemon_reorder_buffer_queue_->GetNPackets()
@@ -1591,7 +1589,7 @@ namespace ns3 {
             } else if (routing_assister_.get_rm() == RoutingMethod::SprayAndWait) {
                 p_bp_header->set_spray(3);
             } else if (routing_assister_.get_rm() == RoutingMethod::Other) {
-                p_bp_header->set_spray(2);
+                p_bp_header->set_spray(1);
             } else if (routing_assister_.get_rm() == RoutingMethod::CGR) {
                 p_bp_header->set_spray(1);
             } else {
@@ -1619,7 +1617,7 @@ namespace ns3 {
 
         RoutingMethodInterface::RoutingMethodInterface(DtnApp& dp) : out_app_(dp) {}
         RoutingMethodInterface::~RoutingMethodInterface() {}
-        void RoutingMethodInterface::GetInfo(int destination_id, int from_id, std::vector<int> vec_of_current_neighbor, int own_id, dtn_time_t expired_time, int bundle_size, int networkconfigurationflag, map<int, vector<int>> id2cur_exclude_vec_of_id, dtn_time_t local_time) {}
+        void RoutingMethodInterface::GetInfo(int destination_id, int from_id, std::vector<int> vec_of_current_neighbor, int own_id, dtn_time_t expired_time, int bundle_size, int networkconfigurationflag, map<int, vector<int>> id2cur_exclude_vec_of_id, dtn_time_t local_time, dtn_seqno_t that_seqno) {}
         Adob RoutingMethodInterface::get_adob() { return out_app_.routing_assister_.vec_[0]; }
 
     } /* ns3dtnbit */ 
