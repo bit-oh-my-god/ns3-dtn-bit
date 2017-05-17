@@ -251,7 +251,8 @@ namespace ns3 {
                     if (pkt_seqno_number > 0) {
                         NS_LOG_INFO(LogPrefixMacro << "in Receive hello, string stream has sth to read, for hello bundle-seqno, pkt_seqno_number=" << pkt_seqno_number);
                         if (pkt_seqno_number > NS3DTNBIT_HELLO_MAX_PKTS) {
-                            NS_LOG_ERROR(LogPrefixMacro << "Error: pkt_seqno_number > 300"
+                            NS_LOG_ERROR(LogPrefixMacro << "Error: pkt_seqno_number > " 
+                                    << NS3DTNBIT_HELLO_MAX_PKTS
                                     << ",hello packet it receive is " << hello_packet_size
                                     << " bytes,follow info may help you know what happened");
                             NS_LOG_ERROR("Error:" << pkt_str_stream.str());

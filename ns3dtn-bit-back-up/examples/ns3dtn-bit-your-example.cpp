@@ -8,8 +8,7 @@
  * 3. run your example
  */
 #include "ns3/ns3dtn-bit-helper.h"
-#include "ns3/ns3dtn-bit-example-interface.h"
-
+#include "ns3/ns3dtn-bit-example-interface.h" 
 using namespace ns3;
 namespace ns3 {
     namespace ns3dtnbit {
@@ -22,14 +21,15 @@ namespace ns3 {
                     simulation_duration_ = 802;     // change me!!
                     print_wifi_log_ = false;
                     //ex_rm_ = DtnApp::RoutingMethod::Other;
-                    ex_rm_ = DtnApp::RoutingMethod::TimeExpanded;
+                    //ex_rm_ = DtnApp::RoutingMethod::TimeExpanded;
                     //ex_rm_ = DtnApp::RoutingMethod::CGR;
-                    //ex_rm_ = DtnApp::RoutingMethod::SprayAndWait;
+                    ex_rm_ = DtnApp::RoutingMethod::SprayAndWait;
 
                     {
                         // following code is just handy used, not essential, you can do it yourself
-                        // FIXME
-                        const int schdule_for_n_trace = 19;
+                        // 
+                        // FIXME 
+                        const int schdule_for_n_trace = 25; // one schdule_for_n_trace correspond to one node moving and one task plan
                         if (schdule_for_n_trace == 3) {
                             node_number_ = 5;
                             simulation_duration_ = 802;
@@ -52,7 +52,13 @@ namespace ns3 {
                                 || schdule_for_n_trace == 12    // cycle-traffic5
                                 || schdule_for_n_trace == 15    // cycle-traffic6
                                 || schdule_for_n_trace == 16    // cycle-traffic7
-                                || schdule_for_n_trace == 19) { // cycle-traffic8
+                                || schdule_for_n_trace == 19    // cycle-traffic8
+                                || schdule_for_n_trace == 20    // cycle-traffic9
+                                || schdule_for_n_trace == 21    // cycle-traffic10
+                                || schdule_for_n_trace == 22    // cycle-traffic11
+                                || schdule_for_n_trace == 23    // cycle-traffic12
+                                || schdule_for_n_trace == 24    // cycle-traffic13
+                                || schdule_for_n_trace == 25) { // cycle-traffic14
                             node_number_ = 12;
                             simulation_duration_ = 802;
                         } else {
@@ -183,7 +189,7 @@ namespace ns3 {
                             handy_func_x(200, 4, 1, 4);
                         };
                         //FIXME
-                        const int schdule_for_n_trace = 19;
+                        const int schdule_for_n_trace = 25;
                         if (schdule_for_n_trace == 3) {
                             // line
                             // this three would be transmit to node-1, and carry to node-2
@@ -276,6 +282,96 @@ namespace ns3 {
                                 handy_func_x2();
                             }
                             for (int k = 2; k > 0; --k) {
+                                handy_func_x3();
+                                handy_func_x4();
+                                handy_func_x5();
+                                handy_func_x6();
+                                handy_func_x7();
+                                handy_func_x7();
+                                handy_func_x8();
+                            }
+                        } else if (schdule_for_n_trace == 20) {
+                            // cycle with traffic-9
+                            for (int k = 12; k > 0; k--) {
+                                handy_func_x1();
+                                handy_func_x2();
+                            }
+                            for (int k = 3; k > 0; --k) {
+                                handy_func_x3();
+                                handy_func_x4();
+                                handy_func_x5();
+                                handy_func_x6();
+                                handy_func_x7();
+                                handy_func_x7();
+                                handy_func_x8();
+                            }
+                        } else if (schdule_for_n_trace == 21) {
+                            // cycle with traffic-10
+                            for (int k = 16; k > 0; k--) {
+                                handy_func_x1();
+                                handy_func_x2();
+                            }
+                            for (int k = 4; k > 0; --k) {
+                                handy_func_x3();
+                                handy_func_x4();
+                                handy_func_x5();
+                                handy_func_x6();
+                                handy_func_x7();
+                                handy_func_x7();
+                                handy_func_x8();
+                            }
+                        } else if (schdule_for_n_trace == 22) {
+                            // cycle with traffic-11
+                            for (int k = 25; k > 0; k--) {
+                                handy_func_x1();
+                                handy_func_x2();
+                            }
+                            for (int k = 6; k > 0; --k) {
+                                handy_func_x3();
+                                handy_func_x4();
+                                handy_func_x5();
+                                handy_func_x6();
+                                handy_func_x7();
+                                handy_func_x7();
+                                handy_func_x8();
+                            }
+                        } else if (schdule_for_n_trace == 23) {
+                            // cycle with traffic-12
+                            for (int k = 33; k > 0; k--) {
+                                handy_func_x1();
+                                handy_func_x2();
+                            }
+                            for (int k = 8; k > 0; --k) {
+                                handy_func_x3();
+                                handy_func_x4();
+                                handy_func_x5();
+                                handy_func_x6();
+                                handy_func_x7();
+                                handy_func_x7();
+                                handy_func_x8();
+                            }
+                        } else if (schdule_for_n_trace == 24) {
+                            // cycle with traffic-13
+                            for (int k = 44; k > 0; k--) {
+                                handy_func_x1();
+                                handy_func_x2();
+                            }
+                            for (int k = 11; k > 0; --k) {
+                                handy_func_x3();
+                                handy_func_x4();
+                                handy_func_x5();
+                                handy_func_x6();
+                                handy_func_x7();
+                                handy_func_x7();
+                                handy_func_x8();
+                            }
+                        } else if (schdule_for_n_trace == 25) {
+                            // cycle with traffic-14
+                            for (int k = 55; k > 0; k--) {
+                                handy_func_x1();
+                                handy_func_x2();
+                            }
+                            for (int k = 15; k > 0; --k) {
                                 handy_func_x3();
                                 handy_func_x4();
                                 handy_func_x5();

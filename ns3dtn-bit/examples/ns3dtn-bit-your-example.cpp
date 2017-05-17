@@ -8,8 +8,7 @@
  * 3. run your example
  */
 #include "ns3/ns3dtn-bit-helper.h"
-#include "ns3/ns3dtn-bit-example-interface.h"
-
+#include "ns3/ns3dtn-bit-example-interface.h" 
 using namespace ns3;
 namespace ns3 {
     namespace ns3dtnbit {
@@ -22,15 +21,15 @@ namespace ns3 {
                     simulation_duration_ = 802;     // change me!!
                     print_wifi_log_ = false;
                     //ex_rm_ = DtnApp::RoutingMethod::Other;
-                    ex_rm_ = DtnApp::RoutingMethod::TimeExpanded;
-                    //ex_rm_ = DtnApp::RoutingMethod::CGR;
+                    //ex_rm_ = DtnApp::RoutingMethod::TimeExpanded;
+                    ex_rm_ = DtnApp::RoutingMethod::CGR;
                     //ex_rm_ = DtnApp::RoutingMethod::SprayAndWait;
 
                     {
                         // following code is just handy used, not essential, you can do it yourself
                         // 
                         // FIXME 
-                        const int schdule_for_n_trace = 26; // one schdule_for_n_trace correspond to one node moving and one task plan
+                        const int schdule_for_n_trace = 25; // one schdule_for_n_trace correspond to one node moving and one task plan
                         if (schdule_for_n_trace == 3) {
                             node_number_ = 5;
                             simulation_duration_ = 802;
@@ -59,8 +58,7 @@ namespace ns3 {
                                 || schdule_for_n_trace == 22    // cycle-traffic11
                                 || schdule_for_n_trace == 23    // cycle-traffic12
                                 || schdule_for_n_trace == 24    // cycle-traffic13
-                                || schdule_for_n_trace == 25    // cycle-traffic14
-                                || schdule_for_n_trace == 26) { // cycle-traffic15
+                                || schdule_for_n_trace == 25) { // cycle-traffic14
                             node_number_ = 12;
                             simulation_duration_ = 802;
                         } else {
@@ -191,7 +189,7 @@ namespace ns3 {
                             handy_func_x(200, 4, 1, 4);
                         };
                         //FIXME
-                        const int schdule_for_n_trace = 26;
+                        const int schdule_for_n_trace = 25;
                         if (schdule_for_n_trace == 3) {
                             // line
                             // this three would be transmit to node-1, and carry to node-2
@@ -382,112 +380,6 @@ namespace ns3 {
                                 handy_func_x7();
                                 handy_func_x8();
                             }
-                        } else if (schdule_for_n_trace == 26) {
-                            // cycle with traffic-15
-                            for (int k = 78; k > 0; k--) {
-                                handy_func_x1();
-                                handy_func_x2();
-                            }
-                            for (int k = 18; k > 0; --k) {
-                                handy_func_x3();
-                                handy_func_x4();
-                                handy_func_x5();
-                                handy_func_x6();
-                                handy_func_x7();
-                                handy_func_x7();
-                                handy_func_x8();
-                            }
-                        } else if (schdule_for_n_trace == 6) {
-                            // moving group
-                            DtnExampleInterface::ScheduleTask();
-                        } else if (schdule_for_n_trace == 4) {
-                            // random
-                            DtnExampleInterface::ScheduleTask();
-                        } else if (schdule_for_n_trace == 8) {
-                            // random-2
-                            DtnExampleInterface::ScheduleTask();
-                        } else {
-                            cout << "WARN: can't find schdule, define it or use default random one " << endl;
-                        }
-                    }
-                        } else if (schdule_for_n_trace == 6) {
-                            // moving group
-                            DtnExampleInterface::ScheduleTask();
-                        } else if (schdule_for_n_trace == 4) {
-                            // random
-                            DtnExampleInterface::ScheduleTask();
-                        } else if (schdule_for_n_trace == 8) {
-                            // random-2
-                            DtnExampleInterface::ScheduleTask();
-                        } else {
-                            cout << "WARN: can't find schdule, define it or use default random one " << endl;
-                        }
-                    }
-                        } else if (schdule_for_n_trace == 6) {
-                            // moving group
-                            DtnExampleInterface::ScheduleTask();
-                        } else if (schdule_for_n_trace == 4) {
-                            // random
-                            DtnExampleInterface::ScheduleTask();
-                        } else if (schdule_for_n_trace == 8) {
-                            // random-2
-                            DtnExampleInterface::ScheduleTask();
-                        } else {
-                            cout << "WARN: can't find schdule, define it or use default random one " << endl;
-                        }
-                    }
-                        } else if (schdule_for_n_trace == 6) {
-                            // moving group
-                            DtnExampleInterface::ScheduleTask();
-                        } else if (schdule_for_n_trace == 4) {
-                            // random
-                            DtnExampleInterface::ScheduleTask();
-                        } else if (schdule_for_n_trace == 8) {
-                            // random-2
-                            DtnExampleInterface::ScheduleTask();
-                        } else {
-                            cout << "WARN: can't find schdule, define it or use default random one " << endl;
-                        }
-                    }
-                        } else if (schdule_for_n_trace == 6) {
-                            // moving group
-                            DtnExampleInterface::ScheduleTask();
-                        } else if (schdule_for_n_trace == 4) {
-                            // random
-                            DtnExampleInterface::ScheduleTask();
-                        } else if (schdule_for_n_trace == 8) {
-                            // random-2
-                            DtnExampleInterface::ScheduleTask();
-                        } else {
-                            cout << "WARN: can't find schdule, define it or use default random one " << endl;
-                        }
-                    }
-                        } else if (schdule_for_n_trace == 6) {
-                            // moving group
-                            DtnExampleInterface::ScheduleTask();
-                        } else if (schdule_for_n_trace == 4) {
-                            // random
-                            DtnExampleInterface::ScheduleTask();
-                        } else if (schdule_for_n_trace == 8) {
-                            // random-2
-                            DtnExampleInterface::ScheduleTask();
-                        } else {
-                            cout << "WARN: can't find schdule, define it or use default random one " << endl;
-                        }
-                    }
-                        } else if (schdule_for_n_trace == 6) {
-                            // moving group
-                            DtnExampleInterface::ScheduleTask();
-                        } else if (schdule_for_n_trace == 4) {
-                            // random
-                            DtnExampleInterface::ScheduleTask();
-                        } else if (schdule_for_n_trace == 8) {
-                            // random-2
-                            DtnExampleInterface::ScheduleTask();
-                        } else {
-                            cout << "WARN: can't find schdule, define it or use default random one " << endl;
-                        }
-                    }
                         } else if (schdule_for_n_trace == 6) {
                             // moving group
                             DtnExampleInterface::ScheduleTask();
