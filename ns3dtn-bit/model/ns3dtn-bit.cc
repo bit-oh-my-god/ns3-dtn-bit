@@ -790,7 +790,7 @@ namespace ns3 {
         bool DtnApp::FindTheNeighborThisBPHeaderTo(BPHeader& ref_bp_header, int& return_index_of_neighbor_you_dedicate, DtnApp::CheckState check_state) {
             NS_LOG_INFO(LogPrefixMacro << "enter FindTheNeighborThisBPHeaderTo()");
             if (ref_bp_header.get_bundle_type() == BundleType::AntiPacket && routing_assister_.get_rm() == RoutingMethod::CGR) {
-                NS_LOG_DEBUG(LogPrefixMacro << "would do something for antipacket routing, to avoid CGR deep recursive for anti");
+                NS_LOG_WARN(LogPrefixMacro << "WARN:would do something for antipacket routing, to avoid CGR deep recursive for anti");
                 // TODO , check hop ip and give back
                 return false;
             }
@@ -876,18 +876,12 @@ namespace ns3 {
                 // Note that this method just indicate which node the next hop would be,
                 // if the next hop is not available yet, should wait for it till available
                 NS_LOG_DEBUG(LogPrefixMacro << ">>NOTE: before TimeExpanded method");
+                dtn_seqno_t that_seqno = ref_bp_header.get_source_seqno();
+                routing_assister_.p_rm_in_->GetInfo(-1, -1, vector<int>(), -1, -1.1, -1, -1, id2cur_exclude_vec_of_id_, -1.1, that_seqno);
                 result = routing_assister_.RouteIt(node_->GetId(), d);
                 NS_LOG_DEBUG(LogPrefixMacro << ">>NOTE: after TimeExpanded method, result =" << result);
                 if (result == node_->GetId()) {NS_LOG_ERROR(LogPrefixMacro << "Error: routing ! s=" << s << ";d=" << d << ";result = " << result); std::abort();}
                 if (result != -1) {
-                    /*
-                       auto ip_base = NodeNo2Ipv4(result);
-                       for (int i = 0; i < neighbor_info_vec_.size(); i++) {
-                    // result to index of neighbor vec
-                    auto nip = neighbor_info_vec_[i].info_address_.GetIpv4();
-                    if (nip.IsEqual(ip_base)) { indx = i; break; }
-                    }
-                    */
                     indx = nodeid2neighborvecindex(neighbor_info_vec_, result);
                     bool result_is_in_available = false;
                     for (auto v : available) {

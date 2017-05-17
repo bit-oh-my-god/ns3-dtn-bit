@@ -60,6 +60,10 @@ namespace ns3 {
 
         TegRouting::TegRouting(DtnApp& dp) : RoutingMethodInterface(dp) {}
 
+        void TegRouting::GetInfo(node_id_t destination_id, node_id_t from_id, std::vector<node_id_t> vec_of_current_neighbor, node_id_t own_id, dtn_time_t expired_time, int bundle_size, int networkconfigurationflag, map<int, vector<int>> id2cur_exclude_vec_of_id, dtn_time_t local_time, dtn_seqno_t that_seqno) {
+            debug_that_seqno_ = that_seqno;
+        }
+
         int TegRouting::DoRouteDetail(int s, int d) {
             using namespace boost;
             Adob adob = RoutingMethodInterface::get_adob();
@@ -107,7 +111,15 @@ namespace ns3 {
         }
 
         int TegRouting::DoRoute(int s, int d) {
-            return DoRouteDetail(s, d);
+            auto foundsx = find_if(routed_table_.begin(), routed_table_.end(), [this](tuple<node_id_t, node_id_t, dtn_seqno_t> rtele){ if (get<2>(rtele) == debug_that_seqno_) { return true; } else { return false; } });
+            if (foundsx != routed_table_.end()) {
+                return get<1>(*foundsx);
+            } else {
+                int r = DoRouteDetail(s, d);
+                auto tmppp = make_tuple(d, r, debug_that_seqno_);
+                routed_table_.push_back(tmppp);
+                return r;
+            }
         }
 
         CGRRouting::CGRRouting(DtnApp& dp) : RoutingMethodInterface(dp) { }
