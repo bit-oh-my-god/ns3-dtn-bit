@@ -619,7 +619,8 @@ namespace ns3 {
             tmp_p_pkt->RemoveHeader(bp_header);
             if (bp_header.get_payload_size() == tmp_p_pkt->GetSize()) {
                 // this bundle is non-fragment or a already reassemble one
-                if (IsDuplicatedDetail(bp_header)) {
+                bool is_dupli_check = IsDuplicatedDetail(bp_header);
+                if (is_dupli_check) {
                     // check Duplicates here
                     NS_LOG_WARN(LogPrefixMacro << "WARN: receive a duplicated bundle, this may happen");
                     return;
@@ -825,7 +826,7 @@ namespace ns3 {
                 dtn_seqno_t that_seqno = ref_bp_header.get_source_seqno();
                 routing_assister_.p_rm_in_->GetInfo(-1, -1, vector<int>(), -1, -1.1, -1, -1, id2cur_exclude_vec_of_id_, -1.1, that_seqno);
                 result = routing_assister_.RouteIt(node_->GetId(), d);
-                if (result == node_->GetId()) {NS_LOG_WARN(LogPrefixMacro << "WARN: routing self! s=" << s << ";d=" << d << ";result = " << result);}
+                if (result == node_->GetId()) {NS_LOG_WARN(LogPrefixMacro << "WARN: routing self!  " << ";d=" << d << ";result = " << result);}
                 NS_LOG_DEBUG(LogPrefixMacro << "NOTE: after YouRouting method, result =" << result << "source =" << s << "dest=" << d);
                 if (result != -1) {
                     indx = nodeid2neighborvecindex(neighbor_info_vec_, result);
