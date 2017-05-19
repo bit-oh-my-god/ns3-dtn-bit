@@ -8,10 +8,17 @@
 namespace ns3 {
     namespace ns3dtnbit {
         class YouRouting : public RoutingMethodInterface {
+            using node_id_t = int;
             public :
                 YouRouting(DtnApp& dp);
                 // s is source index, d is dest index, return next hop
                 int DoRoute(int s, int d) override;
+                void GetInfo(node_id_t destination_id, node_id_t from_id, std::vector<node_id_t> vec_of_current_neighbor, node_id_t own_id, dtn_time_t expired_time, int bundle_size, int networkconfigurationflag, map<int, vector<int>> id2cur_exclude_vec_of_id, dtn_time_t local_time, dtn_seqno_t that_seqno) override;
+            private :
+                int DoRouteDetail(int s, int d);
+                dtn_seqno_t debug_that_seqno_;
+                //           dest  / hop / seqno
+                vector<tuple<node_id_t, node_id_t, dtn_seqno_t>> routed_table_;
         };
 
         // read this :

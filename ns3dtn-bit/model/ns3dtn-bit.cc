@@ -785,16 +785,22 @@ namespace ns3 {
 
         /*
          * Aim : A RoutingMethod switcher
-         * TODO
+         * TODO Don't repeat yourself
          * define your decision method
          */
         bool DtnApp::FindTheNeighborThisBPHeaderTo(BPHeader& ref_bp_header, int& return_index_of_neighbor_you_dedicate, DtnApp::CheckState check_state) {
             NS_LOG_INFO(LogPrefixMacro << "enter FindTheNeighborThisBPHeaderTo()");
-            if (ref_bp_header.get_bundle_type() == BundleType::AntiPacket && routing_assister_.get_rm() == RoutingMethod::CGR) {
-                NS_LOG_WARN(LogPrefixMacro << "WARN:would do something for antipacket routing, to avoid CGR deep recursive for anti");
-                // TODO , check hop ip and give back
-                return false;
+            int s, d, indx = -1, result;
+            {
+                // init s, d
+                auto ip_s = ref_bp_header.get_source_ip();
+                auto ip_d = ref_bp_header.get_destination_ip();
+                if (ip_d == own_ip_) {NS_LOG_INFO(LogPrefixMacro << "routing self, would return false and continue."); return false;} 
+                s = Ipv42NodeNo(ip_s);
+                d = Ipv42NodeNo(ip_d);
             }
+            vector<int> available = BPHeaderBasedSendDecisionDetail(ref_bp_header, check_state);
+            if (available.empty()) {NS_LOG_INFO(LogPrefixMacro << "available is none, return false"); return false;}
             if (routing_assister_.IsSet() && routing_assister_.get_rm() == RoutingMethod::SprayAndWait) {
                 NS_LOG_INFO(LogPrefixMacro << "RoutingMethod is SprayAndWait");
                 auto ip_d = ref_bp_header.get_destination_ip();
@@ -807,8 +813,6 @@ namespace ns3 {
                         spray_map_[v] -= 2;
                     }
                 }
-                // this method is default one
-                vector<int> available = BPHeaderBasedSendDecisionDetail(ref_bp_header, check_state);
                 if (available.size() > 0) {
                     return_index_of_neighbor_you_dedicate = available[0];
                     return true;
@@ -817,30 +821,14 @@ namespace ns3 {
                 }
             } else if (routing_assister_.IsSet() && routing_assister_.get_rm() == RoutingMethod::Other) {
                 NS_LOG_INFO(LogPrefixMacro << "RoutingMethod is Other");
-                int s, d, indx = -1, result;
-                {
-                    // init s, d
-                    auto ip_s = ref_bp_header.get_source_ip();
-                    auto ip_d = ref_bp_header.get_destination_ip();
-                    if (ip_d == own_ip_) {NS_LOG_INFO(LogPrefixMacro << "routing self, would return false and continue."); return false;} 
-                    s = Ipv42NodeNo(ip_s);
-                    d = Ipv42NodeNo(ip_d);
-                    s = node_->GetId();
-                }
                 NS_LOG_DEBUG(LogPrefixMacro << "NOTE: before YouRouting method");
+                dtn_seqno_t that_seqno = ref_bp_header.get_source_seqno();
+                routing_assister_.p_rm_in_->GetInfo(-1, -1, vector<int>(), -1, -1.1, -1, -1, id2cur_exclude_vec_of_id_, -1.1, that_seqno);
                 result = routing_assister_.RouteIt(node_->GetId(), d);
                 if (result == node_->GetId()) {NS_LOG_WARN(LogPrefixMacro << "WARN: routing self! s=" << s << ";d=" << d << ";result = " << result);}
                 NS_LOG_DEBUG(LogPrefixMacro << "NOTE: after YouRouting method, result =" << result << "source =" << s << "dest=" << d);
                 if (result != -1) {
-                    /*
-                       auto ip_base = NodeNo2Ipv4(result);
-                       for (int i = 0; i < neighbor_info_vec_.size(); i++) {
-                       auto nip = neighbor_info_vec_[i].info_address_.GetIpv4();
-                       if (nip.IsEqual(ip_base)) { indx = i; break; }
-                       }
-                       */
                     indx = nodeid2neighborvecindex(neighbor_info_vec_, result);
-                    vector<int> available = BPHeaderBasedSendDecisionDetail(ref_bp_header, check_state);
                     for (auto v : available) {
                         if (v == indx) {
                             return_index_of_neighbor_you_dedicate = indx;
@@ -862,20 +850,8 @@ namespace ns3 {
                 }
             } else if (routing_assister_.IsSet() && routing_assister_.get_rm() == RoutingMethod::TimeExpanded) {
                 NS_LOG_INFO(LogPrefixMacro << "RoutingMethod is TimeExpanded");
-                // s, d is index of node, indx is index of neighbor
-                int s, d, indx = -1, result;
-                {
-                    // init s, d
-                    auto ip_s = ref_bp_header.get_source_ip();
-                    auto ip_d = ref_bp_header.get_destination_ip();
-                    if (ip_d == own_ip_) {NS_LOG_INFO(LogPrefixMacro << "WARN: to self?"); return false;}
-                    s = Ipv42NodeNo(ip_s);
-                    d = Ipv42NodeNo(ip_d);
-                }
                 vector<int> available = BPHeaderBasedSendDecisionDetail(ref_bp_header, check_state);
                 if (available.empty()) {NS_LOG_DEBUG(LogPrefixMacro << "available is empty"); return false;}
-                // Note that this method just indicate which node the next hop would be,
-                // if the next hop is not available yet, should wait for it till available
                 NS_LOG_DEBUG(LogPrefixMacro << ">>NOTE: before TimeExpanded method");
                 dtn_seqno_t that_seqno = ref_bp_header.get_source_seqno();
                 routing_assister_.p_rm_in_->GetInfo(-1, -1, vector<int>(), -1, -1.1, -1, -1, id2cur_exclude_vec_of_id_, -1.1, that_seqno);
@@ -924,20 +900,8 @@ namespace ns3 {
                 int bundle_size = ref_bp_header.get_payload_size();
                 int flag = 0;
 
-                int s, d, indx = -1, result;
-                {
-                    // init s, d
-                    auto ip_s = ref_bp_header.get_source_ip();
-                    auto ip_d = ref_bp_header.get_destination_ip();
-                    if (ip_d == own_ip_) {NS_LOG_INFO(LogPrefixMacro << "WARN: to self, this happens when bundle remains in destination node, so this destination of this bundle is this node. It's purposed."); return false;}
-                    s = Ipv42NodeNo(ip_s);
-                    d = Ipv42NodeNo(ip_d);
-                }
-
                 // -------------- dividing ----------
                 dtn_time_t current_time = Simulator::Now().GetSeconds();
-                vector<int> available = BPHeaderBasedSendDecisionDetail(ref_bp_header, check_state);
-                if (available.empty()) {NS_LOG_INFO(LogPrefixMacro << "available is none, return false"); return false;}
                 dtn_seqno_t that_seqno = ref_bp_header.get_source_seqno();
                 routing_assister_.p_rm_in_->GetInfo(destination_id, from_id, vec_of_current_neighbor, own_id, expired_time, bundle_size, flag, id2cur_exclude_vec_of_id_, current_time, that_seqno);
                 NS_LOG_DEBUG(LogPrefixMacro << ">>NOTE: Before CGR method");
