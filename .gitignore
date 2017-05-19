@@ -4,3 +4,5 @@
 *.swp
 *~
 /box/jupyter/stuff\ folder/*
+/box/jupyter/stuff\sfolder/*
+/box/jupyter/stuff folder/*
