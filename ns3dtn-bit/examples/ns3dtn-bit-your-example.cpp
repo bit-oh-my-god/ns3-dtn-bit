@@ -21,8 +21,8 @@ namespace ns3 {
                     simulation_duration_ = 802;     // change me!!
                     print_wifi_log_ = false;
                     //ex_rm_ = DtnApp::RoutingMethod::Other;
-                    ex_rm_ = DtnApp::RoutingMethod::TimeExpanded;
-                    //ex_rm_ = DtnApp::RoutingMethod::CGR;
+                    //ex_rm_ = DtnApp::RoutingMethod::TimeExpanded;
+                    ex_rm_ = DtnApp::RoutingMethod::CGR;
                     //ex_rm_ = DtnApp::RoutingMethod::SprayAndWait;
 
                     {
