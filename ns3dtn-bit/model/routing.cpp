@@ -153,9 +153,9 @@ namespace ns3 {
             assert(d == destination_id_);
             assert(s == own_id_);
             auto founds = find(exhausted_search_target_list_.begin(), exhausted_search_target_list_.end(), make_pair(d, debug_cgr_that_seqno_));
-            auto foundsx = find_if(routed_table_.begin(), routed_table_.end(), [this](tuple<node_id_t, dtn_time_t, dtn_time_t, node_id_t, dtn_seqno_t> rtele){
+            auto foundsx = find_if(routed_table_.begin(), routed_table_.end(), [this](tuple<node_id_t, dtn_time_t, dtn_time_t, node_id_t, dtn_seqno_t, dtn_time_t> rtele){
                     if (get<0>(rtele) == destination_id_ 
-                            && (get<4>(rtele) == debug_cgr_that_seqno_ ||  local_time_ - get<5>(rtele) < (NS3DTNBIT_BUFFER_CHECK_INTERVAL * 9)) 
+                            && (get<4>(rtele) == debug_cgr_that_seqno_ ||  local_time_ - get<5>(rtele) < (NS3DTNBIT_BUFFER_CHECK_INTERVAL * 15)) 
                             && (get<1>(rtele) - (NS3DTNBIT_BUFFER_CHECK_INTERVAL * 4)) > local_time_) {
                         return true;
                     } else {
@@ -172,7 +172,7 @@ namespace ns3 {
                     << endl;
                 return -1;
             } else if (foundsx != routed_table_.end() && reuse_flag) {
-                tuple<node_id_t, dtn_time_t, dtn_time_t, node_id_t, dtn_seqno_t> tmpfsx = *foundsx;
+                tuple<node_id_t, dtn_time_t, dtn_time_t, node_id_t, dtn_seqno_t, dtn_time_t> tmpfsx = *foundsx;
                 cout << "DEBUG_CGR:" << "WARN:may make bad routing-2. reuse routing result, reduce routing time" 
                     << ";local_time_ = " << local_time_ 
                     << ";debug_cgr_that_seqno_ = " << debug_cgr_that_seqno_
@@ -180,11 +180,9 @@ namespace ns3 {
                     << endl;
                 return get<3>(tmpfsx);
             }
-            ContactReviewProcedure(destination_id_, expired_time_);
-            if (cgr_debug_flag_1) {
-                cout << "DEBUG_CGR:" << "before ForwardDecision()" << endl;
-                cout << "BundleTrace:entertimes=" << debug_crp_enter_count_ << "times" << endl;
-            }
+            ContactReviewProcedure(destination_id_, forfeit_time_, best_delivery_time_);
+            cout << "DEBUG_CGR:" << "before ForwardDecision()" 
+                << "BundleTrace:entertimes=" << debug_crp_enter_count_ << "times" << endl;
             int result_index = ForwardDecision();
             int result = result_index >= 0 ? proximate_vec_[result_index] : -1;
             if (debug_cgr_this_exhausted_search_not_found_) {
@@ -260,10 +258,10 @@ namespace ns3 {
          *  ---- forfeit_time_
          *  ---- best_delivery_time_
          * */
-        void CGRRouting::ContactReviewProcedure(node_id_t cur_d, dtn_time_t cur_deadline) {
+        void CGRRouting::ContactReviewProcedure(node_id_t cur_d, dtn_time_t cur_deadline, dtn_time_t best_deli) {
+                debug_crp_enter_count_ += 1;
             if (cgr_debug_flag_1) {
                 debug_recurrsive_path_stack_.push(cur_d);
-                debug_crp_enter_count_ += 1;
                 debug_recurrsive_deep_ += 1;
                 auto found = debug_node_access_count_map_.find(cur_d);
                 if (found != debug_node_access_count_map_.end()) {
@@ -288,9 +286,6 @@ namespace ns3 {
                 }
             }
             if (cgr_find_one_proximate_) {debug_recurrsive_deep_ -= 1; return;}
-            auto previous_of_forfeit_time = forfeit_time_;
-            forfeit_time_ = cur_deadline;
-            auto previous_of_best_delivery_time = best_delivery_time_;
             // 1.
             excluded_vec_.push_back(cur_d);
             const Adob& ref_adob = RoutingMethodInterface::get_adob();
@@ -306,8 +301,9 @@ namespace ns3 {
             }
             // 2.
             for (auto m : cgr_xmit_vec) {
-                dtn_time_t last_moment_of_xmit = min(cur_deadline, m.contact_end_time_);
-                bool last_moment_check = local_time_ < last_moment_of_xmit && m.contact_start_time_ < last_moment_of_xmit;
+                bool last_moment_check = local_time_ < cur_deadline && m.contact_start_time_ < cur_deadline;
+                dtn_time_t local_forfeit_time = cur_deadline;
+                dtn_time_t local_best_delivery_time = best_deli;
                 if (!last_moment_check) {
                     // 2.A
                     continue;
@@ -337,18 +333,18 @@ namespace ns3 {
                         } else if (d_is_in_proximate) {
                             continue;
                         } else {
-                            if (m.contact_end_time_ < forfeit_time_) {
-                                forfeit_time_ = m.contact_end_time_;
+                            if (m.contact_end_time_ < local_forfeit_time) {
+                                local_forfeit_time = m.contact_end_time_;
                             } 
-                            if (m.contact_start_time_ > best_delivery_time_) {
-                                best_delivery_time_ = m.contact_start_time_;
+                            if (m.contact_start_time_ > local_best_delivery_time) {
+                                local_best_delivery_time = m.contact_start_time_;
                             }
                             proximate_vec_.push_back(cur_d);
                             // this line won't let searching end imediately, still would find the available one in this branch.
                             cgr_find_one_proximate_ = true;
                             // Note the computed forfeit time and best-case delivery time in the event that the bundle is queued for transmission to D.
-                            final_forfeit_time_.push_back(forfeit_time_);
-                            final_best_delivery_time_.push_back(best_delivery_time_);
+                            final_forfeit_time_.push_back(local_forfeit_time);
+                            final_best_delivery_time_.push_back(local_best_delivery_time);
                             if (cgr_debug_flag_0) {
                                 if (debug_cgr_that_seqno_ == 2114 || debug_cgr_that_seqno_ == 2113) {
                                     cout << "\n\nthis is the xmit we finally choose" 
@@ -372,16 +368,15 @@ namespace ns3 {
                         if (s_is_in_excluded) {
                             continue;
                         } else {
-                            if (m.contact_end_time_ < forfeit_time_) {
-                                forfeit_time_ = m.contact_end_time_;
+                            if (m.contact_end_time_ < local_forfeit_time) {
+                                local_forfeit_time = m.contact_end_time_;
                             }
-                            if (m.contact_start_time_ > best_delivery_time_) {
-                                best_delivery_time_ = m.contact_start_time_;
+                            if (m.contact_start_time_ > local_best_delivery_time) {
+                                local_best_delivery_time = m.contact_start_time_;
                             }
                             double forwarding_latency = (2 * ecc_) / m.data_transmission_rate_;     // it's a very small account
                             double next_deadline = min((m.contact_end_time_ - forwarding_latency), cur_deadline);
                             if (cgr_debug_flag_0) {
-
                                 if (debug_cgr_that_seqno_ == 2114 || debug_cgr_that_seqno_ == 2113) {
                                     cout << "\n\nthis is the xmit we enter" 
                                         << ";cur_deadline = " << cur_deadline
@@ -394,15 +389,13 @@ namespace ns3 {
                                         << ";m.data_transmission_rate_=" << m.data_transmission_rate_ << endl;
                                 }
                             }
-                            ContactReviewProcedure(s, next_deadline);
+                            ContactReviewProcedure(s, next_deadline, local_best_delivery_time);
                         }
                     }
                 }
             }
             // 3.
             excluded_vec_.erase(find(excluded_vec_.begin(), excluded_vec_.end(), cur_d));
-            forfeit_time_ = previous_of_forfeit_time;
-            best_delivery_time_ = previous_of_best_delivery_time;
             if (cgr_debug_flag_1) {
                 debug_recurrsive_deep_ -= 1;
                 debug_recurrsive_path_stack_.pop();

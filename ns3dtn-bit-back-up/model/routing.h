@@ -47,7 +47,7 @@ namespace ns3 {
              *  ---- forfeit_time_
              *  ---- best_delivery_time_
              * */
-            void ContactReviewProcedure(node_id_t cur_d, dtn_time_t cur_deadline);
+            void ContactReviewProcedure(node_id_t cur_d, dtn_time_t cur_deadline, dtn_time_t best_deli);
 
             int ForwardDecision();
 
