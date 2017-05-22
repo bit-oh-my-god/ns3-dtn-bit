@@ -138,56 +138,66 @@ namespace ns3 {
             }
         }
 
-        CGRRouting::CGRRouting(DtnApp& dp) : RoutingMethodInterface(dp) { }
+        CGRRouting::CGRRouting(DtnApp& dp) : RoutingMethodInterface(dp) {
+#ifdef CGR_DEBUG_0
+            cgr_debug_flag_0 = true;
+#endif
+#ifdef CGR_DEBUG_1
+            cgr_debug_flag_1 = true;
+#endif
+        }
 
         int CGRRouting::DoRoute(int s, int d) {
+            cout << "DEBUG_CGR:" << " ============== A new DoRoute ==========\n" << endl;
             Init();
             assert(d == destination_id_);
             assert(s == own_id_);
-#ifdef DEBUG
-            cout << "DEBUG_CGR:" << "before ContactReviewProcedure()" << endl;
-#endif
             auto founds = find(exhausted_search_target_list_.begin(), exhausted_search_target_list_.end(), make_pair(d, debug_cgr_that_seqno_));
             auto foundsx = find_if(routed_table_.begin(), routed_table_.end(), [this](tuple<node_id_t, dtn_time_t, dtn_time_t, node_id_t, dtn_seqno_t> rtele){
                     if (get<0>(rtele) == destination_id_ 
-                            && get<4>(rtele) == debug_cgr_that_seqno_ 
-                            && get<1>(rtele) - (NS3DTNBIT_BUFFER_CHECK_INTERVAL * 4) > Simulator::Now().GetSeconds()) {
-                    return true;
+                            && (get<4>(rtele) == debug_cgr_that_seqno_ ||  local_time_ - get<5>(rtele) < (NS3DTNBIT_BUFFER_CHECK_INTERVAL * 9)) 
+                            && (get<1>(rtele) - (NS3DTNBIT_BUFFER_CHECK_INTERVAL * 4)) > local_time_) {
+                        return true;
                     } else {
-                    return false;
+                        return false;
                     }
                     });
             bool reuse_flag = NS3DTNBIT_CGR_OPTIMAL_OPTION;
             if (founds != exhausted_search_target_list_.end() && reuse_flag) {
                 cout << "DEBUG_CGR:" << "WARN:may make bad routing-1. this dest is searched before, and no available one is found, " 
                     << "so this time it would exhausted search possiblity too. we would return a -1" 
-                    << " .This won't affect routing result, but can reduce simulation time." << endl;
+                    << " .This won't affect routing result, but can reduce simulation time." 
+                    << ";local_time_ = " << local_time_ 
+                    << ";debug_cgr_that_seqno_ = " << debug_cgr_that_seqno_
+                    << endl;
                 return -1;
             } else if (foundsx != routed_table_.end() && reuse_flag) {
-                cout << "DEBUG_CGR:" << "WARN:may make bad routing-2. reuse routing result, reduce routing time" << endl;
                 tuple<node_id_t, dtn_time_t, dtn_time_t, node_id_t, dtn_seqno_t> tmpfsx = *foundsx;
+                cout << "DEBUG_CGR:" << "WARN:may make bad routing-2. reuse routing result, reduce routing time" 
+                    << ";local_time_ = " << local_time_ 
+                    << ";debug_cgr_that_seqno_ = " << debug_cgr_that_seqno_
+                    << ";reused result = " << get<3>(tmpfsx) 
+                    << endl;
                 return get<3>(tmpfsx);
             }
             ContactReviewProcedure(destination_id_, expired_time_);
-#ifdef DEBUG
-            cout << "DEBUG_CGR:" << "before ForwardDecision()" << endl;
-            cout << "BundleTrace:entertimes=" << debug_crp_enter_count_ << "times" << endl;
-#endif
-            int result = ForwardDecision();
+            if (cgr_debug_flag_1) {
+                cout << "DEBUG_CGR:" << "before ForwardDecision()" << endl;
+                cout << "BundleTrace:entertimes=" << debug_crp_enter_count_ << "times" << endl;
+            }
+            int result_index = ForwardDecision();
+            int result = result_index >= 0 ? proximate_vec_[result_index] : -1;
             if (debug_cgr_this_exhausted_search_not_found_) {
                 exhausted_search_target_list_.push_back(make_pair(d, debug_cgr_that_seqno_));
             }
             if (result != -1) {
-                tuple<node_id_t, dtn_time_t, dtn_time_t, node_id_t, dtn_seqno_t> tmprvec = make_tuple(destination_id_, forfeit_time_, best_delivery_time_, result, debug_cgr_that_seqno_);
+                tuple<node_id_t, dtn_time_t, dtn_time_t, node_id_t, dtn_seqno_t, dtn_time_t> tmprvec = make_tuple(destination_id_, final_forfeit_time_[result_index], final_forfeit_time_[result_index], result, debug_cgr_that_seqno_, local_time_);
                 routed_table_.push_back(tmprvec);
             }
             assert(result < 100);
-#ifdef DEBUG
-            {
-                cout << "DEBUG_CGR:" << "result= " << result 
-                    << ";CGR-" << s << "->" << d << endl;
-            }
-#endif /* ifdef DEBUG */
+            cout << "DEBUG_CGR:"  << " ================== end this DoRoute() =========\n"
+                << "result= " << result 
+                << ";CGR-" << s << "->" << d << endl;
             return result;
         }
 
@@ -211,7 +221,6 @@ namespace ns3 {
             debug_cgr_this_exhausted_search_not_found_ = false;
             debug_node_access_count_map_ = map<int, int>();
             debug_recurrsive_path_stack_ = stack<int>();
-            debug_abort_count_ = 0;
             excluded_vec_ = vector<int>();
             proximate_vec_ = vector<int>();
             excluded_vec_.push_back(node_id_transmit_from_);
@@ -222,8 +231,24 @@ namespace ns3 {
                     excluded_vec_.push_back(nei);
                 }
             }
-            forfeit_time_ = NS3DTNBIT_HYPOTHETIC_INFINITE_DELAY;
-            best_delivery_time_ = 0;
+            forfeit_time_ = expired_time_;
+            best_delivery_time_ = local_time_;
+        }
+
+        void CGRRouting::DebugPrintXmit(vector<CgrXmit>& cgr_xmit_vec_ref, int cur_d) {
+            {
+                cout << "DEBUG_CGR:" << " ====== for node-" << cur_d 
+                    << " xmit is :" << endl;
+                for (auto m : cgr_xmit_vec_ref) {
+                    cout << "\n m ==> m.contact_start_time_ =" << m.contact_start_time_
+                        << ";m.contact_end_time_=" << m.contact_end_time_
+                        << ";m.node_id_of_from_=" << m.node_id_of_from_
+                        << ";m.node_id_of_to_=" << m.node_id_of_to_
+                        << ";m.data_transmission_rate_=" << m.data_transmission_rate_ << endl;
+                }
+                cout << "end of DEBUG_CGR" << endl;
+            }
+
         }
 
         /*
@@ -236,8 +261,7 @@ namespace ns3 {
          *  ---- best_delivery_time_
          * */
         void CGRRouting::ContactReviewProcedure(node_id_t cur_d, dtn_time_t cur_deadline) {
-#ifdef DEBUG
-            {
+            if (cgr_debug_flag_1) {
                 debug_recurrsive_path_stack_.push(cur_d);
                 debug_crp_enter_count_ += 1;
                 debug_recurrsive_deep_ += 1;
@@ -248,9 +272,7 @@ namespace ns3 {
                     debug_node_access_count_map_[cur_d] = 1;
                 }
                 if (debug_recurrsive_deep_ > 7) {
-                    debug_abort_count_ += 1;
-                    //if (debug_abort_count_ > 200 || debug_crp_enter_count_ > 600000) {
-                    if (debug_crp_enter_count_ > 60000) {
+                    if (debug_crp_enter_count_ > 5000) {
                         cout << "Error: this CGR is missing in deep recurrsive, we would print all access map and abort, enter this function " << debug_crp_enter_count_ << " times, check readme.md to know what happens" << endl;
                         while (!debug_recurrsive_path_stack_.empty()) {
                             cout << "node-" << debug_recurrsive_path_stack_.top() << " to" << endl;
@@ -264,138 +286,159 @@ namespace ns3 {
                         abort();
                     }
                 }
+            }
+            if (cgr_find_one_proximate_) {debug_recurrsive_deep_ -= 1; return;}
+            auto previous_of_forfeit_time = forfeit_time_;
+            forfeit_time_ = cur_deadline;
+            auto previous_of_best_delivery_time = best_delivery_time_;
+            // 1.
+            excluded_vec_.push_back(cur_d);
+            const Adob& ref_adob = RoutingMethodInterface::get_adob();
+            auto cgr_xmit_vec = ref_adob.node_id2cgr_xmit_vec_map_[cur_d];
+            if (cgr_debug_flag_0) {
+                if (debug_cgr_that_seqno_ == 2114 || debug_cgr_that_seqno_ == 2113) {
+                    cout << "temporary debug use, deleteme when you don't need me, xmitdebug-seqno-" << debug_cgr_that_seqno_ << __FILE__ << ":" <<  __LINE__ 
+                        << ";own_id_ = " << own_id_ 
+                        << ";local_time_ = " << local_time_ 
+                        << endl;
+                    DebugPrintXmit(cgr_xmit_vec, cur_d);
                 }
-#endif
-                if (cgr_find_one_proximate_) {debug_recurrsive_deep_ -= 1; return;}
-                auto previous_of_forfeit_time = forfeit_time_;
-                auto previous_of_best_delivery_time = best_delivery_time_;
-                // 1.
-                excluded_vec_.push_back(cur_d);
-                const Adob& ref_adob = RoutingMethodInterface::get_adob();
-                auto cgr_xmit_vec = ref_adob.node_id2cgr_xmit_vec_map_[cur_d];
-#ifdef DEBUG
-                {
-                    cout << "DEBUG_CGR:" << " ====== for node-" << cur_d 
-                        << " ====== debug_recurrsive_deep_ =" << debug_recurrsive_deep_ << endl;
-                    /*
-                       for (auto m : cgr_xmit_vec) {
-                       cout << "\n m ==> m.contact_start_time_ =" << m.contact_start_time_
-                       << ";m.contact_end_time_=" << m.contact_end_time_
-                       << ";m.node_id_of_from_=" << m.node_id_of_from_
-                       << ";m.node_id_of_to_=" << m.node_id_of_to_
-                       << ";m.data_transmission_rate_=" << m.data_transmission_rate_ << endl;
-                       }
-                       cout << "end of DEBUG_CGR" << endl;
-                       */
-                }
-#endif
-                // 2.
-                for (auto m : cgr_xmit_vec) {
-                    dtn_time_t last_moment_of_xmit = min(cur_deadline, m.contact_end_time_);
-                    bool last_moment_check = local_time_ < last_moment_of_xmit && m.contact_start_time_ < last_moment_of_xmit;
-                    if (!last_moment_check) {
-                        // 2.A
-                        continue;
-                    } else {
-                        // 2.B
-                        node_id_t s = m.node_id_of_from_;
-                        bool s_is_local_node_with_own_id = s == own_id_;
-                        if (s_is_local_node_with_own_id) {
-#ifdef DEBUG
+            }
+            // 2.
+            for (auto m : cgr_xmit_vec) {
+                dtn_time_t last_moment_of_xmit = min(cur_deadline, m.contact_end_time_);
+                bool last_moment_check = local_time_ < last_moment_of_xmit && m.contact_start_time_ < last_moment_of_xmit;
+                if (!last_moment_check) {
+                    // 2.A
+                    continue;
+                } else {
+                    // 2.B
+                    node_id_t s = m.node_id_of_from_;
+                    bool s_is_local_node_with_own_id = s == own_id_;
+                    if (s_is_local_node_with_own_id) {
+                        if (cgr_debug_flag_1) {
+
                             cout << "DEBUG_CGR:" << "in tail of recursive, and, if we find a proximate one,"
                                 << "we would break the search, because the CGR algorithm in RFC would force to find all possible pathes,"
                                 << " which is too big for some senario, mainly the group moving senario " << endl;
-#endif
-                            // 2.B.1
-                            // compute ECC for this bundle
-                            int ecc = ecc_;
-                            assert(m.contact_end_time_ - m.contact_start_time_ < 5000);
-                            // not accurate, just a hypothetic value,  TODO
-                            int ecc_of_other_bundles = 1800;
-                            int residual_capacity = ((m.contact_end_time_ - m.contact_start_time_) * m.data_transmission_rate_) - ecc_of_other_bundles;
-                            assert(residual_capacity > 1000);
-                            auto found_1 = find(proximate_vec_.begin(), proximate_vec_.end(), cur_d);
-                            bool d_is_in_proximate = found_1 != proximate_vec_.end();
-                            if (residual_capacity < ecc) {
-                                continue;
-                            } else if (d_is_in_proximate) {
-                                continue;
-                            } else {
-                                if (m.contact_end_time_ < forfeit_time_) {
-                                    forfeit_time_ = m.contact_end_time_;
-                                } 
-                                if (m.contact_start_time_ > best_delivery_time_) {
-                                    best_delivery_time_ = m.contact_start_time_;
-                                }
-                                proximate_vec_.push_back(cur_d);
-                                cgr_find_one_proximate_ = true;
-                                // Note the computed forfeit time and best-case delivery time in the event that the bundle is queued for transmission to D. TODO
-                            }
+                        }
+                        // 2.B.1
+                        // compute ECC for this bundle
+                        int ecc = ecc_;
+                        assert(m.contact_end_time_ - m.contact_start_time_ < 5000);
+                        // not accurate, just a hypothetic value,  TODO
+                        int ecc_of_other_bundles = 1800;
+                        int residual_capacity = ((m.contact_end_time_ - m.contact_start_time_) * m.data_transmission_rate_) - ecc_of_other_bundles;
+                        assert(residual_capacity > 1000);
+                        auto found_1 = find(proximate_vec_.begin(), proximate_vec_.end(), cur_d);
+                        bool d_is_in_proximate = found_1 != proximate_vec_.end();
+                        if (residual_capacity < ecc) {
+                            continue;
+                        } else if (d_is_in_proximate) {
+                            continue;
                         } else {
-#ifdef DEBUG
-                            cout << "DEBUG_CGR:" << "in body of recursive" << endl;
-#endif
-                            // 2.B.2
-                            auto found_2 = find(excluded_vec_.begin(), excluded_vec_.end(), s);
-                            bool s_is_in_excluded = found_2 != excluded_vec_.end();
-                            if (s_is_in_excluded) {
-                                continue;
-                            } else {
-                                if (m.contact_end_time_ < forfeit_time_) {
-                                    forfeit_time_ = m.contact_end_time_;
-                                }
-                                if (m.contact_start_time_ > best_delivery_time_) {
-                                    best_delivery_time_ = m.contact_start_time_;
-                                }
-                                double forwarding_latency = (2 * ecc_) / m.data_transmission_rate_;     // it's a very small account
-                                double next_deadline = min((m.contact_end_time_ - forwarding_latency), cur_deadline);
-                                ContactReviewProcedure(s, next_deadline);
+                            if (m.contact_end_time_ < forfeit_time_) {
+                                forfeit_time_ = m.contact_end_time_;
+                            } 
+                            if (m.contact_start_time_ > best_delivery_time_) {
+                                best_delivery_time_ = m.contact_start_time_;
                             }
+                            proximate_vec_.push_back(cur_d);
+                            // this line won't let searching end imediately, still would find the available one in this branch.
+                            cgr_find_one_proximate_ = true;
+                            // Note the computed forfeit time and best-case delivery time in the event that the bundle is queued for transmission to D.
+                            final_forfeit_time_.push_back(forfeit_time_);
+                            final_best_delivery_time_.push_back(best_delivery_time_);
+                            if (cgr_debug_flag_0) {
+                                if (debug_cgr_that_seqno_ == 2114 || debug_cgr_that_seqno_ == 2113) {
+                                    cout << "\n\nthis is the xmit we finally choose" 
+                                        << ";forfeit_time_ = " << forfeit_time_
+                                        << ";cur_deadline = " << cur_deadline << endl;
+                                    cout << "\n m ==> m.contact_start_time_ =" << m.contact_start_time_
+                                        << ";m.contact_end_time_=" << m.contact_end_time_
+                                        << ";m.node_id_of_from_=" << m.node_id_of_from_
+                                        << ";m.node_id_of_to_=" << m.node_id_of_to_
+                                        << ";m.data_transmission_rate_=" << m.data_transmission_rate_ << endl;
+                                }
+                            }
+                        }
+                    } else {
+                        if (cgr_debug_flag_1) {
+                            cout << "DEBUG_CGR:" << "in body of recursive" << endl;
+                        }
+                        // 2.B.2
+                        auto found_2 = find(excluded_vec_.begin(), excluded_vec_.end(), s);
+                        bool s_is_in_excluded = found_2 != excluded_vec_.end();
+                        if (s_is_in_excluded) {
+                            continue;
+                        } else {
+                            if (m.contact_end_time_ < forfeit_time_) {
+                                forfeit_time_ = m.contact_end_time_;
+                            }
+                            if (m.contact_start_time_ > best_delivery_time_) {
+                                best_delivery_time_ = m.contact_start_time_;
+                            }
+                            double forwarding_latency = (2 * ecc_) / m.data_transmission_rate_;     // it's a very small account
+                            double next_deadline = min((m.contact_end_time_ - forwarding_latency), cur_deadline);
+                            if (cgr_debug_flag_0) {
+
+                                if (debug_cgr_that_seqno_ == 2114 || debug_cgr_that_seqno_ == 2113) {
+                                    cout << "\n\nthis is the xmit we enter" 
+                                        << ";cur_deadline = " << cur_deadline
+                                        << ";forfeit_time_ = " << forfeit_time_
+                                        << ";next_deadline = " << next_deadline << endl;
+                                    cout << "\n m ==> m.contact_start_time_ =" << m.contact_start_time_
+                                        << ";m.contact_end_time_=" << m.contact_end_time_
+                                        << ";m.node_id_of_from_=" << m.node_id_of_from_
+                                        << ";m.node_id_of_to_=" << m.node_id_of_to_
+                                        << ";m.data_transmission_rate_=" << m.data_transmission_rate_ << endl;
+                                }
+                            }
+                            ContactReviewProcedure(s, next_deadline);
                         }
                     }
                 }
-                // 3.
-                excluded_vec_.erase(find(excluded_vec_.begin(), excluded_vec_.end(), cur_d));
-                forfeit_time_ = previous_of_forfeit_time;
-                best_delivery_time_ = previous_of_best_delivery_time;
-#ifdef DEBUG
-                {
-                    debug_recurrsive_deep_ -= 1;
-                    debug_recurrsive_path_stack_.pop();
-                }
-#endif
             }
+            // 3.
+            excluded_vec_.erase(find(excluded_vec_.begin(), excluded_vec_.end(), cur_d));
+            forfeit_time_ = previous_of_forfeit_time;
+            best_delivery_time_ = previous_of_best_delivery_time;
+            if (cgr_debug_flag_1) {
+                debug_recurrsive_deep_ -= 1;
+                debug_recurrsive_path_stack_.pop();
+            }
+        }
 
-            int CGRRouting::ForwardDecision() {
-                if (proximate_vec_.empty()) {
-                    std::cout << "Warn: cgr can't find one !" << __LINE__ << endl;
-                    debug_cgr_this_exhausted_search_not_found_ = true;
-                    return -1;
+        int CGRRouting::ForwardDecision() {
+            if (proximate_vec_.empty()) {
+                std::cout << "Warn: cgr can't find one !" << __LINE__ << endl;
+                debug_cgr_this_exhausted_search_not_found_ = true;
+                return -1;
+            } else {
+                if (proximate_vec_.size() >= 2) {
+                    std::cout << "Warn : we need to implement a network configuration matter decision!" << endl;
+                    return NCMDecision();
+                } else if (proximate_vec_.size() == 1) {
+                    return 0;
                 } else {
-                    if (proximate_vec_.size() >= 2) {
-                        std::cout << "Warn : we need to implement a network configuration matter decision!" << endl;
-                        return NCMDecision();
-                    } else if (proximate_vec_.size() == 1) {
-                        return proximate_vec_[0];
-                    } else {
-                        std::cout << "Error:" << __LINE__ << endl;
-                        std::abort();
-                    }
+                    std::cout << "Error:" << __FILE__ <<  __LINE__ << endl;
+                    std::abort();
                 }
             }
+        }
 
-            // implement this! TODO
-            // check https://tools.ietf.org/html/draft-burleigh-dtnrg-cgr-00 -------- 2.5.3
-            int CGRRouting::NCMDecision() {
-                return proximate_vec_[0];
-            }
+        // implement this! TODO
+        // check https://tools.ietf.org/html/draft-burleigh-dtnrg-cgr-00 -------- 2.5.3
+        int CGRRouting::NCMDecision() {
+            return 0;
+        }
 
-            EmptyRouting::EmptyRouting(DtnApp& dp) : RoutingMethodInterface(dp) {}
+        EmptyRouting::EmptyRouting(DtnApp& dp) : RoutingMethodInterface(dp) {}
 
-            int EmptyRouting::DoRoute(int s, int d)  {
-                std::cout << " empty method, using spray and wait won't arrive here!" << std::endl;
-                std::abort();
-            }
-        } /* ns3dtnbit */ 
+        int EmptyRouting::DoRoute(int s, int d)  {
+            std::cout << " empty method, using spray and wait won't arrive here!" << std::endl;
+            std::abort();
+        }
+    } /* ns3dtnbit */ 
 
-    } /* ns3  */ 
+} /* ns3  */ 

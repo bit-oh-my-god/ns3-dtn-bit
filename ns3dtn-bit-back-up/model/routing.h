@@ -34,6 +34,8 @@ namespace ns3 {
             void GetInfo(node_id_t destination_id, node_id_t from_id, std::vector<node_id_t> vec_of_current_neighbor, node_id_t own_id, dtn_time_t expired_time, int bundle_size, int networkconfigurationflag, map<int, vector<int>> id2cur_exclude_vec_of_id, dtn_time_t local_time, dtn_seqno_t that_seqno) override;
 
             private :
+            void DebugPrintXmit(vector<CgrXmit>& cgr_xmit_vec_ref, int cur_d);
+
             void Init();
 
             /*
@@ -55,6 +57,8 @@ namespace ns3 {
 
             private :
             node_id_t destination_id_; 
+            bool cgr_debug_flag_0 = false;
+            bool cgr_debug_flag_1 = false;
             node_id_t own_id_;
             dtn_time_t local_time_;
             bool cgr_find_one_proximate_;
@@ -62,12 +66,11 @@ namespace ns3 {
             int debug_crp_enter_count_;
             map<int, int> debug_node_access_count_map_;
             stack<int> debug_recurrsive_path_stack_;
-            int debug_abort_count_;
             bool debug_cgr_this_exhausted_search_not_found_;
             dtn_seqno_t debug_cgr_that_seqno_;
             vector<pair<node_id_t, dtn_seqno_t>> exhausted_search_target_list_;
-            //           dest  /   forfeit time  / best delivery time / hop / seqno
-            vector<tuple<node_id_t, dtn_time_t, dtn_time_t, node_id_t, dtn_seqno_t>> routed_table_;
+            //           dest  /   forfeit time  / best delivery time / hop / seqno / routing time
+            vector<tuple<node_id_t, dtn_time_t, dtn_time_t, node_id_t, dtn_seqno_t, dtn_time_t>> routed_table_;
             int ecc_;
             int networkconfigurationflag_;
             node_id_t node_id_transmit_from_;
@@ -78,6 +81,8 @@ namespace ns3 {
             map<int, vector<node_id_t>> id_of_d2cur_excluded_vec_of_d_;
             dtn_time_t forfeit_time_;
             dtn_time_t best_delivery_time_;
+            vector<dtn_time_t> final_forfeit_time_;
+            vector<dtn_time_t> final_best_delivery_time_;
         };
 
         class TegRouting : public RoutingMethodInterface {

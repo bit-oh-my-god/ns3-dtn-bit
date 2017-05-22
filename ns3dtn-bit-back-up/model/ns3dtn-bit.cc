@@ -619,7 +619,8 @@ namespace ns3 {
             tmp_p_pkt->RemoveHeader(bp_header);
             if (bp_header.get_payload_size() == tmp_p_pkt->GetSize()) {
                 // this bundle is non-fragment or a already reassemble one
-                if (IsDuplicatedDetail(bp_header)) {
+                bool is_dupli_check = IsDuplicatedDetail(bp_header);
+                if (is_dupli_check) {
                     // check Duplicates here
                     NS_LOG_WARN(LogPrefixMacro << "WARN: receive a duplicated bundle, this may happen");
                     return;
@@ -631,6 +632,7 @@ namespace ns3 {
                     daemon_consume_bundle_queue_->Enqueue(Packet2Queueit(tmp_p_pkt));
                     // this is a heuristic method to make hello, to let others know it already has it.
                     daemon_bundle_queue_->Enqueue(Packet2Queueit(tmp_p_pkt));
+                    before_receive_seqno_set_.insert(bp_header.get_source_seqno());
                 } else {
                     if (bp_header.get_bundle_type() == BundleType::BundlePacket) {
                         NS_LOG_DEBUG(LogPrefixMacro << "NOTE:BundleTrace:good! one bundle recept, it's one hop! bp_header=" << bp_header);
@@ -639,6 +641,7 @@ namespace ns3 {
                     }
                     tmp_p_pkt->AddHeader(bp_header);
                     daemon_bundle_queue_->Enqueue(Packet2Queueit(tmp_p_pkt));
+                    before_receive_seqno_set_.insert(bp_header.get_source_seqno());
                 }
             } else {
                 NS_LOG_ERROR(LogPrefixMacro << "fragment not solved!");
@@ -825,7 +828,7 @@ namespace ns3 {
                 dtn_seqno_t that_seqno = ref_bp_header.get_source_seqno();
                 routing_assister_.p_rm_in_->GetInfo(-1, -1, vector<int>(), -1, -1.1, -1, -1, id2cur_exclude_vec_of_id_, -1.1, that_seqno);
                 result = routing_assister_.RouteIt(node_->GetId(), d);
-                if (result == node_->GetId()) {NS_LOG_WARN(LogPrefixMacro << "WARN: routing self! s=" << s << ";d=" << d << ";result = " << result);}
+                if (result == node_->GetId()) {NS_LOG_WARN(LogPrefixMacro << "WARN: routing self!  " << ";d=" << d << ";result = " << result);}
                 NS_LOG_DEBUG(LogPrefixMacro << "NOTE: after YouRouting method, result =" << result << "source =" << s << "dest=" << d);
                 if (result != -1) {
                     indx = nodeid2neighborvecindex(neighbor_info_vec_, result);
@@ -895,8 +898,7 @@ namespace ns3 {
                     }
                 }
                 int own_id = node_->GetId();
-                dtn_time_t expired_time = ref_bp_header.get_src_time_stamp().GetSeconds();
-                expired_time += NS3DTNBIT_HYPOTHETIC_BUNDLE_EXPIRED_TIME;
+                dtn_time_t expired_time = ref_bp_header.get_src_time_stamp().GetSeconds() + NS3DTNBIT_HYPOTHETIC_BUNDLE_EXPIRED_TIME;
                 int bundle_size = ref_bp_header.get_payload_size();
                 int flag = 0;
 
@@ -1332,6 +1334,10 @@ namespace ns3 {
                 }
             } else {
                 NS_LOG_ERROR(LogPrefixMacro << "ERROR: can't be, must wrong");
+            }
+            auto found_in_before_receive_seqno_set = before_receive_seqno_set_.find(bp_header.get_source_seqno());
+            if (found_in_before_receive_seqno_set != before_receive_seqno_set_.end()) {
+                return true;
             }
             return false;
             NS_LOG_LOGIC(LogPrefixMacro << "Out of " << "IsDuplicatedDetail()");

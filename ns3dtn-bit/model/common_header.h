@@ -36,7 +36,8 @@
 #include <boost/graph/graphviz.hpp>
 
 
-#define DEBUG
+#define CGR_DEBUG_1
+#define CGR_DEBUG_0
 #define NS3DTNBIT_PORT_NUMBER 1234
 #define NS3DTNBIT_HELLO_PORT_NUMBER 80
 #define NS3DTNBIT_MAC_MTU 2296  

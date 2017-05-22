@@ -335,6 +335,7 @@ namespace ns3 {
                 // for SprayGoodDetail
                 std::map<dtn_seqno_t, int> spray_map_;
                 map<dtn_seqno_t, int> seqno2fromid_map_;
+                set<dtn_seqno_t> before_receive_seqno_set_;
                 map<int, vector<int>> id2cur_exclude_vec_of_id_;    //used for CGR
                 int anti_send_count_ = 0;
                 int ack_send_count_ = 0;

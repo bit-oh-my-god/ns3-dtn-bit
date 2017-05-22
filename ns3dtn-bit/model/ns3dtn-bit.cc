@@ -898,8 +898,7 @@ namespace ns3 {
                     }
                 }
                 int own_id = node_->GetId();
-                dtn_time_t expired_time = ref_bp_header.get_src_time_stamp().GetSeconds();
-                expired_time += NS3DTNBIT_HYPOTHETIC_BUNDLE_EXPIRED_TIME;
+                dtn_time_t expired_time = ref_bp_header.get_src_time_stamp().GetSeconds() + NS3DTNBIT_HYPOTHETIC_BUNDLE_EXPIRED_TIME;
                 int bundle_size = ref_bp_header.get_payload_size();
                 int flag = 0;
 
