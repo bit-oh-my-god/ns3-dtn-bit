@@ -155,7 +155,7 @@ namespace ns3 {
             auto founds = find(exhausted_search_target_list_.begin(), exhausted_search_target_list_.end(), make_pair(d, debug_cgr_that_seqno_));
             auto foundsx = find_if(routed_table_.begin(), routed_table_.end(), [this](tuple<node_id_t, dtn_time_t, dtn_time_t, node_id_t, dtn_seqno_t> rtele){
                     if (get<0>(rtele) == destination_id_ 
-                            && (get<4>(rtele) == debug_cgr_that_seqno_ ||  local_time_ - get<5>(rtele < (NS3DTNBIT_BUFFER_CHECK_INTERVAL * 9)) 
+                            && (get<4>(rtele) == debug_cgr_that_seqno_ ||  local_time_ - get<5>(rtele) < (NS3DTNBIT_BUFFER_CHECK_INTERVAL * 9)) 
                             && (get<1>(rtele) - (NS3DTNBIT_BUFFER_CHECK_INTERVAL * 4)) > local_time_) {
                         return true;
                     } else {
