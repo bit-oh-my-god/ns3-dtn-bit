@@ -325,7 +325,10 @@ namespace ns3 {
             }
             // 2.
             for (auto& m : cgr_xmit_vec_ref) {
-                bool last_moment_check = local_time_ < cur_deadline && m.contact_start_time_ < cur_deadline && local_time_ < m.contact_end_time_;
+                bool last_moment_check = 
+                    local_time_ < cur_deadline - NS3DTNBIT_BUFFER_CHECK_INTERVAL * 2
+                    && m.contact_start_time_ + NS3DTNBIT_BUFFER_CHECK_INTERVAL * 2< cur_deadline 
+                    && local_time_ < m.contact_end_time_ - NS3DTNBIT_BUFFER_CHECK_INTERVAL * 2;
                 dtn_time_t local_forfeit_time = cur_deadline;
                 dtn_time_t local_best_delivery_time = best_deli;
                 if (!last_moment_check) {
@@ -399,7 +402,7 @@ namespace ns3 {
                                 local_best_delivery_time = m.contact_start_time_;
                             }
                             double forwarding_latency = (2 * ecc_) / m.data_transmission_rate_;     // it's a very small account
-                            double next_deadline = min((m.contact_end_time_ - forwarding_latency), cur_deadline);
+                            double next_deadline = min((m.contact_end_time_ - forwarding_latency), cur_deadline) - NS3DTNBIT_BUFFER_CHECK_INTERVAL;
                             if (next_deadline < local_time_) {
                                 cout << "CGR_DEBUG:" << __LINE__
                                     << ";m.contact_end_time_=" << m.contact_end_time_
