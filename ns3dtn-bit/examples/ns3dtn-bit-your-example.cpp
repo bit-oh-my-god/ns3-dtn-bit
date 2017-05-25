@@ -20,8 +20,8 @@ namespace ns3 {
                     node_number_ = 12;           // change me!!
                     simulation_duration_ = 802;     // change me!!
                     print_wifi_log_ = false;
-                    //ex_rm_ = DtnApp::RoutingMethod::Other;
-                    ex_rm_ = DtnApp::RoutingMethod::TimeExpanded;
+                    ex_rm_ = DtnApp::RoutingMethod::Other;
+                    //ex_rm_ = DtnApp::RoutingMethod::TimeExpanded;
                     //ex_rm_ = DtnApp::RoutingMethod::CGR;
                     //ex_rm_ = DtnApp::RoutingMethod::SprayAndWait;
 
@@ -29,7 +29,7 @@ namespace ns3 {
                         // following code is just handy used, not essential, you can do it yourself
                         // 
                 // FIXME 
-                const int schdule_for_n_trace = 11; // one schdule_for_n_trace correspond to one node moving and one task plan
+                const int schdule_for_n_trace = 10; // one schdule_for_n_trace correspond to one node moving and one task plan
                         if (schdule_for_n_trace == 3) {
                             node_number_ = 5;
                             simulation_duration_ = 802;
@@ -189,7 +189,7 @@ namespace ns3 {
                             handy_func_x(200, 4, 1, 4);
                         };
                 // FIXME 
-                const int schdule_for_n_trace = 11; // one schdule_for_n_trace correspond to one node moving and one task plan
+                const int schdule_for_n_trace = 10; // one schdule_for_n_trace correspond to one node moving and one task plan
                         if (schdule_for_n_trace == 3) {
                             // line
                             // this three would be transmit to node-1, and carry to node-2
