@@ -7,7 +7,7 @@ Read this [paper](http://www.sciencedirect.com/science/article/pii/S009457651200
 # Begin
 
 * Install
-  1. download source code, ns-allineone-3.26 under this directory
+  1. download source code, ns-allineone-3.26 under this directory and make sure you can use ns3
   2. cp /box/ns2mobilityhelper.cc to /ns-allineone-3.26/src/mobility, this file was modified and would help us parse 3d-motion
   3. modify your current_trace_file.tcl by your hand or by [bonnmotion](#A) or by ./create_trace_file.sh
   4. set node_number and simulation_time to jupytor and your-example.cc
