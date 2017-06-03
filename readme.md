@@ -50,7 +50,7 @@ so I have the setdest in my "/usr/bin/setdest"
 
 * ns3 example-interface
 This file defines how your scenario structed, how your network configured.
-Make sure that simulation time should be minus or equal to time of teg.txt.
+Make sure that simulation time should be equal to time of teg.txt.
 Note that time-interval of two lines of teg.txt is exactly ** one second ** in real time, which was descripted in current_trace_file.tcl
 
 * ns3 and ns3-dtn-bit module <a name="C"></a>
