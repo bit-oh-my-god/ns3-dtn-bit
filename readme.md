@@ -62,7 +62,8 @@ Also, you can find image in /box
 * jupyter and python-matplotlib <a name="B"></a>
 There is one tutorial that I think may help you [ref](https://www.youtube.com/watch?v=HW29067qVWk&t=1568s).
 This combo is used to make graph and paper, check /box/jupyter.
-If you want use jupyter yourself, install it on org-web, in China, you may not be able to download 0.5 G big file from the web, so it's highly recommanded to install miniconda first, and install full-package from miniconda, that's the way I did.
+If you want use jupyter yourself, install it on org-web, in China, you may not be able to download 0.5 G big file from the web, 
+so it's highly recommanded to install [miniconda](http://cs205uiuc.github.io/guidebook/resources/python-miniconda.html) first, and install full-package from miniconda, that's the way I did.
 
 * Acknoeledgement Annoucement, How does this model works.
 
