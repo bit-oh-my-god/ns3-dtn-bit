@@ -1,0 +1,239 @@
+#!/home/dtn-012345/miniconda3/bin/python
+
+import re
+import sys
+import math
+import inspect
+import os
+from math import sqrt
+import numpy as np
+from scipy import integrate
+from matplotlib import pyplot as plt
+import matplotlib as mpl
+from matplotlib import cm
+import pandas as pd
+from mpl_toolkits.mplot3d import Axes3D
+import jsonpickle
+from matplotlib.colors import cnames
+from matplotlib import animation
+
+#========================================
+# this is a file used to generate current_trace_file
+#=========================================
+
+#=========================
+# @brief this func would generate the corner of a 'n' edge polygon with core of 'core', long axis(length in 'X' axis), short axis, vertical_line, angle between long axis and xz surface
+# @return a vector of points of polygon
+def generate_points_of_polygon_with_core_size_slope(n, core, size_long, size_width, vertical_line, angle_of_long_axis_and_xz_surface, is_clock_wise, root_1_or_2) :
+    #assert n
+    #assert core
+    #assert size_long
+    #assert size_width
+    #assert vertical_line
+    print("nothing")
+    def solve_it_on_plain(n, size_long, size_width) :
+        assert(n > 6)
+        angle = []
+        result = []
+        pi2 = math.pi / 2.0
+        for i in range(1, n, 1) :
+            one = 2 * math.pi / float(n)
+            angle.append(i * one)
+        print(angle)
+        for angle_i in angle :
+            if (abs(angle_i - pi2) < g_precise or abs(angle_i - (pi2 * 3)) < g_precise) :
+                if (angle_i - pi2 < g_precise) :
+                    result.append([0, size_width, 0])
+                else :
+                    result.append([0, (-1.0) * size_width, 0])
+            else :
+                # solve the equation x^2 / a^2 + y^2 / b^2 = 1
+                tan = math.tan(angle_i)
+                factor1 = (1.0 / pow(size_long, 2)) + (pow(tan, 2) / pow(size_width, 2))
+                x = 0
+                if (angle_i < pi2 or angle_i > pi2 * 3) :
+                    x = sqrt(1.0 / factor1)
+                else :
+                    x = -1.0 * sqrt(1.0 / factor1)
+                y = x * tan
+                result.append([x, y, 0])
+        return result
+    def get_changing_vector_x(vertical_line, angle_of_long_axis_and_xz_surface, root_1_or_2) :
+        #assert
+        if (angle_of_long_axis_and_xz_surface == math.pi / 4.0 or angle_of_long_axis_and_xz_surface == math.pi / 4.0 * 3) :
+            print("Error:bad01")
+            sys.exit()
+        a = 0
+        b = 0
+        c = 0
+        # solve these three equation
+        # 1. a^2 + b^2 + c^2 = 1
+        # 2. b / sqrt(a^2 + c^2) = tan(angle)
+        # 3. a * vertical_line[0] + b * vertical_line[1] + c * vertical_line[2] = 0
+        b = sqrt(1.0 - 1.0 / (1.0 + math.tan(angle_of_long_axis_and_xz_surface))) # the positive root
+        tmp01 = 0
+        if (math.tan(angle_of_long_axis_and_xz_surface) > 0) :
+            tmp01 = 1
+        else :
+            tmp01 = -1
+        b = b * tmp01 # the real root, note the sign in second equation
+        factor1 = (b * b) / (math.tan(angle_of_long_axis_and_xz_surface) * math.tan(angle_of_long_axis_and_xz_surface)) # f1 = b^2 / tan(anxz)^2
+        factor2 = b * vertical_line[1]  # f2 = b * vertical_line[1]
+        factor3 = ((vertical_line[2] * vertical_line[2]) / (vertical_line[0] * vertical_line[0])) + 1 # f3 = v[2]^2 / v[0]^2 + 1
+        factor4 = (2 * factor2 * vertical_line[2]) / (vertical_line[0] * vertical_line[0]) # f4 = 2 * f2 * v[2] / v[0]^2
+        factor5 = ((factor2 * factor2) / (vertical_line[0] * vertical_line[0])) - factor1 # f5 = f2^2 / v[0]^2 - f1
+        factor6 = ((factor4 * factor4) - (4.0 * factor3 * factor5)) / (4.0 * factor3 * factor3) # solve this : f3 * c^2 + f4 * c + f5 = 0
+        c1 = sqrt(factor6) - (factor4 / (2.0 * factor3))
+        c2 = ((-1.0) * sqrt(factor6)) - (factor4 / (2 * factor3))
+        a1 = (b * vertical_line[1] + c1 * vertical_line[2]) / ((-1.0) * vertical_line[0])
+        a2 = (b * vertical_line[1] + c2 * vertical_line[2]) / ((-1.0) * vertical_line[0])
+        if (root_1_or_2 == 1) :
+            #assert(a1 * a1 + b * b + c1 * c1 == 1)
+            return [a1, b, c1]
+        elif (root_1_or_2 == 2) :
+            #assert(a2 * a2 + b * b + c2 * c2 == 1)
+            return [a2, b, c2]
+        else :
+            print("specify which root you want, root_1_or_2 can only have two value :'1, 2'")
+            sys.exit()
+    def get_changing_vector_y(z, x) :
+        print("nothing")
+        return np.cross(z, x)
+    def map_one_to_slope(point, core, changing_vec) :
+        assert(len(point) == 3)
+        assert(len(core) == 3)
+        assert(len(changing_vec) == 3)
+        cv = np.matrix(changing_vec)
+        p = np.matrix(point)
+        mr = p * cv
+        mrr = mr.tolist()
+        #print(mrr)
+        assert(len(mrr[0]) == 3)
+        return [mrr[0][0] + core[0], mrr[0][1] + core[1], mrr[0][2] + core[2]]
+    # first get the solution on plain, then map it to slope surface
+    plain = solve_it_on_plain(n, size_long, size_width)
+    print("plain:")
+    print(plain)
+    assert(len(plain[0]) == 3)
+    cvx = get_changing_vector_x(vertical_line, angle_of_long_axis_and_xz_surface, root_1_or_2)
+    cvy = get_changing_vector_y(vertical_line, cvx)
+    cvall = [cvx, cvy, vertical_line]
+    ret = list(map(lambda x : map_one_to_slope(x, core, cvall), plain)) 
+    print("changing_vec")
+    print(cvall)
+    print("slope:")
+    print(ret)
+    if (is_clock_wise) :
+        if (len(ret) > 0) :
+            return ret
+        else :
+            sys.exit()
+    else :
+        print("not implement, yet, so lazy.")
+        sys.exit()
+#========================
+# string pattern
+def ori_pattern(vec, n) :
+    #$node_(0) set X_ 2000.34380287508
+    #$node_(0) set Y_ 2096.060359323184
+    #$node_(0) set Z_ 2147.98298672775
+    try :
+        assert(vec[0] > 0)
+        assert(vec[1] > 0)
+        assert(vec[2] > 0)
+    except :
+        print("Error: pos must be positive, or later process (translate into teg.txt )would fail.")
+        sys.exit()
+    return "$node_(" + str(n) + ") set X_ " + str(vec[0]) + "\n"\
+            "$node_(" + str(n) + ") set Y_ " + str(vec[1]) + "\n"\
+            "$node_(" + str(n) + ") set Z_ " + str(vec[2]) + "\n"
+def move_pattern(vec, n, t, s) :
+    #$ns_ at 20.0 "$node_(6) setdest 6671.810294658997 6693.12828510459 5891.62337050674 45.63736346097109"
+    return "$ns_ at " + str(t) + " \"" + "$node_("+ str(n) + ") setdest " +\
+            str(vec[0]) + " " +\
+            str(vec[1]) + " " +\
+            str(vec[2]) + " " +\
+            str(s) + "\"\n"
+#=======================
+# math
+def dist_of(vec1, vec2) :
+    return sqrt(pow(vec1[0] - vec2[0], 2) + pow(vec1[1] - vec2[1], 2) + pow(vec1[2] - vec2[2], 2))
+
+#========================
+# @brief this func would write a sequence of trace into file with vector of points and speed and time, start at vector_of_points[m]
+# @input
+def write_trace_into_file(vector_of_points, speed, alltime, m, n) :
+    #assert
+    print("nothing")
+    assert(len(vector_of_points) > 3)
+    cur = m
+    cur_t = 0
+    g_trace_file.write(ori_pattern(vector_of_points[cur], n))
+    while cur_t < alltime :
+        to = (cur + 1) % len(vector_of_points)
+        g_trace_file.write(move_pattern(vector_of_points[to], n, cur_t, speed))
+        assert(cur != to)
+        add_v = float(dist_of(vector_of_points[cur], vector_of_points[to])) / float(speed)
+        if (add_v > 0) :
+            cur = to
+            cur_t += add_v
+        else :
+            print("Error:add_v <= 0")
+            print(vector_of_points)
+            print(add_v)
+            print(dist_of(vector_of_points[cur], vector_of_points[to]))
+            sys.exit()
+    print("good, write into file")
+
+#==============
+# @brief print in figure 2d
+def print_in_2d(vector_of_points) :
+    xx = []
+    yy = []
+    for v in vector_of_points :
+        xx.append(v[0])
+        yy.append(v[1])
+    plt.plot(xx, yy, 'ro')
+    #plt.axis([0, 6, 0, 20])
+    plt.show()
+
+#==============
+# @brief print in figure 3d
+def print_in_3d(vector_of_points) :
+    xx = []
+    yy = []
+    zz = []
+    for v in vector_of_points :
+        xx.append(v[0])
+        yy.append(v[1])
+        zz.append(v[2])
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(xx, yy, zz)
+    plt.show()
+#===================
+# @brief a main function
+def test_functon() :
+    print("python version:" + sys.version)
+    global g_precise, g_trace_file 
+    g_precise = 0.000001
+    x_current_path = os.getcwd()
+    g_trace_file = open(x_current_path + "/current_trace/current_trace_generate_one", "w")
+    #==
+    #
+    assert(dist_of([1000,1000,1000],[2000,1000,1000]) == 1000)
+    #g_trace_file.write(ori_pattern([2000.343, 2096.061, 2147.982], 0))
+    #g_trace_file.write(move_pattern([1212.1, 1212.4, 444.2], 6, 20.0, 35.6))
+    #node1_trace = generate_points_of_polygon_with_core_size_slope(24, [4000,4000,4000], 1500.0, 2800.0, [0.1,0.1,1], (math.pi / 6.0), True, 1)
+    #node2_trace = [[0,0,0], [1000, 1000, 1000], [2000, 2000, 1000], [1000, 2000, 3000]]
+    node3_trace = generate_points_of_polygon_with_core_size_slope(24, [8000,8000,8000], 1500.0, 2800.0, [1.1,2.0,0.5], (math.pi / 6.0), True, 1)
+    node4_trace = [[1000, 1000, 1000], [2000, 1000, 1000], [2000, 2000, 1000], [1000, 2000, 1000]]
+    print_in_3d(node3_trace)
+    write_trace_into_file(node3_trace, 100, 2000, 0, 0)
+    print_in_3d(node4_trace)
+    write_trace_into_file(node4_trace, 100, 2000, 0, 1)
+    #write_trace_into_file(node2_trace, 100, 1000, 0, 1)
+    g_trace_file.close()
+
+#======================
+test_functon()

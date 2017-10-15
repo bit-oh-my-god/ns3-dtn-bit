@@ -788,7 +788,7 @@ namespace ns3 {
 
         /*
          * Aim : A RoutingMethod switcher
-         * TODO Don't repeat yourself
+         * TODO to refine it, Don't repeat yourself
          * define your decision method
          */
         bool DtnApp::FindTheNeighborThisBPHeaderTo(BPHeader& ref_bp_header, int& return_index_of_neighbor_you_dedicate, DtnApp::CheckState check_state) {
@@ -804,6 +804,8 @@ namespace ns3 {
             }
             vector<int> available = BPHeaderBasedSendDecisionDetail(ref_bp_header, check_state);
             if (available.empty()) {NS_LOG_INFO(LogPrefixMacro << "available is none, return false"); return false;}
+
+            // check the routing method and invoke by their way
             if (routing_assister_.IsSet() && routing_assister_.get_rm() == RoutingMethod::SprayAndWait) {
                 NS_LOG_INFO(LogPrefixMacro << "RoutingMethod is SprayAndWait");
                 auto ip_d = ref_bp_header.get_destination_ip();
@@ -813,11 +815,14 @@ namespace ns3 {
                     int v = ref_bp_header.get_source_seqno();
                     auto found = spray_map_.find(v);
                     if (found != spray_map_.end()) {
-                        spray_map_[v] -= 2;
+                        spray_map_[v] -= NS3DTNBIT_SPRAY_ARGUMENT - 1;
                     }
                 }
                 if (available.size() > 0) {
-                    return_index_of_neighbor_you_dedicate = available[0];
+                    // TODO get a random 'A' 
+                    std::srand(std::time(0)); // use current time as seed for random generator
+                    int random_A = std::rand();
+                    return_index_of_neighbor_you_dedicate = available[random_A % available.size()];
                     return true;
                 } else {
                     return false;
@@ -1552,7 +1557,7 @@ namespace ns3 {
                 // because TimeExpanded routing is accurate, so, every node need only one transmition for every bundle-pkt
                 p_bp_header->set_spray(1);
             } else if (routing_assister_.get_rm() == RoutingMethod::SprayAndWait) {
-                p_bp_header->set_spray(3);
+                p_bp_header->set_spray(NS3DTNBIT_SPRAY_ARGUMENT);
             } else if (routing_assister_.get_rm() == RoutingMethod::Other) {
                 p_bp_header->set_spray(1);
             } else if (routing_assister_.get_rm() == RoutingMethod::CGR) {

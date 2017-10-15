@@ -15,6 +15,7 @@
 #include <vector>
 #include <cstdio>
 #include <memory>
+#include <cstdlib>
 #include <type_traits>
 #include <sstream>
 #include <memory>
@@ -44,13 +45,14 @@
 #define NS3DTNBIT_CGR_OPTIMAL_OPTION true
 #define NS3DTNBIT_MAX_TRANSMISSION_TIMES 4
 #define NS3DTNBIT_HYPOTHETIC_TRANS_SIZE_FRAGMENT_MAX 1472
-#define NS3DTNBIT_SPRAY_PHASE_TWO_TIME 111.0
+#define NS3DTNBIT_SPRAY_PHASE_TWO_TIME 311.0
+#define NS3DTNBIT_SPRAY_ARGUMENT 3
 #define NS3DTNBIT_HELLO_BUNDLE_SIZE_MAX (2400 * sizeof(int))
 #define NS3DTNBIT_HYPOTHETIC_NEIGHBOR_BAQ_NUMBER_MAX 400
-#define NS3DTNBIT_BUFFER_CHECK_INTERVAL 0.3     // want more throghput? make this small, not hello interval should be small than this
-#define NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME 0.2
-#define NS3DTNBIT_HELLO_MAX_PKTS 1600
-#define NS3DTNBIT_RETRANSMISSION_INTERVAL 1.7
+#define NS3DTNBIT_BUFFER_CHECK_INTERVAL 0.1     // want more throghput? make this small, not hello interval should be small than this
+#define NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME 0.07
+#define NS3DTNBIT_HELLO_MAX_PKTS 1900
+#define NS3DTNBIT_RETRANSMISSION_INTERVAL 1.1
 #define NS3DTNBIT_MAX_RETRANSMISSION 3
 #define NS3DTNBIT_HYPOTHETIC_BUNDLE_EXPIRED_TIME 650.0
 #define NS3DTNBIT_ANTIPACKET_EXPIRED_TIME 650.0

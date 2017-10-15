@@ -3,19 +3,9 @@
 ROOT_PATH=${PWD}
 LOG_FILE=${ROOT_PATH}/box/dtn_simulation_result/dtnrunninglog.txt
 DATE=`date +%Y-%m-%d`
-DIR1="./ns3dtn-bit-back-up"
 CXX="g++"
 CXXFLAGS="-Wno-error"
 
-if [ -d $DIR1 ]; then
-    echo -e "\033[96m back up!"
-    rm -rf ${DIR1}
-    cp -rf ./ns3dtn-bit ${DIR1}
-else
-    echo -e "\033[96m no back_up, copy one"
-    cp -rf ./ns3dtn-bit ${DIR1}
-    return
-fi
 echo -e "\033[96m ***************** symbol link *********"
 # configure and run test
 cd ./ns-allinone-3.26/ns-3.26/src
@@ -43,20 +33,22 @@ echo -e "***************** gonna to test ***************"
 # this command can show you all the 'test-project name'
 #./test.py --list
 #./test.py --example=ns3dtn-bit-example --text=results.txt --verbose 2>&1 >${LOG_FILE}
-#./test.py --example=ns3dtn-bit-your-example --verbose 2>&1 >${LOG_FILE}
-./test.py --example=ns3dtn-bit-your-example --verbose >${LOG_FILE}
+./test.py --example=ns3dtn-bit-your-example --verbose 2>&1 >${LOG_FILE}
+#./test.py --example=ns3dtn-bit-your-example -verbose >${LOG_FILE}
+#cd ${ROOT_PATH}
+#./ns-allinone-3.26/ns-3.26/build/src/ns3dtn-bit/examples/ns3.26-ns3dtn-bit-your-example-debug 0 >${LOG_FILE}
 
-while true; do
-    echo -e "\033[96m do you want gdb ? \033[0m"
-    read -p "yes or no, most of time you should say no :" yn
-    case $yn in
-        [Yy]* ) break;;
-        [Nn]* ) exit 0;break;;
-        * ) echo "Please answer y or n.";;
-    esac
-done
-
-./waf --command-template="gdb %s" --run ns3dtn-bit-your-example
+#while true; do
+#    echo -e "\033[96m do you want gdb ? \033[0m"
+#    read -p "yes or no, most of time you should say no :" yn
+#    case $yn in
+#        [Yy]* ) break;;
+#        [Nn]* ) exit 0;break;;
+#        * ) echo "Please answer y or n.";;
+#    esac
+#done
+#
+#./waf --command-template="gdb %s" --run ns3dtn-bit-your-example 
 # debug with gdb https://www.nsnam.org/wiki/HOWTO_use_gdb_to_debug_program_errors
 #./waf --command-template="gdb %s" --run third
 #(gdb) run --help > output.txt 2>&1

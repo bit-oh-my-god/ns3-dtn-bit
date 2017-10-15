@@ -15,7 +15,9 @@ namespace ns3 {
                 DtnExampleInterface(DtnExampleInterface&& rh);
                 virtual void ConfigureEx(int argc, char** argv);
                 virtual void RunEx();
+                virtual void SetSchduleN(size_t n) = 0;
                 virtual void ReportEx(std::ostream& os) = 0;
+                void set_th(size_t th);
                 DtnExampleInterface& operator=(DtnExampleInterface&& rh) {
                     if (this!=&rh) {
                         // do some TODO
@@ -24,6 +26,7 @@ namespace ns3 {
                 }
 
             protected :
+                size_t th_ = 0;
                 uint32_t random_seed_;
                 uint32_t node_number_;
                 dtn_time_t simulation_duration_;

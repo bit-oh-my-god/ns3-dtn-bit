@@ -10,6 +10,10 @@ namespace ns3 {
 
         }
 
+        void DtnExampleInterface::set_th(size_t th) {
+            th_ = th;
+        }
+
         /*
          * 
          * copy from ns3 wifi-adhoc example
@@ -204,7 +208,7 @@ namespace ns3 {
             ss1 << root_path << "/box/current_trace/teg.txt";
             teg_file_ = ss1.str();
             std::stringstream ss2;
-            ss2 << root_path << "/box/dtn_simulation_result/dtn_trace_log.txt";
+            ss2 << root_path << "/box/dtn_simulation_result/dtn_trace_log_" << th_ <<".txt";
             log_file_ = ss2.str();
             //trace_file_ = "/home/dtn-012345/ns-3_build/ns3-dtn-bit/box/current_trace/current_trace.tcl";
             //teg_file_ = "/home/dtn-012345/ns-3_build/ns3-dtn-bit/box/current_trace/teg.txt";
