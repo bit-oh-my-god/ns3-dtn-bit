@@ -1,16 +1,18 @@
 # Preface
 This Project is a newbie-readable simulation for dtn on ns-3 environment, easy to use for research purples, supporting customed routing definition and scenario definition.
+
 This project is highly inspirited by [Lakkakorpi](https://www.netlab.tkk.fi/tutkimus/dtn/ns/)
+
 Read this teg-[paper](https://smartech.gatech.edu/bitstream/handle/1853/6492/GIT-CC-04-07.pdf?sequence=1&isAllowed=y) if you want know about TEG(time-expanded graph)
+
 Read this [paper](http://www.sciencedirect.com/science/article/pii/S0094576512000288) [link](https://tools.ietf.org/html/draft-burleigh-dtnrg-cgr-00) if you want know about CGR
 
 # Begin
 
-* Install
-  1. download source code
-  2. cp /box/ns2mobilityhelper.cc to /ns-allineone-3.26/src/mobility, this file was modified and would help us parse 3d-motion
-  3. modify your current_trace_file.tcl by your hand or by [bonnmotion](#A) or by ./create_trace_file.sh
-  4. set node_number and simulation_time to jupytor and your-example.cc
+  1. Download source code, ns-allineone-3.26 under this directory and make sure you can use[ns3](Installhttps://www.nsnam.org/releases/)
+  2. Copy ./box/ns2mobilityhelper.cc to ./ns-allineone-3.26/src/mobility, this file was modified and would help us parse 3d-motion
+  3. Modify your current_trace_file.tcl by your hand or by [bonnmotion](#A) or by ./create_trace_file.sh
+  4. Set node_number and simulation_time to jupytor and your-example.cc
         
             // in jupytor PreparSimulation
             T_max = 802                #change me !!!!!!!
@@ -20,14 +22,14 @@ Read this [paper](http://www.sciencedirect.com/science/article/pii/S009457651200
             node_number_ = 5;           // change me!!
             simulation_duration_ = 802;         // change me!!!
 
-  5. run jupytor notebook animation to generate teg.txt, see [jupytor](#B)
-  6. modify ns3dtn-bit-your-example.cc to set simulation settings, see [example-interface](#C)
-  7. run ./build.sh to run simulation
-  8. run jupytor notebook to parse result to json file, and visualize your simulation result
+  5. Run jupytor notebook animation to generate teg.txt, see [jupytor](#B)
+  6. Modify ns3dtn-bit-your-example.cc to set simulation settings, see [example-interface](#C)
+  7. Make sure you have your **teg.txt** **current_trace_file** **yourexample.cpp** done. Then run ./build.sh to run simulation
+  8. Run jupytor notebook to parse result to json file, and visualize your simulation result
 
             // in jupyter ParseSimulationResult
             x_jsonfile_name = 'please_change_this_name'   // change me!!!
-  9. run jupytor other script to get compare between scenario
+  9. Run jupytor MakeGraph script to get compare between scenario
 
 # structure of this project
 
@@ -48,20 +50,20 @@ so I have the setdest in my "/usr/bin/setdest"
 
 * ns3 example-interface
 This file defines how your scenario structed, how your network configured.
-Make sure that simulation time should be minus or equal to time of teg.txt.
+Make sure that simulation time should be equal to time of teg.txt.
 Note that time-interval of two lines of teg.txt is exactly ** one second ** in real time, which was descripted in current_trace_file.tcl
 
 * ns3 and ns3-dtn-bit module <a name="C"></a>
-The main method for DtnApp is 1. checkbuffer - totransmit 2. receive bundle 3. sendhello - receive hello
+The main methods for DtnApp are 1. checkbuffer - totransmit 2. receive bundle 3. sendhello - receive hello.
 We modify ns2-mobility-helper.cc, to support 3d-parse for us. you can find it at /box
 Also, you can find image in /box
 ![ns3-dtn-bit module image][image01]
 
 * jupyter and python-matplotlib <a name="B"></a>
-there is one tutorial that I think may help you [ref](https://www.youtube.com/watch?v=HW29067qVWk&t=1568s)
-This combo is used to make graph and paper, check /box/jupyter
-if you want use jupyter yourself, install it on org-web, in China, you may not be able to download 0.5 G big file from the web.
-you would need to install miniconda first, and install full-package from miniconda, that's the way I did.
+There is one tutorial that I think may help you [ref](https://www.youtube.com/watch?v=HW29067qVWk&t=1568s).
+This combo is used to make graph and paper, check /box/jupyter.
+If you want use jupyter yourself, install it on org-web, in China, you may not be able to download 0.5 G big file from the web, 
+so it's highly recommanded to install [miniconda](http://cs205uiuc.github.io/guidebook/resources/python-miniconda.html) first, and install full-package from miniconda, that's the way I did.
 
 * Acknoeledgement Annoucement, How does this model works.
 
