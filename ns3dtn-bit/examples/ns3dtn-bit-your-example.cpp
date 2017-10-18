@@ -161,6 +161,7 @@ int main(int argc, char *argv[]) {
 
     if (argc == 1) {
         std::cout << "please give some argument to identify the example number you want to run. If you were building this, let it go and remenber to run the excutable with argument." << std::endl;
+        std::abort();
     } else {
         auto ss = std::string(argv[1]);
         sss = std::string(argv[2]);

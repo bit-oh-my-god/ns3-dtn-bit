@@ -33,8 +33,8 @@ echo -e "***************** gonna to test ***************"
 # this command can show you all the 'test-project name'
 #./test.py --list
 #./test.py --example=ns3dtn-bit-example --text=results.txt --verbose 2>&1 >${LOG_FILE}
-./test.py --example=ns3dtn-bit-your-example --verbose 2>&1 >${LOG_FILE}
-#./test.py --example=ns3dtn-bit-your-example -verbose >${LOG_FILE}
+#./test.py --example=ns3dtn-bit-your-example --verbose 2>&1 >${LOG_FILE}
+./test.py --example=ns3dtn-bit-your-example --verbose
 #cd ${ROOT_PATH}
 #./ns-allinone-3.26/ns-3.26/build/src/ns3dtn-bit/examples/ns3.26-ns3dtn-bit-your-example-debug 0 >${LOG_FILE}
 
