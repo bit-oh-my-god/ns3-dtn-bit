@@ -37,6 +37,7 @@ namespace ns3 {
                     }
 
                     {
+                        // assign node_number_ and simulation_duration_ by different schdule_for_n_trace
                         if (schdule_for_n_trace == 6) {
                             node_number_ = 20;
                             simulation_duration_ = 802;
@@ -71,6 +72,9 @@ namespace ns3 {
                                 || schdule_for_n_trace == 123    ) { // cycle-traffic23
                             node_number_ = 12;
                             simulation_duration_ = 802;
+                        } else if (schdule_for_n_trace == 201) { // tx1-traffic1
+                            node_number_ = 7;
+                            simulation_duration_ = 1000;
                         } else {
                             cout << "warn: " << __FILE__ << __LINE__ << endl;
                             std::abort();
@@ -93,20 +97,24 @@ namespace ns3 {
                     };
                     */
                     auto handy_func_x = [sch_size, this](double sch_time, int dstnode, int i, int times) {
-                        for (double rt = sch_time; rt < sch_time + times; rt += 1.0) {
+                        for (double rt = sch_time; rt < sch_time + times * 10; rt += 10.0) {
                             std::cout << "bundle send schedule: time=" << rt << ";node-" << i << "send " << sch_size << " size-pkt to node-" << dstnode << std::endl;
                             this->apps_[i]->ScheduleTx(Seconds(rt), dstnode, sch_size);
                         }
                     };
                     {
+                        // Schedule differently by schdule_for_n_trace
                         // following code is just handy used, not essential, you can do it yourself
-                        auto handy_func_x1 = [this, handy_func_x]() {
-                            handy_func_x(300, 0, 10, 4);
-                        };
                         if (schdule_for_n_trace > 100) {
-                            auto amount = schdule_for_n_trace - 100;
+                            auto amount = schdule_for_n_trace % 100;
                             while (amount --) {
-                                handy_func_x1();
+                                if (schdule_for_n_trace > 200) {
+                                    handy_func_x(100 + amount * 30, 5, 6, 4);
+                                } else if (schdule_for_n_trace > 100 && schdule_for_n_trace < 200) {
+                                    handy_func_x(200 + amount * 20, 0, 10, 4);
+                                } else {
+                                    abort();
+                                }
                             }
                         } else if (schdule_for_n_trace == 6) {
                             // moving group

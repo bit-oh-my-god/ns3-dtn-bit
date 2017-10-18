@@ -21,10 +21,15 @@ from matplotlib import animation
 # this is a file used to generate current_trace_file
 #=========================================
 
+#========================
+# @brief refine a vector to length 1
+def refine_mode_one(v) :
+    dis = sqrt(dist_of(v, [0.0,0.0,0.0]))
+    return [v[0] / dis, v[1] / dis, v[2] / dis]
 #=========================
 # @brief this func would generate the corner of a 'n' edge polygon with core of 'core', long axis(length in 'X' axis), short axis, vertical_line, angle between long axis and xz surface
 # @return a vector of points of polygon
-def generate_points_of_polygon_with_core_size_slope(n, core, size_long, size_width, vertical_line, angle_of_long_axis_and_xz_surface, is_clock_wise, root_1_or_2) :
+def generate_points_of_polygon_with_core_size_slope(n, core, size_long, size_width, vertical_line, angle_of_long_axis_and_xz_surface, is_clock_wise, root_1_or_2, axis_x) :
     #assert n
     #assert core
     #assert size_long
@@ -88,10 +93,10 @@ def generate_points_of_polygon_with_core_size_slope(n, core, size_long, size_wid
         a1 = (b * vertical_line[1] + c1 * vertical_line[2]) / ((-1.0) * vertical_line[0])
         a2 = (b * vertical_line[1] + c2 * vertical_line[2]) / ((-1.0) * vertical_line[0])
         if (root_1_or_2 == 1) :
-            #assert(a1 * a1 + b * b + c1 * c1 == 1)
+            #assert(a1 * a1 + b * b + c1 * c1 == 1) # assert would fail, it's a bug? TODO
             return [a1, b, c1]
         elif (root_1_or_2 == 2) :
-            #assert(a2 * a2 + b * b + c2 * c2 == 1)
+            #assert(a1 * a1 + b * b + c1 * c1 == 1) # assert would fail, it's a bug? TODO
             return [a2, b, c2]
         else :
             print("specify which root you want, root_1_or_2 can only have two value :'1, 2'")
@@ -115,9 +120,16 @@ def generate_points_of_polygon_with_core_size_slope(n, core, size_long, size_wid
     print("plain:")
     print(plain)
     assert(len(plain[0]) == 3)
-    cvx = get_changing_vector_x(vertical_line, angle_of_long_axis_and_xz_surface, root_1_or_2)
-    cvy = get_changing_vector_y(vertical_line, cvx)
-    cvall = [cvx, cvy, vertical_line]
+    cvx = []
+    if (axis_x == []) :
+        cvx = get_changing_vector_x(vertical_line, angle_of_long_axis_and_xz_surface, root_1_or_2)
+    else :
+        cvx = axis_x
+        assert((cvx[0] * vertical_line[0] + cvx[1] * vertical_line[1] + cvx[2] * vertical_line[2]) == 0)
+    cvz = refine_mode_one(vertical_line)
+    cvx = refine_mode_one(cvx)
+    cvy = get_changing_vector_y(cvz, cvx)
+    cvall = [cvx, cvy, cvz]
     ret = list(map(lambda x : map_one_to_slope(x, core, cvall), plain)) 
     print("changing_vec")
     print(cvall)
@@ -165,8 +177,8 @@ def dist_of(vec1, vec2) :
 def write_trace_into_file(vector_of_points, speed, alltime, m, n) :
     #assert
     print("nothing")
-    assert(len(vector_of_points) > 3)
-    cur = m
+    #assert(len(vector_of_points) > 3)
+    cur = (m) % len(vector_of_points)
     cur_t = 0
     g_trace_file.write(ori_pattern(vector_of_points[cur], n))
     while cur_t < alltime :
@@ -211,6 +223,22 @@ def print_in_3d(vector_of_points) :
     ax = fig.add_subplot(111, projection='3d')
     ax.scatter(xx, yy, zz)
     plt.show()
+
+#==============
+# @brief print in figure 3d group
+def print_in_3d_group(v_of_v_p) :
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    for vector_of_points in v_of_v_p :
+        xx = []
+        yy = []
+        zz = []
+        for v in vector_of_points :
+            xx.append(v[0])
+            yy.append(v[1])
+            zz.append(v[2])
+        ax.scatter(xx, yy, zz)
+    plt.show()
 #===================
 # @brief a main function
 def test_functon() :
@@ -222,17 +250,21 @@ def test_functon() :
     #==
     #
     assert(dist_of([1000,1000,1000],[2000,1000,1000]) == 1000)
-    #g_trace_file.write(ori_pattern([2000.343, 2096.061, 2147.982], 0))
-    #g_trace_file.write(move_pattern([1212.1, 1212.4, 444.2], 6, 20.0, 35.6))
-    #node1_trace = generate_points_of_polygon_with_core_size_slope(24, [4000,4000,4000], 1500.0, 2800.0, [0.1,0.1,1], (math.pi / 6.0), True, 1)
-    #node2_trace = [[0,0,0], [1000, 1000, 1000], [2000, 2000, 1000], [1000, 2000, 3000]]
-    node3_trace = generate_points_of_polygon_with_core_size_slope(24, [8000,8000,8000], 1500.0, 2800.0, [1.1,2.0,0.5], (math.pi / 6.0), True, 1)
-    node4_trace = [[1000, 1000, 1000], [2000, 1000, 1000], [2000, 2000, 1000], [1000, 2000, 1000]]
-    print_in_3d(node3_trace)
-    write_trace_into_file(node3_trace, 100, 2000, 0, 0)
-    print_in_3d(node4_trace)
-    write_trace_into_file(node4_trace, 100, 2000, 0, 1)
-    #write_trace_into_file(node2_trace, 100, 1000, 0, 1)
+    node1_trace = generate_points_of_polygon_with_core_size_slope(24, [8000,8000,8000], 1500.0, 2800.0, [0.1,0.2,0.9], (math.pi / 6.0), True, 1, [])
+    node2_trace = generate_points_of_polygon_with_core_size_slope(24, [8000,8000,8500], 1500.0, 2800.0, [0.1,0.2,0.9], (math.pi / 6.0), True, 1, [])
+    node3_trace = generate_points_of_polygon_with_core_size_slope(24, [8000,8000,7500], 1500.0, 2800.0, [0.1,0.2,0.9], (math.pi / 6.0), True, 1, [])
+    node4_trace = generate_points_of_polygon_with_core_size_slope(24, [10000,10000,6500], 310.0, 180.0, [0.1,2,0.2], (math.pi / 12.0), True, 1, [0, -1, 10])
+    node5_trace = generate_points_of_polygon_with_core_size_slope(24, [6000,6000,9500], 310.0, 180.0, [0.1,2,0.2], (math.pi / 12.0), True, 1, [0, -1, 10])
+    node6_trace = [[6000, 6000, 11000], [6000,6000,10200]]
+    node7_trace = [[10000, 10000, 5400], [10000,10000,6000]]
+    print_in_3d_group([node1_trace,node2_trace,node3_trace,node4_trace, node5_trace, node6_trace, node7_trace])
+    write_trace_into_file(node1_trace, 100, 1000, 0, 0)
+    write_trace_into_file(node2_trace, 30, 1000, 9, 1)
+    write_trace_into_file(node3_trace, 30, 1000, 15, 2)
+    write_trace_into_file(node4_trace, 20, 1000, 5, 3)
+    write_trace_into_file(node5_trace, 20, 1000, 5, 4)
+    write_trace_into_file(node6_trace, 10, 1000, 5, 5)
+    write_trace_into_file(node7_trace, 10, 1000, 5, 6)
     g_trace_file.close()
 
 #======================

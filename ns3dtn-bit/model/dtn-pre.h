@@ -5,6 +5,7 @@
 #include "dtn_package.h"
 #include "common_header.h"
 
+// this file declare some class that was instantialized before DTN sim runs
 
 namespace ns3 {
 

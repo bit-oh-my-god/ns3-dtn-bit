@@ -14,21 +14,42 @@ function one_loop_func {
 }
 
 #TEG CGR Spray Heuristic
+function cycle_func {
+    for x_running_argument_0 in {101..114..1}
+    do 
+        x_running_argument_1="TEG"
+        x_parse_argument=loop_cycle-$x_running_argument_0\swith\sx_running_argument_1
+        one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+        x_running_argument_1="CGR"
+        x_parse_argument=loop_cycle-$x_running_argument_0\swith\sx_running_argument_1
+        one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+        x_running_argument_1="Spray"
+        x_parse_argument=loop_cycle-$x_running_argument_0\swith\sx_running_argument_1
+        one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+        x_running_argument_1="Heuristic"
+        x_parse_argument=loop_cycle-$x_running_argument_0\swith\sx_running_argument_1
+        one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+    done
+}
 
-for x_running_argument_0 in {101..114..1}
-do 
-    x_running_argument_1="TEG"
-    x_parse_argument=loop-$x_running_argument_0\swith\sx_running_argument_1
-    one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
-    x_running_argument_1="CGR"
-    x_parse_argument=loop-$x_running_argument_0\swith\sx_running_argument_1
-    one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
-    x_running_argument_1="Spray"
-    x_parse_argument=loop-$x_running_argument_0\swith\sx_running_argument_1
-    one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
-    x_running_argument_1="Heuristic"
-    x_parse_argument=loop-$x_running_argument_0\swith\sx_running_argument_1
-    one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
-done
+function tx1_func {
+    echo "in tx1_func"
+    for x_running_argument_0 in {201..201..1}
+    do
+        echo "one"
+        x_running_argument_1="TEG"
+        x_parse_argument=tx1-$x_running_argument_0\swith\sx_running_argument_1
+        one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+    #    x_running_argument_1="CGR"
+    #    x_parse_argument=tx1-$x_running_argument_0\swith\sx_running_argument_1
+    #    one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+    #    x_running_argument_1="Spray"
+    #    x_parse_argument=tx1-$x_running_argument_0\swith\sx_running_argument_1
+    #    one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+    #    x_running_argument_1="Heuristic"
+    #    x_parse_argument=tx1-$x_running_argument_0\swith\sx_running_argument_1
+    #    one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+    done
+}
 
-#one_loop_func 101 "Spray" "loop-test\swith\sSpray"
+tx1_func
