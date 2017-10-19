@@ -59,7 +59,11 @@ namespace ns3 {
         }
 
 #define LogPrefixMacro LogPrefix()<<"line-"<<__LINE__<<"]"
+    } /* ns3dtnbit */ 
+} /*ns3*/
 
+namespace ns3 {
+    namespace ns3dtnbit {
         /*
          * Aim : inherited method
          * */
@@ -105,6 +109,11 @@ namespace ns3 {
             daemon_baq_pkts_max_ = 13753;
         }
 
+    } /* ns3dtnbit */ 
+} /*ns3*/
+
+namespace ns3 {
+    namespace ns3dtnbit {
         /* refine 
          * Aim : send hello
          */
@@ -670,6 +679,7 @@ namespace ns3 {
             }
             NS_LOG_LOGIC(LogPrefixMacro << "Out of " << "TransmitSessionFailCheck()");
         }
+
         /* refine 
          * Aim : handle send bundle stuff after checkbuffer
          * Detail :

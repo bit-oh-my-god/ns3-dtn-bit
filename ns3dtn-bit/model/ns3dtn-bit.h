@@ -115,7 +115,6 @@ namespace ns3 {
                         // some thing for CGR
                         // end of CGR
                 };
-
                 DtnAppRoutingAssister routing_assister_;
 
                 /*
@@ -135,6 +134,13 @@ namespace ns3 {
                 };
                 DtnAppTransmitSessionAssister transmit_assister_;
 
+                /*
+                 * 
+                 * */
+                class DtnpAppNeighborKeeper {
+
+                };
+                DtnpAppNeighborKeeper neighbor_keeper_;
             public :
 
                 bool InvokeMeWhenInstallAppToSetupDtnAppRoutingAssister(RoutingMethod rm, vector<Adob>& adob) {
