@@ -35,7 +35,7 @@
 #include <boost/range/adaptors.hpp>
 #include <boost/graph/bellman_ford_shortest_paths.hpp>
 #include <boost/graph/graphviz.hpp>
-
+#include "ns3/config.txt"    // a string , contains the PWD, update every time invoke build.sh
 
 #define CGR_DEBUG_1
 #define CGR_DEBUG_0
@@ -49,7 +49,7 @@
 #define NS3DTNBIT_SPRAY_ARGUMENT 3
 #define NS3DTNBIT_HELLO_BUNDLE_SIZE_MAX (2400 * sizeof(int))
 #define NS3DTNBIT_HYPOTHETIC_NEIGHBOR_BAQ_NUMBER_MAX 400
-#define NS3DTNBIT_BUFFER_CHECK_INTERVAL 0.1     // want more throghput? make this small, not hello interval should be small than this
+#define NS3DTNBIT_BUFFER_CHECK_INTERVAL 0.1     // want more throghput? make this small, hello interval must be small than this
 #define NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME 0.07
 #define NS3DTNBIT_HELLO_MAX_PKTS 1900
 #define NS3DTNBIT_RETRANSMISSION_INTERVAL 1.1

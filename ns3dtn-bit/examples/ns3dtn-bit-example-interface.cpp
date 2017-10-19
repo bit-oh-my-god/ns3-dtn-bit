@@ -1,8 +1,6 @@
 /*
 */
 #include "ns3dtn-bit-example-interface.h"
-#include "../config.txt"
-extern std::string root_path;
 
 namespace ns3 {
     namespace ns3dtnbit {

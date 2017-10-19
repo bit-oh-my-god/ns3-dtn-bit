@@ -15,7 +15,7 @@ def build(bld):
         'model/dtn-pre.cpp',
         'helper/ns3dtn-bit-helper.cc',
         'model/routing.cpp',
-        'examples/ns3dtn-bit-example-interface.cpp'
+        'examples/ns3dtn-bit-example-interface.cpp',
         ]
     module.cxxflags = ['-std=c++11', '-Wall', '-Wextra', '-fpermissive', '-w']
     #module.cxxflags = ['-std=c++11', '-Wall']
@@ -28,7 +28,8 @@ def build(bld):
         'model/ns3dtn-bit.h',
         'helper/ns3dtn-bit-helper.h',
         'examples/ns3dtn-bit-example-interface.h',
-        'model/routing.h'
+        'model/routing.h',
+        'config.txt'
         ]
 
     if bld.env.ENABLE_EXAMPLES:
