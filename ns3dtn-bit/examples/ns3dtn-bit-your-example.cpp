@@ -47,6 +47,7 @@ namespace ns3 {
                         } else if (schdule_for_n_trace == 8) {
                             node_number_ = 15;
                             simulation_duration_ = 802;
+                                                                 // name in graph
                         } else if (schdule_for_n_trace == 101    // cycle-traffic1
                                 || schdule_for_n_trace == 102    // cycle-traffic2
                                 || schdule_for_n_trace == 103    // cycle-traffic3
@@ -70,9 +71,12 @@ namespace ns3 {
                                 || schdule_for_n_trace == 121    // cycle-traffic21
                                 || schdule_for_n_trace == 122    // cycle-traffic22
                                 || schdule_for_n_trace == 123    ) { // cycle-traffic23
+                                    // 0100_current_trace.tcl + 0100_teg.txt
                             node_number_ = 12;
                             simulation_duration_ = 802;
+                                                                 // name in graph
                         } else if (schdule_for_n_trace == 201) { // tx1-traffic1
+                                    // 0200_current_trace.tcl + 0200_teg.txt
                             node_number_ = 7;
                             simulation_duration_ = 1000;
                         } else {
@@ -148,8 +152,8 @@ namespace ns3 {
 
 int main(int argc, char *argv[]) {
     //!important LOG control
-    LogComponentEnable ("DtnRunningLog",LOG_LEVEL_DEBUG);
-    //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_INFO);
+    //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_DEBUG);
+    LogComponentEnable ("DtnRunningLog",LOG_LEVEL_INFO);
     //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_LOGIC);
     //LogComponentEnable ("DtnRunningLog", LOG_LEVEL_ALL);
     LogComponentEnable("Ns2MobilityHelper", LOG_LEVEL_INFO);

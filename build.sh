@@ -61,7 +61,7 @@ function build_func {
     #./test.py --list
     #./test.py --example=ns3dtn-bit-example --text=results.txt --verbose 2>&1 >${LOG_FILE}
     #./test.py --example=ns3dtn-bit-your-example --verbose 2>&1 >${LOG_FILE}
-    ./test.py --example=ns3dtn-bit-your-example --verbose
+    #./test.py --example=ns3dtn-bit-your-example --verbose
 }
 
 #=== =====================

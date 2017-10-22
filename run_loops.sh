@@ -34,7 +34,7 @@ function cycle_func {
 
 function tx1_func {
     echo "in tx1_func"
-    for x_running_argument_0 in {201..201..1}
+    for x_running_argument_0 in {101..101..1}
     do
         echo "one"
         x_running_argument_1="TEG"
