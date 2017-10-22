@@ -681,6 +681,7 @@ namespace ns3 {
         }
 
         void DtnApp::ReceiveHello(Ptr<Socket> socket_handle) {
+            std::abort();
             NS_LOG_INFO("FUCK04");
             neighbor_keeper_.ReceiveHelloDetail(socket_handle);
             ReactMain("ReceiveHello");

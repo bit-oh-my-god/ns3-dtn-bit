@@ -29,7 +29,7 @@ namespace ns3 {
             YansWifiChannelHelper wifiChannel;
             wifiChannel.SetPropagationDelay("ns3::ConstantSpeedPropagationDelayModel");
             wifiChannel.AddPropagationLoss ("ns3::RangePropagationLossModel",  
-                    "MaxRange", DoubleValue (4000.0));
+                    "MaxRange", DoubleValue (NS3DTNBIT_MAXRANGE));
             wifiPhy.SetChannel(wifiChannel.Create());
             WifiMacHelper wifiMac;
 
