@@ -72,19 +72,18 @@ namespace ns3 {
                 };
 
                 struct NeighborInfo {
-                    InetSocketAddress info_address_;
                     uint32_t info_daemon_baq_available_bytes_;
                     dtn_time_t info_last_seen_time_;
                     bool IsLastSeen();
-                    NeighborInfo() : info_address_(InetSocketAddress("10.0.0.55", 88)) { }
-                    NeighborInfo(InetSocketAddress addr, uint32_t i, dtn_time_t t) : info_address_(addr), info_daemon_baq_available_bytes_(i), info_last_seen_time_(t) {}
+                    NeighborInfo() { }
+                    NeighborInfo(uint32_t i, dtn_time_t t) : info_daemon_baq_available_bytes_(i), info_last_seen_time_(t) {}
                 };
 
                 DtnApp () : routing_assister_(*this), transmit_assister_(*this), neighbor_keeper_(*this), lower_layer_adaptor_(*this) {}
                 virtual ~DtnApp () { }
                 void SetUp(Ptr<Node> node);
                 void ScheduleTx(Time tNext, uint32_t dstnode, uint32_t payload_size);
-                void ToSendHello(Ptr<Socket> socket, double simulation_end_time);
+                void ToSendHello(Ptr<Socket> socket, double simulation_end_time, Time first_time);
                 void ReceiveBundle(Ptr<Socket> socket);
                 void ReceiveHello(Ptr<Socket> socket_handle);
                 void Report(std::ostream& os);

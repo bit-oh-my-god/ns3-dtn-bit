@@ -130,6 +130,8 @@ namespace ns3 {
                 nodes_container_.Get(i)->AddApplication(apps_[i]);
                 apps_[i]->SetStartTime(Seconds(0.0));
                 apps_[i]->SetStopTime(Seconds(5000.0));
+                // bundle send socket would be set inside DtnApp
+                // 
                 // set bundle receive socket
                 Ptr<Socket> dst = Socket::CreateSocket(nodes_container_.Get(i), udp_tid);
                 char dststring[1024]="";
@@ -142,7 +144,8 @@ namespace ns3 {
                 InetSocketAddress remote(Ipv4Address("255.255.255.255"), NS3DTNBIT_HELLO_PORT_NUMBER);
                 source->SetAllowBroadcast(true);
                 source->Connect(remote); 
-                apps_[i]->ToSendHello(source, simulation_duration_); 
+                Time tmp_t = Seconds(0.5 + 0.01 * (i));
+                apps_[i]->ToSendHello(source, simulation_duration_, tmp_t); 
                 // set hello listen socket 
                 Ptr<Socket> recvSink = Socket::CreateSocket(nodes_container_.Get(i), udp_tid);
                 InetSocketAddress local(Ipv4Address::GetAny(), NS3DTNBIT_HELLO_PORT_NUMBER);
@@ -187,7 +190,7 @@ namespace ns3 {
             internet.Install(nodes_container_);
             Ipv4AddressHelper ipv4;
             NS_LOG_UNCOND("Assign IP Addresses.");
-            ipv4.SetBase("10.0.0.0", "255.0.0.0");
+            ipv4.SetBase("10.0.0.0", "10.252.0.0");
             Ipv4InterfaceContainer i = ipv4.Assign(net_devices_container_);
             Ipv4GlobalRoutingHelper::PopulateRoutingTables();
         }
