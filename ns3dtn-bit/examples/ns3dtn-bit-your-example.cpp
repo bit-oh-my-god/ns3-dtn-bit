@@ -152,11 +152,12 @@ namespace ns3 {
 
 int main(int argc, char *argv[]) {
     //!important LOG control
-    //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_DEBUG);
-    LogComponentEnable ("DtnRunningLog",LOG_LEVEL_INFO);
+    LogComponentEnable ("DtnRunningLog",LOG_LEVEL_DEBUG);
+    //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_INFO);
     //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_LOGIC);
     //LogComponentEnable ("DtnRunningLog", LOG_LEVEL_ALL);
     LogComponentEnable("Ns2MobilityHelper", LOG_LEVEL_INFO);
+    LogComponentEnable("UdpSocket", LOG_LEVEL_INFO);
 
     assert(std::is_move_constructible<ns3dtnbit::YourExample>::value);
     assert(std::is_move_assignable<ns3dtnbit::YourExample>::value);
@@ -165,7 +166,7 @@ int main(int argc, char *argv[]) {
 
     if (argc == 1) {
         std::cout << "please give some argument to identify the example number you want to run. If you were building this, let it go and remenber to run the excutable with argument." << std::endl;
-        std::abort();
+        //std::abort();
     } else {
         auto ss = std::string(argv[1]);
         sss = std::string(argv[2]);

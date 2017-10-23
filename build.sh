@@ -60,7 +60,7 @@ function build_func {
     # this command can show you all the 'test-project name'
     #./test.py --list
     #./test.py --example=ns3dtn-bit-example --text=results.txt --verbose 2>&1 >${LOG_FILE}
-    #./test.py --example=ns3dtn-bit-your-example --verbose 2>&1 >${LOG_FILE}
+    ./test.py --example=ns3dtn-bit-your-example --verbose 2>&1 >${LOG_FILE}
     #./test.py --example=ns3dtn-bit-your-example --verbose
 }
 
