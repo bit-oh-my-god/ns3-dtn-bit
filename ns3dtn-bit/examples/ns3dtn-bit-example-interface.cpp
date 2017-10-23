@@ -142,7 +142,6 @@ namespace ns3 {
                 InetSocketAddress remote(Ipv4Address("255.255.255.255"), NS3DTNBIT_HELLO_PORT_NUMBER);
                 source->SetAllowBroadcast(true);
                 source->Connect(remote); 
-                Time tmpt = Seconds(0.1 + 0.01*i); 
                 apps_[i]->ToSendHello(source, simulation_duration_); 
                 // set hello listen socket 
                 Ptr<Socket> recvSink = Socket::CreateSocket(nodes_container_.Get(i), udp_tid);

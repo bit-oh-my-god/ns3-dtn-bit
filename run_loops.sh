@@ -9,6 +9,7 @@ function one_loop_func {
     LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ns-allinone-3.26/ns-3.26/build/src/ns3dtn-bit/examples/:
     LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ns-allinone-3.26/ns-3.26/build/:
     export LD_LIBRARY_PATH
+    export NS_LOG=UdpL4Protocol
     ./ns-allinone-3.26/ns-3.26/build/src/ns3dtn-bit/examples/ns3.26-ns3dtn-bit-your-example-debug $1 $2 &>${LOG_FILE}
     ./box/ParseLogInLoops.py $3
 }

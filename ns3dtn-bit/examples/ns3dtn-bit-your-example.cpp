@@ -158,6 +158,7 @@ int main(int argc, char *argv[]) {
     //LogComponentEnable ("DtnRunningLog", LOG_LEVEL_ALL);
     LogComponentEnable("Ns2MobilityHelper", LOG_LEVEL_INFO);
     LogComponentEnable("UdpSocket", LOG_LEVEL_INFO);
+    LogComponentEnable("UdpL4Protocol", LOG_LEVEL_INFO);
 
     assert(std::is_move_constructible<ns3dtnbit::YourExample>::value);
     assert(std::is_move_assignable<ns3dtnbit::YourExample>::value);
