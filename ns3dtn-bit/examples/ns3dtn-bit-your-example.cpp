@@ -70,12 +70,29 @@ namespace ns3 {
                                 || schdule_for_n_trace == 120    // cycle-traffic20
                                 || schdule_for_n_trace == 121    // cycle-traffic21
                                 || schdule_for_n_trace == 122    // cycle-traffic22
-                                || schdule_for_n_trace == 123    ) { // cycle-traffic23
+                                || schdule_for_n_trace == 123    // cycle-traffic23
+                                ) { 
                                     // 0100_current_trace.tcl + 0100_teg.txt
                             node_number_ = 12;
                             simulation_duration_ = 802;
                                                                  // name in graph
-                        } else if (schdule_for_n_trace == 201) { // tx1-traffic1
+                        } else if (schdule_for_n_trace == 201    // tx1-traffic1
+                                || schdule_for_n_trace == 202
+                                || schdule_for_n_trace == 203
+                                || schdule_for_n_trace == 204
+                                || schdule_for_n_trace == 205
+                                || schdule_for_n_trace == 206
+                                || schdule_for_n_trace == 207
+                                || schdule_for_n_trace == 208
+                                || schdule_for_n_trace == 209
+                                || schdule_for_n_trace == 210
+                                || schdule_for_n_trace == 211
+                                || schdule_for_n_trace == 212
+                                || schdule_for_n_trace == 213
+                                || schdule_for_n_trace == 214
+                                || schdule_for_n_trace == 215
+                                || schdule_for_n_trace == 216
+                                ) { 
                                     // 0200_current_trace.tcl + 0200_teg.txt
                             node_number_ = 7;
                             simulation_duration_ = 1000;
@@ -113,9 +130,11 @@ namespace ns3 {
                             auto amount = schdule_for_n_trace % 100;
                             while (amount --) {
                                 if (schdule_for_n_trace > 200) {
-                                    handy_func_x(100 + amount * 30, 5, 6, 4);
+                                    handy_func_x(100 + amount * 12, 5, 6, 35);
+                                    handy_func_x(300 + amount * 15, 6, 5, 35);
                                 } else if (schdule_for_n_trace > 100 && schdule_for_n_trace < 200) {
-                                    handy_func_x(200 + amount * 20, 0, 10, 4);
+                                    handy_func_x(200 + amount * 20, 4, 10, 23);
+                                    handy_func_x(100 + amount * 20, 0, 10, 21);
                                 } else {
                                     abort();
                                 }

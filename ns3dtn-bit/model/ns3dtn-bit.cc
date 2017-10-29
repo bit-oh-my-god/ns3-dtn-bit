@@ -141,9 +141,12 @@ namespace ns3 {
                     bp_header.set_offset(msg_str.size());
                 }
                 p_pkt->AddHeader(bp_header);
-                NS_LOG_INFO("FUCK03");
                 socket->Send(p_pkt);
             }
+        }
+
+        bool DtnApp::DtnAppNeighborKeeper::HasNewNeighbor() const {
+            return true;
         }
 
         void DtnApp::DtnAppTransmitSessionAssister::ReceiveBundleDetail(Ptr<Socket>& socket) {
@@ -175,25 +178,26 @@ namespace ns3 {
                     ss >> ip_ack_from >> seqno_was_acked >> bundle_total_payload >> acked_offset >> retransmit_count;
                     DaemonBundleHeaderInfo tmp_bh_info = {
                         ip_ack_from,
-                        retransmit_count,
                         seqno_was_acked
                     };
                     NS_LOG_LOGIC(LogPrefixMacro << "tmp_bh_info - seqno=" << tmp_bh_info.info_source_seqno_);
                     if (NS3DTNBIT_NO_FRAGMENT) {
                         NS_LOG_DEBUG(LogPrefixMacro << "well! we know the bundle has been accept, this transmit-session can be close");
-                        //int last = daemon_transmission_info_map_[tmp_bh_info].info_transmission_bundle_last_sent_bytes_;
-                        //daemon_transmission_info_map_[tmp_bh_info].info_transmission_current_sent_acked_bytes_ += last;
-                        daemon_transmission_info_map_.erase(daemon_transmission_info_map_.find(tmp_bh_info));
-                        NS_LOG_INFO(LogPrefixMacro << "FUCK");
+                        int last = daemon_transmission_info_map_[tmp_bh_info].info_transmission_bundle_last_sent_bytes_;
+                        daemon_transmission_info_map_[tmp_bh_info].info_transmission_current_sent_acked_bytes_ += last;
+                        daemon_transmission_info_map_[tmp_bh_info].info_transmission_bundle_last_sent_bytes_ = 0;
+                        if (daemon_transmission_info_map_.count(tmp_bh_info)) { // if duplicated ack, would duplicated erase
+                            //daemon_transmission_info_map_.erase(daemon_transmission_info_map_.find(tmp_bh_info)); don't erase yet, TODO
+                        }
                     } else {
                         int total = daemon_transmission_info_map_[tmp_bh_info].info_transmission_total_send_bytes_;
                         int current = daemon_transmission_info_map_[tmp_bh_info].info_transmission_current_sent_acked_bytes_;
                         int last = daemon_transmission_info_map_[tmp_bh_info].info_transmission_bundle_last_sent_bytes_;
                         if (total ==  current + last) {
                             NS_LOG_DEBUG(LogPrefixMacro << "well! we know the bundle has been accept, this transmit-session can be close");
-                            //daemon_transmission_info_map_[tmp_bh_info].info_transmission_current_sent_acked_bytes_ += last;
-                            //daemon_transmission_info_map_[tmp_bh_info].info_transmission_bundle_last_sent_bytes_ = 0;
-                            daemon_transmission_info_map_.erase(daemon_transmission_info_map_.find(tmp_bh_info));
+                            daemon_transmission_info_map_[tmp_bh_info].info_transmission_current_sent_acked_bytes_ += last;
+                            daemon_transmission_info_map_[tmp_bh_info].info_transmission_bundle_last_sent_bytes_ = 0;
+                            //daemon_transmission_info_map_.erase(daemon_transmission_info_map_.find(tmp_bh_info)); don't erase yet, TODO
                         } else if (total > current + last){
                             daemon_transmission_info_map_[tmp_bh_info].info_transmission_current_sent_acked_bytes_ += last;
                             NS_LOG_INFO(LogPrefixMacro << "here, before ToTransmit(), to transmit more"
@@ -208,11 +212,11 @@ namespace ns3 {
                         }
                         return;
                     }
-                    NS_LOG_INFO(LogPrefixMacro << "FUCK");
                 } else {
                     // if not, send 'transmission ack' first
                     NS_LOG_INFO(LogPrefixMacro << "here, received anti or bundle, send ack back first, before ToSendAck" << "; ip=" << from_ip 
                             << "; bp_header=" << bp_header);
+                    NS_LOG_DEBUG(LogPrefixMacro << "receive bundle from node-" << Ipv42NodeNo(from_ip) << " to node-" << Ipv42NodeNo(out_app_.own_ip_));
                     ToSendAckDetail(bp_header, from_ip);
                     out_app_.seqno2fromid_map_[bp_header.get_source_seqno()] = Ipv42NodeNo(from_ip);
                     {
@@ -235,7 +239,6 @@ namespace ns3 {
                             };
                             DaemonBundleHeaderInfo tmp_header_info = {
                                 from_ip,
-                                bp_header.get_retransmission_count(),
                                 bp_header.get_source_seqno(),
                             };
                             daemon_reception_info_map_[tmp_header_info] = tmp_recept_info;
@@ -290,20 +293,18 @@ namespace ns3 {
         }
 
         bool DtnApp::DtnAppTransmitSessionAssister::SocketSendDetail(Ptr<Packet> p_pkt, uint32_t flags, InetSocketAddress trans_addr) {
+            BPHeader bp_header;
             {
-                NS_LOG_INFO(LogPrefixMacro << "FUCK");
-                BPHeader bp_header;
                 p_pkt->RemoveHeader(bp_header);
-                out_app_.SprayGoodDetail(bp_header, 1);
-                if (p_pkt->GetSize() == 0) {
-                    NS_LOG_ERROR(LogPrefixMacro << "ERROR:pkt size =" << p_pkt->GetSize() << ";bundle type=" << bp_header.get_bundle_type());
-                    std::abort();
-                }
+                if (p_pkt->GetSize() == 0) { NS_LOG_ERROR(LogPrefixMacro << "ERROR:pkt size =" << p_pkt->GetSize() << ";bundle type=" << bp_header.get_bundle_type()); std::abort(); }
+                bp_header.set_hop_time_stamp(Simulator::Now());
+                bp_header.set_hop_ip(NodeNo2Ipv4(out_app_.node_->GetId()));
                 p_pkt->AddHeader(bp_header);
                 NS_LOG_INFO(LogPrefixMacro << "one bundle trans, header is " << bp_header);
             }
             if (out_app_.daemon_socket_handle_) {
                 NS_LOG_INFO(LogPrefixMacro << "one bundle trans, trans_addr is " << Addr2Ip(trans_addr) << " " << trans_addr.GetPort());
+                NS_LOG_DEBUG(LogPrefixMacro << "PKTTRACE: one bundle trans, from node-" << Ipv42NodeNo(out_app_.own_ip_) << " to node-" << Ipv42NodeNo(Addr2Ip(trans_addr)) << " seq : " << bp_header.get_source_seqno());
                 int result = out_app_.daemon_socket_handle_->SendTo(p_pkt, flags, trans_addr);
                 return result != -1 ? true : false;
             } else {
@@ -320,7 +321,8 @@ namespace ns3 {
                 bool nei_last_seen_bool = neighbor_info_this_.IsLastSeen();
                 bool nei_have_space = neighbor_info_this_.info_daemon_baq_available_bytes_ > ref_bp_header.get_payload_size() + ref_bp_header.GetSerializedSize();
                 bool nei_is_not_source = !nei_ip.IsEqual(ref_bp_header.get_source_ip());
-                bool pre = nei_last_seen_bool && nei_have_space && nei_is_not_source;
+                bool nei_is_not_from = out_app_.seqno2fromid_map_[ref_bp_header.get_source_seqno()] != Ipv42NodeNo(nei_ip);
+                bool pre = nei_last_seen_bool && nei_have_space && nei_is_not_source && nei_is_not_from;
 
                 if (pre) {
                     result.push_back(get<0>(nk));
@@ -334,11 +336,7 @@ namespace ns3 {
         void DtnApp::DtnAppTransmitSessionAssister::BundleReceptionTailWorkDetail(DaemonBundleHeaderInfo tmp_header_info) {
             BPHeader bp_header;
             Ptr<Packet> tmp_p_pkt;
-            if (NS3DTNBIT_NO_FRAGMENT) {
-                tmp_p_pkt = daemon_reception_info_map_[tmp_header_info].info_fragment_pkt_pointer_vec_[0]->Copy();
-                NS_LOG_INFO(LogPrefixMacro << "erase reception info");
-                daemon_reception_info_map_.erase(daemon_reception_info_map_.find(tmp_header_info));
-            }
+            tmp_p_pkt = daemon_reception_info_map_[tmp_header_info].info_fragment_pkt_pointer_vec_[0]->Copy();
             tmp_p_pkt->RemoveHeader(bp_header);
             if (bp_header.get_payload_size() == tmp_p_pkt->GetSize()) {
                 // this bundle is non-fragment or a already reassemble one
@@ -350,6 +348,7 @@ namespace ns3 {
                 }
                 if (bp_header.get_destination_ip().IsEqual(out_app_.own_ip_)) {
                     NS_LOG_DEBUG(LogPrefixMacro << "NOTE:BundleTrace:Great! one bundle arrive destination! bp_header=" << bp_header);
+                    NS_LOG_DEBUG(LogPrefixMacro << "PKTTRACE:BundleTrace:Great! one bundle arrive destination! bp_header=" << bp_header << " seq : " << bp_header.get_source_seqno());
                     //ToSendAntipacketBundle(bp_header);
                     tmp_p_pkt->AddHeader(bp_header);
                     out_app_.daemon_consume_bundle_queue_->Enqueue(Packet2Queueit(tmp_p_pkt));
@@ -357,6 +356,7 @@ namespace ns3 {
                 } else {
                     if (bp_header.get_bundle_type() == BundleType::BundlePacket) {
                         NS_LOG_DEBUG(LogPrefixMacro << "NOTE:BundleTrace:good! one bundle recept, it's one hop! bp_header=" << bp_header);
+                        NS_LOG_DEBUG(LogPrefixMacro << "PKTTRACE: receive one," << " from node-" << Ipv42NodeNo(tmp_header_info.info_transmit_addr_) << " to node-" << Ipv42NodeNo(out_app_.own_ip_) << " seq : " << bp_header.get_source_seqno());
                     } else {
                         NS_LOG_ERROR(LogPrefixMacro << "ERROR: can't be");
                     }
@@ -368,6 +368,10 @@ namespace ns3 {
                 NS_LOG_ERROR(LogPrefixMacro << "fragment not solved!");
                 std::abort();
             }
+            if (NS3DTNBIT_NO_FRAGMENT) {
+                NS_LOG_INFO(LogPrefixMacro << "erase reception info");
+                daemon_reception_info_map_.erase(daemon_reception_info_map_.find(tmp_header_info));
+            }
         }
 
         void DtnApp::DtnAppTransmitSessionAssister::TransmitSessionFailCheck(DaemonBundleHeaderInfo bh_info, int last_time_current) {
@@ -376,7 +380,7 @@ namespace ns3 {
                 last_trans_was_acked = true;
             }
             if (last_trans_was_acked) {
-                //NS_LOG_INFO(LogPrefixMacro << "seqno=" << bh_info.info_source_seqno_ << "; this is acked, successed! ; detail is : last_time_current =" << last_time_current << "; now_current =" << daemon_transmission_info_map_[index].info_transmission_current_sent_acked_bytes_ );
+                NS_LOG_INFO(LogPrefixMacro << "seqno=" << bh_info.info_source_seqno_ << "; this is acked, successed! ");
             } else {
                 // we don't need to roll back spray_map_, here
                 NS_LOG_INFO(LogPrefixMacro << "seqno=" << bh_info.info_source_seqno_ << "; this is not acked, retransmit!");
@@ -384,13 +388,21 @@ namespace ns3 {
             }
         }
 
+        bool DtnApp::DtnAppRoutingAssister::ShallWait() {
+            if (get_rm() == RoutingMethod::Other) {
+                return false;
+            } else {
+                return true;
+            }
+        }
+
         int DtnApp::DtnAppRoutingAssister::FindTheNeighborThisBPHeaderTo(BPHeader& ref_bp_header) {
-            int s, d, indx = -1, result;
+            int s, d, result;
             {
                 // init s, d
                 auto ip_s = ref_bp_header.get_source_ip();
                 auto ip_d = ref_bp_header.get_destination_ip();
-                if (ip_d == out_app_.own_ip_) {NS_LOG_INFO(LogPrefixMacro << "routing self, would return false and continue."); return false;} 
+                if (ip_d == out_app_.own_ip_) {NS_LOG_INFO(LogPrefixMacro << "this is destination, would return false and continue."); return -1;} 
                 s = Ipv42NodeNo(ip_s);
                 d = Ipv42NodeNo(ip_d);
             }
@@ -400,25 +412,23 @@ namespace ns3 {
             if (available.empty()) {NS_LOG_INFO(LogPrefixMacro << "available is none, return false"); return -1;}
 
             // check the routing method and invoke by their way
-            if (IsSet() && get_rm() == RoutingMethod::SprayAndWait) {
-                NS_LOG_INFO(LogPrefixMacro << "RoutingMethod is SprayAndWait");
-                auto ip_d = ref_bp_header.get_destination_ip();
-                if (ip_d == out_app_.own_ip_) {return -1;}
-                if (ref_bp_header.get_src_time_stamp().GetSeconds() + NS3DTNBIT_SPRAY_PHASE_TWO_TIME < Simulator::Now().GetSeconds()) {
-                    // time is over, SprayAndWait enter the phase two of it's routing
-                    int v = ref_bp_header.get_source_seqno();
-                    auto found = out_app_.spray_map_.find(v);
-                    if (found != out_app_.spray_map_.end()) {
-                        out_app_.spray_map_[v] -= NS3DTNBIT_SPRAY_ARGUMENT - 1;
-                    }
-                }
-                // TODO get a random 'A' 
-                std::srand(std::time(0)); // use current time as seed for random generator
-                int random_A = std::rand();
-                return available[random_A % available.size()];
-            } else if (IsSet()) {
+            if (IsSet()) {
                 dtn_seqno_t that_seqno = ref_bp_header.get_source_seqno();
-                if (get_rm() == RoutingMethod::Other) {
+                if (get_rm() == RoutingMethod::SprayAndWait) {
+                    if (ref_bp_header.get_src_time_stamp().GetSeconds() + NS3DTNBIT_SPRAY_PHASE_TWO_TIME < Simulator::Now().GetSeconds()) {
+                        // time is over, SprayAndWait enter the phase two of it's routing
+                        int v = ref_bp_header.get_source_seqno();
+                        auto found = out_app_.spray_map_.find(v);
+                        if (found != out_app_.spray_map_.end()) {
+                            out_app_.spray_map_[v] -= 1;
+                        }
+                    }
+                    // TODO get a random 'A' 
+                    //std::srand(std::time(0)); // use current time as seed for random generator
+                    int random_A = std::rand();
+                    NS_LOG_INFO(LogPrefixMacro << "Available has " << available.size());
+                    result = available[random_A % available.size()];
+                } else if (get_rm() == RoutingMethod::Other) {
                     p_rm_in_->GetInfo(-1, -1, vector<int>(), -1, -1.1, -1, -1, out_app_.id2cur_exclude_vec_of_id_, -1.1, that_seqno);
                     result = RouteIt(out_app_.node_->GetId(), d);
                 } else if (get_rm() == RoutingMethod::TimeExpanded) {
@@ -452,16 +462,21 @@ namespace ns3 {
                 } else {
                     std::abort();
                 }
-                if (result == out_app_.node_->GetId()) {NS_LOG_WARN(LogPrefixMacro << "WARN: routing self!  " << ";d=" << d << ";result = " << result);}
+                if (result == int(out_app_.node_->GetId())) {NS_LOG_WARN(LogPrefixMacro << "WARN: routing self!  " << ";d=" << d << ";result = " << result);}
                 if (result != -1) {
                     auto ipkey = NodeNo2Ipv4(result);
                     if (out_app_.neighbor_keeper_.neighbor_info_map_.count(ipkey) 
                             && out_app_.neighbor_keeper_.neighbor_info_map_[ipkey].IsLastSeen()) {
                         return result;
                     }
-                    NS_LOG_INFO(LogPrefixMacro << "routing decision is not in available, or have be sent; we would transmit this to an available," << " to-node-id =" << result << "; index of correspond neighbor of result is = " << indx << "all available is: ");
+                    NS_LOG_INFO(LogPrefixMacro << "routing decision is not in available, or have be sent; we would wait and abond this" << " all available is: ");
                     for (auto v : available) { NS_LOG_INFO("v = " << v << "."); }
-                    return available[0];
+                    if (ShallWait()) {
+                        return -1;
+                    } else {
+                        int random_A = std::rand();
+                        return available[random_A % available.size()];
+                    }
                 } else {
                     return -1;
                 }
@@ -480,11 +495,10 @@ namespace ns3 {
             }
         }
 
-        void DtnApp::DtnAppTransmitSessionAssister::InitTransmission(Ipv4Address nei_ip, BPHeader bp_header) {
+        void DtnApp::DtnAppTransmitSessionAssister::InitTransmission(Ipv4Address nei_ip, BPHeader bp_header, bool& is_exist) {
             DaemonBundleHeaderInfo tmp_header_info = {
                 nei_ip,
-                bp_header.get_retransmission_count(),
-                bp_header.get_source_seqno()
+                bp_header.get_source_seqno(),
             };
             DaemonTransmissionInfo tmp_transmission_info = {
                 bp_header.get_payload_size() + bp_header.GetSerializedSize(),
@@ -492,7 +506,8 @@ namespace ns3 {
                 Simulator::Now().GetSeconds(),
                 Simulator::Now().GetSeconds(),
                 0,
-                {}
+                {},
+                bp_header.get_retransmission_count(),
             };
             bool transmist_session_already = false;
             if (daemon_transmission_info_map_.count(tmp_header_info)) {
@@ -500,9 +515,11 @@ namespace ns3 {
             }
             if (transmist_session_already) {
                 NS_LOG_WARN(LogPrefixMacro << "WARN:transmit-session already exist, head = " << bp_header);
+                is_exist = true;
             } else {
-                NS_LOG_INFO(LogPrefixMacro << "transmission session Enqueue");
+                NS_LOG_DEBUG(LogPrefixMacro << "PKTTRACE:transmission session Enqueue" << " from node-" << Ipv42NodeNo(out_app_.own_ip_) << " to node-" << Ipv42NodeNo(nei_ip) << " seq " << bp_header.get_source_seqno() << " seq : " << bp_header.get_source_seqno());
                 daemon_transmission_info_map_[tmp_header_info] = tmp_transmission_info;
+                out_app_.ReplicationGoodDetail(bp_header, 1);
             }
         }
 
@@ -513,7 +530,6 @@ namespace ns3 {
             auto ip_to = bh_info.info_transmit_addr_;
             BPHeader tran_bp_header;
             int offset_value;
-            NS_LOG_INFO(LogPrefixMacro << "FUCK");
             {
                 // check state, cancel transmission if condition
                 if (0 == daemon_transmission_info_map_.count(bh_info) || 
@@ -526,7 +542,7 @@ namespace ns3 {
                 } else {
                     this_session_not_done = true;
                 }
-                if (bh_info.info_retransmission_count_ > NS3DTNBIT_MAX_RETRANSMISSION) {
+                if (daemon_transmission_info_map_[bh_info].info_retransmission_count_ > NS3DTNBIT_MAX_RETRANSMISSION) {
                     NS_LOG_INFO(LogPrefixMacro << "this transmit-session is over max-retranmission time , would drop this transmit." 
                             << "transmit-to-ip=" << bh_info.info_transmit_addr_
                             << ";seqno=" << bh_info.info_source_seqno_);
@@ -548,29 +564,21 @@ namespace ns3 {
                 }
             }
 
-            NS_LOG_INFO(LogPrefixMacro << "FUCK");
             if (this_session_not_done && this_session_not_ove_retx_time && neighbor_nearby) {
                 Ptr<Packet> tran_p_pkt;
                 if (NS3DTNBIT_NO_FRAGMENT) {
-                    NS_LOG_INFO(LogPrefixMacro << "FUCK");
                     tran_p_pkt = daemon_transmission_info_map_[bh_info].info_transmission_pck_buffer_[0];
                 }
-                NS_LOG_INFO(LogPrefixMacro << "FUCK");
-                if (bh_info.info_retransmission_count_ > 0) {
-                    NS_LOG_INFO("---- seqno=" << bh_info.info_source_seqno_ << ";retransmit_count  = " << bh_info.info_retransmission_count_);
+                if (daemon_transmission_info_map_[bh_info].info_retransmission_count_ > 0) {
+                    NS_LOG_INFO("---- seqno=" << bh_info.info_source_seqno_ << ";retransmit_count  = " << daemon_transmission_info_map_[bh_info].info_retransmission_count_);
                 }
-                NS_LOG_INFO(LogPrefixMacro << "FUCK");
                 tran_p_pkt->RemoveHeader(tran_bp_header);
-                NS_LOG_INFO(LogPrefixMacro << "FUCK");
                 offset_value = tran_p_pkt->GetSize();
-                NS_LOG_INFO(LogPrefixMacro << "FUCK");
                 assert(offset_value == tran_bp_header.get_payload_size());
-                NS_LOG_INFO(LogPrefixMacro << "FUCK");
                 if (offset_value == 0) {
                     NS_LOG_ERROR(LogPrefixMacro << "tran_p_pkt.size() = 0" << " bp_header :" << tran_bp_header);
                     std::abort();
                 }
-                NS_LOG_INFO(LogPrefixMacro << "FUCK");
                 assert(tran_p_pkt->GetSize()!=0);
                 tran_bp_header.set_offset(offset_value);
                 tran_p_pkt->AddHeader(tran_bp_header);
@@ -580,14 +588,12 @@ namespace ns3 {
                     target.info_transmission_bundle_last_sent_time_ = Simulator::Now().GetSeconds();
                     target.info_transmission_bundle_last_sent_bytes_ = tran_p_pkt->GetSize();
                 }
-                NS_LOG_INFO(LogPrefixMacro << "FUCK");
                 if (!NS3DTNBIT_NO_ROBUST_TRANSMIT){
                     // fail check
                     int last_time_current = daemon_transmission_info_map_[bh_info].info_transmission_current_sent_acked_bytes_;
                     Simulator::Schedule(Seconds(NS3DTNBIT_RETRANSMISSION_INTERVAL), 
                             &::ns3::ns3dtnbit::DtnApp::DtnAppTransmitSessionAssister::TransmitSessionFailCheck, this, bh_info, last_time_current);
                 }
-                NS_LOG_INFO(LogPrefixMacro << "FUCK");
                 if (!SocketSendDetail(tran_p_pkt, 0, InetSocketAddress(ip_to, NS3DTNBIT_PORT_NUMBER))) {
                     NS_LOG_ERROR("SocketSendDetail fail");
                     std::abort();
@@ -626,7 +632,9 @@ namespace ns3 {
 
         RoutingMethodInterface::RoutingMethodInterface(DtnApp& dp) : out_app_(dp) {}
         RoutingMethodInterface::~RoutingMethodInterface() {}
-        void RoutingMethodInterface::GetInfo(int destination_id, int from_id, std::vector<int> vec_of_current_neighbor, int own_id, dtn_time_t expired_time, int bundle_size, int networkconfigurationflag, map<int, vector<int>> id2cur_exclude_vec_of_id, dtn_time_t local_time, dtn_seqno_t that_seqno) {}
+        void RoutingMethodInterface::GetInfo(int destination_id, int from_id, std::vector<int> vec_of_current_neighbor, int own_id, dtn_time_t expired_time, int bundle_size, int networkconfigurationflag, map<int, vector<int>> id2cur_exclude_vec_of_id, dtn_time_t local_time, dtn_seqno_t that_seqno) {
+            // nothing
+        }
         Adob RoutingMethodInterface::get_adob() { return out_app_.routing_assister_.vec_[0]; }
 
     } /* ns3dtnbit */ 
@@ -636,55 +644,57 @@ namespace ns3 {
     namespace ns3dtnbit {
 
         void DtnApp::ReactMain(string s) {
-            NS_LOG_INFO(LogPrefixMacro << "React FUCK");
             if (s == "NewTransmitCheck") {
                 int decision_neighbor = -1;
                 BPHeader bp_header;
                 if (wifi_ph_p->IsStateIdle()) {
                     NS_LOG_LOGIC(LogPrefixMacro << "is stateidle");
                     NS_LOG_DEBUG(LogPrefixMacro << "we have NPackets = " << daemon_bundle_queue_->GetNPackets());
-                    for (int n = 0; n < daemon_bundle_queue_->GetNPackets(); n++) {
+                    for (size_t n = 0; n < daemon_bundle_queue_->GetNPackets(); n++) {
                         Ptr<Packet> p_pkt = daemon_bundle_queue_->Dequeue()->GetPacket();
-                        int p_pkt_size = p_pkt->GetSize();
+                        //int p_pkt_size = p_pkt->GetSize();
                         p_pkt->RemoveHeader(bp_header);
-                        assert(p_pkt_size == bp_header.get_payload_size() + bp_header.GetSerializedSize());
-                        NS_LOG_INFO(LogPrefixMacro << "FUCK");
+                        //assert(p_pkt_size == bp_header.get_payload_size() + bp_header.GetSerializedSize());
                         if (Simulator::Now().GetSeconds() - bp_header.get_src_time_stamp().GetSeconds() < NS3DTNBIT_HYPOTHETIC_BUNDLE_EXPIRED_TIME) {
-                            NS_LOG_INFO(LogPrefixMacro << "FUCK");
-                            bool bundle_check_good = (SprayGoodDetail(bp_header, 0));
+                            bool bundle_check_good = (ReplicationGoodDetail(bp_header, 0));
                             bool bundle_lazy_transmit_check = Simulator::Now().GetSeconds() - bp_header.get_hop_time_stamp().GetSeconds() > NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME;
                             bool bundle_dest_not_this_check = !bp_header.get_destination_ip().IsEqual(own_ip_);
                             if (bundle_check_good && bundle_dest_not_this_check && bundle_lazy_transmit_check) {
-                                NS_LOG_INFO(LogPrefixMacro << "FUCK");
                                 decision_neighbor = routing_assister_.FindTheNeighborThisBPHeaderTo(bp_header);
-                                if (decision_neighbor == -1) { p_pkt->AddHeader(bp_header); daemon_bundle_queue_->Enqueue(Packet2Queueit(p_pkt)); continue; }
+                                if (decision_neighbor == -1) { p_pkt->AddHeader(bp_header); daemon_bundle_queue_->Enqueue(Packet2Queueit(p_pkt)); continue; } else {
+                                    NS_LOG_DEBUG(LogPrefixMacro << "PKTTRACE: One decision is made, " << "from node-" << Ipv42NodeNo(own_ip_) << " to node-" << decision_neighbor << " seq : " << bp_header.get_source_seqno());
+                                }
                                 auto nei_ip = NodeNo2Ipv4(decision_neighbor);
-                                transmit_assister_.InitTransmission(nei_ip, bp_header);
+                                bool is_exist = false;
+                                transmit_assister_.InitTransmission(nei_ip, bp_header, is_exist);
                                 DaemonBundleHeaderInfo tmp_header_info = {
                                     nei_ip,
-                                    bp_header.get_retransmission_count(),
                                     bp_header.get_source_seqno()
                                 };
-                                NS_LOG_INFO(LogPrefixMacro << "FUCK06 " << "from " << own_ip_ << " to " << nei_ip);
                                 p_pkt->AddHeader(bp_header);
-                                Ptr<Packet> p_pkt_copy = p_pkt->Copy();
-                                transmit_assister_.daemon_transmission_info_map_[tmp_header_info].info_transmission_pck_buffer_.push_back(p_pkt_copy);
                                 daemon_bundle_queue_->Enqueue(Packet2Queueit(p_pkt));
-                                transmit_assister_.ToTransmit(tmp_header_info);
+                                if (!is_exist) {
+                                    Ptr<Packet> p_pkt_copy = p_pkt->Copy();
+                                    transmit_assister_.daemon_transmission_info_map_[tmp_header_info].info_transmission_pck_buffer_.push_back(p_pkt_copy);
+                                    transmit_assister_.ToTransmit(tmp_header_info);
+                                }
                             } else {
-                                NS_LOG_INFO(LogPrefixMacro << "FUCK");
                                 p_pkt->AddHeader(bp_header); daemon_bundle_queue_->Enqueue(Packet2Queueit(p_pkt)); continue; 
                             }
                         } else {
-                            NS_LOG_INFO(LogPrefixMacro << "FUCK");
                             continue;   // would remove expired package
                         }
                     }
                 }
             } else if (s == "ReceiveBundle") {
+                NS_LOG_INFO(LogPrefixMacro << "React ReceiveBundle");
                 ReactMain("NewTransmitCheck");
             } else if (s == "ReceiveHello") {
-                ReactMain("NewTransmitCheck");
+                NS_LOG_INFO(LogPrefixMacro << "React ReceiveHello");
+                // should I check every time I receive Hello?
+                if (neighbor_keeper_.HasNewNeighbor()) {
+                    ReactMain("NewTransmitCheck");
+                }
             } else if (s == "OneTransmited") {
 
             } else {
@@ -704,13 +714,11 @@ namespace ns3 {
         }
 
         void DtnApp::ReceiveBundle(Ptr<Socket> socket) {
-            NS_LOG_INFO("FUCK05");
             transmit_assister_.ReceiveBundleDetail(socket);
             ReactMain("ReceiveBundle");
         }
 
         void DtnApp::ReceiveHello(Ptr<Socket> socket_handle) {
-            NS_LOG_INFO("FUCK04");
             neighbor_keeper_.ReceiveHelloDetail(socket_handle);
             ReactMain("ReceiveHello");
         }
@@ -719,10 +727,8 @@ namespace ns3 {
             if (hello_schedule_flag_) {
                 Simulator::Schedule(Seconds(NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME), 
                     &DtnApp::ToSendHello, this, socket, simulation_end_time, first_time);
-                NS_LOG_INFO("FUCK01");
                 neighbor_keeper_.SendHelloDetail(socket);
             } else {
-                NS_LOG_INFO("FUCK02");
                 Simulator::Schedule(first_time, 
                     &DtnApp::ToSendHello, this, socket, simulation_end_time, first_time);
                 hello_schedule_flag_ = true;
@@ -769,13 +775,10 @@ namespace ns3 {
 
         /*
          *  real send flags == 1
+         *  
          * */
-        bool DtnApp::SprayGoodDetail(BPHeader& bp_header, int flag) {
+        bool DtnApp::ReplicationGoodDetail(BPHeader& bp_header, int flag) {
             int v = bp_header.get_source_seqno();
-            if (flag == 1) {
-                bp_header.set_hop_time_stamp(Simulator::Now());
-                bp_header.set_hop_ip(NodeNo2Ipv4(node_->GetId()));
-            }
             auto found = spray_map_.find(v);
             if (found == spray_map_.end()) {
                 spray_map_[v] = bp_header.get_spray();

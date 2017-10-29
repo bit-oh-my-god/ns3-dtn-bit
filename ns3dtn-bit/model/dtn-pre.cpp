@@ -299,6 +299,12 @@ namespace ns3 {
                 sort(vec_of_xmits.begin(), vec_of_xmits.end(), [](const CgrXmit& a, const CgrXmit& b) {
                         return a.contact_start_time_ < b.contact_start_time_;
                         });
+                if (vec_of_xmits[0].contact_start_time_ >= vec_of_xmits[1].contact_start_time_) {
+                    for (auto xmit : vec_of_xmits) {
+                        cout << xmit.contact_start_time_ << endl;
+                    }
+                    assert(vec_of_xmits[0].contact_start_time_ <= vec_of_xmits[1].contact_start_time_);
+                }
                 node_id2cgr_xmit_vec_map_[d] = vec_of_xmits;
             }
         }

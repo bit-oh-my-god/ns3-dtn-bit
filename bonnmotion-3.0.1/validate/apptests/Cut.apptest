@@ -1,4 +1,0 @@
-app=Cut
-paramsfile=modeltests-basic
-extensions={NULL}
-appparams=-b 2000 -e 2500 -d ../scenario.cuttest

@@ -36,8 +36,8 @@ x_is_one_delivery_route = False
 x_jsonfile_save_path = x_current_path + "/box/jupyter/stuff folder/"
 x_jsonfile_name = 'haha' # TEG CGR Spray Heuristic  #"cycle12 with TEG"
 if len(sys.argv) > 1 :
-    print("successfully get the argument")
-    x_jsonfile_name = sys.argv[1]
+    print("successfully get the argument :{0} {1} {2}".format(sys.argv[1], sys.argv[2], sys.argv[3]))
+    x_jsonfile_name = sys.argv[1] + " " + sys.argv[2] + " " + sys.argv[3]
 x_total_cgr_reuse_optimal_count = 0
 x_total_cgr_exhaust_optimal_count = 0
 x_totoal_cgr_enter_count = 0

@@ -1,4 +1,0 @@
-app=InRangePrinter
-paramsfile=modeltests-basic
-extensions={irp}
-appparams=-r 10.0

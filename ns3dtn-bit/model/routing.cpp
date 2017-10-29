@@ -315,7 +315,7 @@ namespace ns3 {
             const Adob& ref_adob = RoutingMethodInterface::get_adob();
             auto& cgr_xmit_vec_ref = ref_adob.node_id2cgr_xmit_vec_map_[cur_d];
             if (cgr_debug_flag_0) {
-                if (debug_cgr_that_seqno_ == 2114 || debug_cgr_that_seqno_ == 2113) {
+                if (debug_cgr_that_seqno_ == NS3DTNBIT_CGR_DEBUG_SEQ_1 || debug_cgr_that_seqno_ == NS3DTNBIT_CGR_DEBUG_SEQ_2) {
                     cout << "CGR_DEBUG:temporary debug use, deleteme when you don't need me, xmitdebug-seqno-" << debug_cgr_that_seqno_ << __FILE__ << ":" <<  __LINE__ 
                         << ";own_id_ = " << own_id_ 
                         << ";local_time_ = " << local_time_ 
@@ -373,7 +373,7 @@ namespace ns3 {
                             final_forfeit_time_.push_back(local_forfeit_time);
                             final_best_delivery_time_.push_back(local_best_delivery_time);
                             if (cgr_debug_flag_0) {
-                                if (debug_cgr_that_seqno_ == 2114 || debug_cgr_that_seqno_ == 2113) {
+                                if (debug_cgr_that_seqno_ == NS3DTNBIT_CGR_DEBUG_SEQ_1 || debug_cgr_that_seqno_ == NS3DTNBIT_CGR_DEBUG_SEQ_2) {
                                     cout << "\nCGR_DEBUG:\nthis is the xmit we finally choose" 
                                         << ";forfeit_time_ = " << local_forfeit_time
                                         << ";cur_deadline = " << cur_deadline << endl;
@@ -413,7 +413,7 @@ namespace ns3 {
                                 continue;
                             }
                             if (cgr_debug_flag_0) {
-                                if (debug_cgr_that_seqno_ == 2114 || debug_cgr_that_seqno_ == 2113) {
+                                if (debug_cgr_that_seqno_ == NS3DTNBIT_CGR_DEBUG_SEQ_1 || debug_cgr_that_seqno_ == NS3DTNBIT_CGR_DEBUG_SEQ_2) {
                                     cout << "\nCGR_DEBUG:\nthis is the xmit we enter" 
                                         << ";cur_deadline = " << cur_deadline
                                         << ";forfeit_time_ = " << local_forfeit_time

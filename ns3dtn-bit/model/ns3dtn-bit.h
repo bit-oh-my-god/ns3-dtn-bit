@@ -48,18 +48,17 @@ namespace ns3 {
                 // use BPHeader to compare is an ambiguity, so use this to compare
                 struct DaemonBundleHeaderInfo {
                     Ipv4Address info_transmit_addr_;
-                    uint32_t info_retransmission_count_;
                     dtn_seqno_t info_source_seqno_;
                     bool operator==(struct DaemonBundleHeaderInfo& rhs) {
                         auto ipl = info_transmit_addr_;
                         auto ipr = rhs.info_transmit_addr_;
-                        return (ipl.IsEqual(ipr) && info_retransmission_count_ == rhs.info_retransmission_count_ && info_source_seqno_ == rhs.info_source_seqno_);
+                        return (ipl.IsEqual(ipr)  && info_source_seqno_ == rhs.info_source_seqno_);
                     }
                     bool operator<(DaemonBundleHeaderInfo const & rhs) const {
                         return info_source_seqno_ < rhs.info_source_seqno_;
                     }
                     DaemonBundleHeaderInfo() : info_transmit_addr_(Ipv4Address("10.0.0.55")) {}
-                    DaemonBundleHeaderInfo(Ipv4Address ipaddr, uint32_t count, dtn_seqno_t seq) : info_transmit_addr_(ipaddr), info_retransmission_count_(count), info_source_seqno_(seq) {}
+                    DaemonBundleHeaderInfo(Ipv4Address ipaddr, dtn_seqno_t seq) : info_transmit_addr_(ipaddr), info_source_seqno_(seq) {}
                 };
 
                 struct DaemonTransmissionInfo {
@@ -69,6 +68,7 @@ namespace ns3 {
                     dtn_time_t info_transmission_bundle_last_sent_time_;
                     uint32_t info_transmission_bundle_last_sent_bytes_;
                     vector<Ptr<Packet>> info_transmission_pck_buffer_;
+                    uint32_t info_retransmission_count_;
                 };
 
                 struct NeighborInfo {
@@ -93,7 +93,7 @@ namespace ns3 {
                  * nested private class, just a implement usage, note a nested class is friend of outer class
                  * */
                 struct DtnAppRoutingAssister {
-                    DtnAppRoutingAssister(DtnApp& p) : out_app_(p) {}
+                    DtnAppRoutingAssister(DtnApp& p) : out_app_(p) { std::srand(rand_seed); }
                     ~DtnAppRoutingAssister() {}
                     void SetIt() { is_init = true; }
                     bool IsSet() {return is_init;}
@@ -112,6 +112,9 @@ namespace ns3 {
                     bool is_init = false;
                     RoutingMethod rm_;
                     private :
+                    map<dtn_seqno_t, int> shall_wait_map_;
+                    bool ShallWait();
+                    int rand_seed = std::time(0);
                     DtnApp& out_app_;
                 };
                 DtnAppRoutingAssister routing_assister_;
@@ -122,10 +125,9 @@ namespace ns3 {
                 struct DtnAppTransmitSessionAssister {
                     DtnAppTransmitSessionAssister(DtnApp& dp) : out_app_(dp) { }
                     ~DtnAppTransmitSessionAssister() { }
-                    //int get_need_to_bytes(DaemonBundleHeaderInfo bh_info) { return daemon_transmission_info_map_[bh_info].info_transmission_total_send_bytes_ - daemon_transmission_info_map_[bh_info].info_transmission_current_sent_acked_bytes_; }
 
                     // Transmit
-                    void InitTransmission(Ipv4Address nei_ip, BPHeader bp_header);
+                    void InitTransmission(Ipv4Address nei_ip, BPHeader bp_header, bool& is_exist);
                     void ToTransmit(DaemonBundleHeaderInfo bh_info);
                     void TransmitSessionFailCheck(DaemonBundleHeaderInfo bh_info, int last_current);
 
@@ -159,6 +161,7 @@ namespace ns3 {
                     // send hello
                     vector<Ipv4Address> PackageStillNeighborAvailableDetail(BPHeader& ref_bp_header);
                     void ReceiveHelloDetail(Ptr<Socket>& socket_handle);
+                    bool HasNewNeighbor() const;
                     std::string LogPrefix() {return out_app_.LogPrefix();}
 
                     // data
@@ -198,7 +201,7 @@ namespace ns3 {
 
             private :
                 // control the times of transmit from this node for one identical pkt
-                bool SprayGoodDetail(BPHeader& bp_header, int flag);
+                bool ReplicationGoodDetail(BPHeader& bp_header, int flag);
                 // put bundle in queue
                 void ToSendBundle(uint32_t dstnode_number, uint32_t payload_size);
                 //
@@ -219,7 +222,7 @@ namespace ns3 {
                 std::string LogPrefix();
                 // to check state of wireless device
                 Ptr<WifiPhy> wifi_ph_p;
-                // for SprayGoodDetail
+                // for ReplicationGoodDetail
                 bool hello_schedule_flag_ = false;
                 std::map<dtn_seqno_t, int> spray_map_;
                 map<dtn_seqno_t, int> seqno2fromid_map_;

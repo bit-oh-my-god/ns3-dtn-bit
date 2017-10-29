@@ -1,3 +1,0 @@
-app=GlomoFile
-paramsfile=modeltests-basic
-extensions={glomo_mobility;glomo_nodes}
