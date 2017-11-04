@@ -2,6 +2,7 @@
 
 import re
 import sys
+import random
 import math
 import inspect
 import os
@@ -41,7 +42,7 @@ def generate_points_of_polygon_with_core_size_slope(n, core, size_long, size_wid
         angle = []
         result = []
         pi2 = math.pi / 2.0
-        for i in range(1, n, 1) :
+        for i in range(0, n, 1) :
             one = 2 * math.pi / float(n)
             angle.append(i * one)
         print(angle)
@@ -174,15 +175,17 @@ def dist_of(vec1, vec2) :
 #========================
 # @brief this func would write a sequence of trace into file with vector of points and speed and time, start at vector_of_points[m]
 # @input
-def write_trace_into_file(vector_of_points, speed, alltime, m, n) :
+def write_trace_into_file(vector_of_points, speed_vec, alltime, m, n) :
     #assert
     print("nothing")
     #assert(len(vector_of_points) > 3)
     cur = (m) % len(vector_of_points)
     cur_t = 0
+    speed_index = 0
     g_trace_file.write(ori_pattern(vector_of_points[cur], n))
     while cur_t < alltime :
         to = (cur + 1) % len(vector_of_points)
+        speed = speed_vec[speed_index % len(speed_vec)]
         g_trace_file.write(move_pattern(vector_of_points[to], n, cur_t, speed))
         assert(cur != to)
         add_v = float(dist_of(vector_of_points[cur], vector_of_points[to])) / float(speed)
@@ -195,6 +198,7 @@ def write_trace_into_file(vector_of_points, speed, alltime, m, n) :
             print(add_v)
             print(dist_of(vector_of_points[cur], vector_of_points[to]))
             sys.exit()
+        speed_index += 1
     print("good, write into file")
 
 #==============
@@ -239,9 +243,37 @@ def print_in_3d_group(v_of_v_p) :
             zz.append(v[2])
         ax.scatter(xx, yy, zz)
     plt.show()
+#==========
+# @brief
+def generate_random_speed_vec(speed_range, n) :
+    assert(len(speed_range)==2 and speed_range[1] > speed_range[0])
+    speed_vec = []
+    for i in range(0, n, 1) :
+        speed_vec.append(random.uniform(speed_range[0], speed_range[1]))
+    return speed_vec
+#=============
+# @brief 
+def generate_points_of_random_in_range_and_n(argumap) :
+    x_range = argumap["range"]["x_range"]
+    y_range = argumap["range"]["y_range"]
+    z_range = argumap["range"]["z_range"]
+    n_of_points = argumap["n_of_points"]
+    assert(len(x_range)==2 and x_range[1] > x_range[0])
+    assert(len(y_range)==2 and y_range[1] > y_range[0])
+    assert(len(z_range)==2 and z_range[1] > z_range[0])
+    points_vec = []
+    for i in range(0, n_of_points, 1) :
+        points_vec.append([
+            random.uniform(x_range[0], x_range[1]), 
+            random.uniform(y_range[0], y_range[1]), 
+            random.uniform(z_range[0], z_range[1]), 
+            ])
+    print("n_of_points is{0}, len = {1}".format(n_of_points, len(points_vec)))
+    assert(n_of_points == len(points_vec)) 
+    return points_vec
 #===================
 # @brief a main function
-def test_functon() :
+def test01_functon() :
     print("python version:" + sys.version)
     global g_precise, g_trace_file 
     g_precise = 0.000001
@@ -258,14 +290,98 @@ def test_functon() :
     node6_trace = [[6000, 6000, 11000], [6000,6000,10200]]
     node7_trace = [[10000, 10000, 5400], [10000,10000,6000]]
     print_in_3d_group([node1_trace,node2_trace,node3_trace,node4_trace, node5_trace, node6_trace, node7_trace])
-    write_trace_into_file(node1_trace, 100, 1000, 0, 0)
-    write_trace_into_file(node2_trace, 30, 1000, 9, 1)
-    write_trace_into_file(node3_trace, 30, 1000, 15, 2)
-    write_trace_into_file(node4_trace, 20, 1000, 5, 3)
-    write_trace_into_file(node5_trace, 20, 1000, 5, 4)
-    write_trace_into_file(node6_trace, 10, 1000, 5, 5)
-    write_trace_into_file(node7_trace, 10, 1000, 5, 6)
+    write_trace_into_file(node1_trace, [100], 1000, 0, 0)
+    write_trace_into_file(node2_trace, [30], 1000, 9, 1)
+    write_trace_into_file(node3_trace, [30], 1000, 15, 2)
+    write_trace_into_file(node4_trace, [20], 1000, 5, 3)
+    write_trace_into_file(node5_trace, [20], 1000, 5, 4)
+    write_trace_into_file(node6_trace, [10], 1000, 5, 5)
+    write_trace_into_file(node7_trace, [10], 1000, 5, 6)
     g_trace_file.close()
 
+#====================
+# @brief another main function
+def test02_functon() :
+    print("python version:" + sys.version)
+    global g_precise, g_trace_file 
+    g_precise = 0.000001
+    x_current_path = os.getcwd()
+    g_trace_file = open(x_current_path + "/current_trace/current_trace_generate_one", "w")
+    #==
+    #
+    assert(dist_of([1000,1000,1000],[2000,1000,1000]) == 1000)
+    random.seed()
+    node1_trace = generate_points_of_random_in_range_and_n(
+        {   
+            "range":
+                {   "x_range":[1000, 20000], 
+                    "y_range":[1000, 20000], 
+                    "z_range":[1000, 20000],
+                },
+            "n_of_points": 33
+        }
+    )
+    node2_trace = generate_points_of_random_in_range_and_n(
+        {   
+            "range":
+                {   "x_range":[1000, 20000], 
+                    "y_range":[1000, 20000], 
+                    "z_range":[1000, 20000],
+                },
+            "n_of_points": 33
+        }
+    )
+    node3_trace = generate_points_of_random_in_range_and_n(
+        {   
+            "range":
+                {   "x_range":[1000, 20000], 
+                    "y_range":[1000, 20000], 
+                    "z_range":[1000, 20000],
+                },
+            "n_of_points": 33
+        }
+    )
+    node4_trace = generate_points_of_random_in_range_and_n(
+        {   
+            "range":
+                {   "x_range":[1000, 20000], 
+                    "y_range":[1000, 20000], 
+                    "z_range":[1000, 20000],
+                },
+            "n_of_points": 33
+        }
+    )
+    node5_trace = generate_points_of_random_in_range_and_n(
+        {   
+            "range":
+                {   "x_range":[1000, 20000], 
+                    "y_range":[1000, 20000], 
+                    "z_range":[1000, 20000],
+                },
+            "n_of_points": 33
+        }
+    )
+    node6_trace = generate_points_of_random_in_range_and_n(
+        {   
+            "range":
+                {   "x_range":[1000, 20000], 
+                    "y_range":[1000, 20000], 
+                    "z_range":[1000, 20000],
+                },
+            "n_of_points": 33
+        }
+    )
+    speed_vec_1 = generate_random_speed_vec([120, 222], 5)
+    speed_vec_2 = generate_random_speed_vec([100, 200], 9)
+    speed_vec_3 = generate_random_speed_vec([160, 250], 11)
+    speed_vec_4 = generate_random_speed_vec([90, 240], 14)
+    speed_vec_5 = generate_random_speed_vec([80, 260], 12)
+    speed_vec_6 = generate_random_speed_vec([110, 200], 7)
+    write_trace_into_file(node1_trace, speed_vec_1, 1000, 2, 0)
+    write_trace_into_file(node2_trace, speed_vec_2, 1000, 2, 1)
+    write_trace_into_file(node3_trace, speed_vec_3, 1000, 2, 2)
+    write_trace_into_file(node4_trace, speed_vec_4, 1000, 2, 3)
+    write_trace_into_file(node5_trace, speed_vec_5, 1000, 2, 4)
+    write_trace_into_file(node6_trace, speed_vec_6, 1000, 2, 5)
 #======================
-test_functon()
+test02_functon()

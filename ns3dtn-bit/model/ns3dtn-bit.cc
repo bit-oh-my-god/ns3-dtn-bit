@@ -145,8 +145,26 @@ namespace ns3 {
             }
         }
 
-        bool DtnApp::DtnAppNeighborKeeper::HasNewNeighbor() const {
-            return true;
+        bool DtnApp::DtnAppNeighborKeeper::HasNewNeighbor() {
+            bool ret = false;
+            for (auto nei : neighbor_info_map_) {
+                auto nei_ip = get<0>(nei);
+                if (get<1>(nei).IsLastSeen()) {
+                    if (cur_neighbor_.count(nei_ip)) {
+                        
+                    } else {
+                        cur_neighbor_.insert(nei_ip);
+                        ret = true;
+                    }
+                } else {
+                    if (cur_neighbor_.count(nei_ip)) {
+                        cur_neighbor_.erase(cur_neighbor_.find(nei_ip));
+                    } else {
+
+                    }
+                }
+            }
+            return ret;
         }
 
         void DtnApp::DtnAppTransmitSessionAssister::ReceiveBundleDetail(Ptr<Socket>& socket) {
@@ -345,6 +363,8 @@ namespace ns3 {
                     // check Duplicates here
                     NS_LOG_WARN(LogPrefixMacro << "WARN: receive a duplicated bundle, or a bundle has been store in this node once. This may happen");
                     return;
+                } else {
+                    ThisIsNotDup();
                 }
                 if (bp_header.get_destination_ip().IsEqual(out_app_.own_ip_)) {
                     NS_LOG_DEBUG(LogPrefixMacro << "NOTE:BundleTrace:Great! one bundle arrive destination! bp_header=" << bp_header);
@@ -368,6 +388,7 @@ namespace ns3 {
                 NS_LOG_ERROR(LogPrefixMacro << "fragment not solved!");
                 std::abort();
             }
+
             if (NS3DTNBIT_NO_FRAGMENT) {
                 NS_LOG_INFO(LogPrefixMacro << "erase reception info");
                 daemon_reception_info_map_.erase(daemon_reception_info_map_.find(tmp_header_info));
@@ -487,12 +508,15 @@ namespace ns3 {
         }
 
         bool DtnApp::IsDuplicatedDetail(BPHeader& bp_header) {
+            /*
             auto found_in_before_receive_seqno_set = before_receive_seqno_set_.find(bp_header.get_source_seqno());
             if (found_in_before_receive_seqno_set != before_receive_seqno_set_.end()) {
                 return true;
             } else {
                 return false;
             }
+            */
+            return before_receive_seqno_set_.count(bp_header.get_source_seqno());
         }
 
         void DtnApp::DtnAppTransmitSessionAssister::InitTransmission(Ipv4Address nei_ip, BPHeader bp_header, bool& is_exist) {
@@ -649,7 +673,7 @@ namespace ns3 {
                 BPHeader bp_header;
                 if (wifi_ph_p->IsStateIdle()) {
                     NS_LOG_LOGIC(LogPrefixMacro << "is stateidle");
-                    NS_LOG_DEBUG(LogPrefixMacro << "we have NPackets = " << daemon_bundle_queue_->GetNPackets());
+                    //NS_LOG_DEBUG(LogPrefixMacro << "we have NPackets = " << daemon_bundle_queue_->GetNPackets());
                     for (size_t n = 0; n < daemon_bundle_queue_->GetNPackets(); n++) {
                         Ptr<Packet> p_pkt = daemon_bundle_queue_->Dequeue()->GetPacket();
                         //int p_pkt_size = p_pkt->GetSize();
@@ -688,11 +712,13 @@ namespace ns3 {
                 }
             } else if (s == "ReceiveBundle") {
                 NS_LOG_INFO(LogPrefixMacro << "React ReceiveBundle");
-                ReactMain("NewTransmitCheck");
+                // should I check every time I receive Hello?
+                if (transmit_assister_.NotDuplicatedBundle()) {
+                    ReactMain("NewTransmitCheck");
+                }
             } else if (s == "ReceiveHello") {
                 NS_LOG_INFO(LogPrefixMacro << "React ReceiveHello");
-                // should I check every time I receive Hello?
-                if (neighbor_keeper_.HasNewNeighbor()) {
+                if (neighbor_keeper_.CheckBufferTimePass() || neighbor_keeper_.HasNewNeighbor()) {  
                     ReactMain("NewTransmitCheck");
                 }
             } else if (s == "OneTransmited") {
@@ -714,6 +740,7 @@ namespace ns3 {
         }
 
         void DtnApp::ReceiveBundle(Ptr<Socket> socket) {
+            transmit_assister_.DuplicatedBundleGuard(); 
             transmit_assister_.ReceiveBundleDetail(socket);
             ReactMain("ReceiveBundle");
         }

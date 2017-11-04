@@ -96,7 +96,28 @@ namespace ns3 {
                                     // 0200_current_trace.tcl + 0200_teg.txt
                             node_number_ = 7;
                             simulation_duration_ = 1000;
+                        } else if (schdule_for_n_trace == 301    // ra1-traffic1
+                                || schdule_for_n_trace == 302
+                                || schdule_for_n_trace == 303
+                                || schdule_for_n_trace == 304
+                                || schdule_for_n_trace == 305
+                                || schdule_for_n_trace == 306
+                                || schdule_for_n_trace == 307
+                                || schdule_for_n_trace == 308
+                                || schdule_for_n_trace == 309
+                                || schdule_for_n_trace == 310
+                                || schdule_for_n_trace == 311
+                                || schdule_for_n_trace == 312
+                                || schdule_for_n_trace == 313
+                                || schdule_for_n_trace == 314
+                                || schdule_for_n_trace == 315
+                                || schdule_for_n_trace == 316
+                                ) { 
+                                    // 0200_current_trace.tcl + 0200_teg.txt
+                            node_number_ = 6;
+                            simulation_duration_ = 1000;
                         } else {
+
                             cout << "warn: " << __FILE__ << __LINE__ << endl;
                             std::abort();
                         }
@@ -127,14 +148,24 @@ namespace ns3 {
                         // Schedule differently by schdule_for_n_trace
                         // following code is just handy used, not essential, you can do it yourself
                         if (schdule_for_n_trace > 100) {
+                            std::srand(std::time(0));
                             auto amount = schdule_for_n_trace % 100;
                             while (amount --) {
-                                if (schdule_for_n_trace > 200) {
+                                if (schdule_for_n_trace > 300) {
+                                    int rand1 = std::rand() % 6;
+                                    int rand2 = std::rand() % 6;
+                                    int rand3 = std::rand() % 6;
+                                    while (rand1 == rand2) {rand2 = std::rand() % 6;}
+                                    while (rand2 == rand3 || rand1 == rand3) {rand3 = std::rand() % 6;}
+                                    handy_func_x(100 + amount * 17, rand1, rand2, 17);
+                                    handy_func_x(100 + amount * 17, rand2, rand3, 17);
+                                    handy_func_x(100 + amount * 17, rand3, rand1, 17);
+                                } else if (schdule_for_n_trace > 200) {
                                     handy_func_x(100 + amount * 12, 5, 6, 35);
                                     handy_func_x(300 + amount * 15, 6, 5, 35);
-                                } else if (schdule_for_n_trace > 100 && schdule_for_n_trace < 200) {
-                                    handy_func_x(200 + amount * 20, 4, 10, 23);
-                                    handy_func_x(100 + amount * 20, 0, 10, 21);
+                                } else if (schdule_for_n_trace > 100) {
+                                    handy_func_x(200 + amount * 20, 4, 10, 6);
+                                    handy_func_x(100 + amount * 20, 0, 10, 7);
                                 } else {
                                     abort();
                                 }
@@ -171,8 +202,8 @@ namespace ns3 {
 
 int main(int argc, char *argv[]) {
     //!important LOG control
-    //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_DEBUG);
-    LogComponentEnable ("DtnRunningLog",LOG_LEVEL_INFO);
+    LogComponentEnable ("DtnRunningLog",LOG_LEVEL_DEBUG);
+    //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_INFO);
     //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_LOGIC);
     //LogComponentEnable ("DtnRunningLog", LOG_LEVEL_ALL);
     LogComponentEnable("Ns2MobilityHelper", LOG_LEVEL_INFO);

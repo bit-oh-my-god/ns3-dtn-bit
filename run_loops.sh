@@ -18,6 +18,7 @@ function one_loop_func {
 
 #TEG CGR Spray Heuristic
 function cycle_func {
+    echo "in cycle_func"
     for x_running_argument_0 in {101..114..1}
     do 
         x_running_argument_1="TEG"
@@ -40,7 +41,7 @@ function tx1_func {
     echo "in tx1_func"
     for x_running_argument_0 in {201..214..1}
     do
-        #echo "one"
+        echo "one"
         x_running_argument_1="TEG"
         x_parse_argument="tx$x_running_argument_0 with $x_running_argument_1"
         one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
@@ -56,4 +57,24 @@ function tx1_func {
     done
 }
 
-tx1_func
+function ran_func {
+    echo "in ran_func"
+    for x_running_argument_0 in {301..314..1}
+    do
+        echo "one"
+        x_running_argument_1="TEG"
+        x_parse_argument="ran$x_running_argument_0 with $x_running_argument_1"
+        one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+        x_running_argument_1="CGR"
+        x_parse_argument="ran$x_running_argument_0 with $x_running_argument_1"
+        one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+        x_running_argument_1="Spray"
+        x_parse_argument="ran$x_running_argument_0 with $x_running_argument_1"
+        one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+        x_running_argument_1="Heuristic"
+        x_parse_argument="ran$x_running_argument_0 with $x_running_argument_1"
+        one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+    done
+}
+
+ran_func

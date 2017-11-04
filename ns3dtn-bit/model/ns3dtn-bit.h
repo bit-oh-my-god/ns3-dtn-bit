@@ -135,6 +135,11 @@ namespace ns3 {
                     void ReceiveBundleDetail(Ptr<Socket>& socket);
                     void BundleReceptionTailWorkDetail(DaemonBundleHeaderInfo tmp_header_info);
 
+                    // Duplicate
+                    bool NotDuplicatedBundle() {return !this_dup_;};
+                    void DuplicatedBundleGuard() {this_dup_ = true;}
+                    void ThisIsNotDup() {this_dup_ = false;}
+
                     // Ack
                     void ToSendAckDetail(BPHeader& ref_bp_header, Ipv4Address response_ip);
 
@@ -146,6 +151,7 @@ namespace ns3 {
                     map<DaemonBundleHeaderInfo, DaemonTransmissionInfo> daemon_transmission_info_map_;
                     map<DaemonBundleHeaderInfo, DaemonReceptionInfo> daemon_reception_info_map_;
                     private :
+                    bool this_dup_ = false;
                     DtnApp& out_app_;
                 };
                 DtnAppTransmitSessionAssister transmit_assister_;
@@ -161,12 +167,22 @@ namespace ns3 {
                     // send hello
                     vector<Ipv4Address> PackageStillNeighborAvailableDetail(BPHeader& ref_bp_header);
                     void ReceiveHelloDetail(Ptr<Socket>& socket_handle);
-                    bool HasNewNeighbor() const;
+                    bool HasNewNeighbor();
                     std::string LogPrefix() {return out_app_.LogPrefix();}
+                    bool CheckBufferTimePass() {
+                        if (Simulator::Now().GetSeconds() - last_check_buffer_time_.GetSeconds() > NS3DTNBIT_BUFFER_CHECK_INTERVAL) {
+                            last_check_buffer_time_ = Simulator::Now();
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    }
 
                     // data
                     map<Ipv4Address, NeighborInfo> neighbor_info_map_;
                     private :
+                    Time last_check_buffer_time_ = Simulator::Now();
+                    set<Ipv4Address> cur_neighbor_;
                     DtnApp& out_app_;
                 };
                 DtnAppNeighborKeeper neighbor_keeper_;

@@ -19,7 +19,8 @@ from matplotlib.colors import cnames
 from matplotlib import animation
 
 #################################################
-handy_modify = True # diable me if you don't know what I'm doing
+handy_modify = True # diable me if you don't know what I'm doing TODO
+g_senario_name_list = ['s-1', 's-2', 's-3', 's-4', 's-5', 's-6', 's-7', 's-8', 's-9', 's-10', 's-11', 's-12', 's-13', 's-14']
 #################################
 ######### definition
 #                                                                                    dstination
@@ -233,8 +234,10 @@ def draw_jsonob_list(p_out_jsonob_list) :
     print(list_of_line_route_name_k)
     print('\nlist_of_senario_name_k')
     print(list_of_senario_name_k)
-    draw_graph_of(map_of_one_line_of_delivery_rate, list_of_line_route_name_k, list_of_senario_name_k, 0)
-    draw_graph_of(map_of_one_line_of_average_delivery_delay, list_of_line_route_name_k, list_of_senario_name_k, 1)
+    draw_graph_of(map_of_one_line_of_delivery_rate, list_of_line_route_name_k, list_of_senario_name_k, "delivery rate")
+    draw_graph_of(map_of_one_line_of_average_delivery_delay, list_of_line_route_name_k, list_of_senario_name_k, "delivery delay")
+
+#               'y' of one line index by route name; list of route name; list of 'x' axis name; flag is which figure you want
 def draw_graph_of(map_of_one_line, list_of_line_route_name, list_of_senario_name, flag) :
     assert(len(map_of_one_line) == len(list_of_line_route_name))
     assert(map_of_one_line != None)
@@ -242,18 +245,16 @@ def draw_graph_of(map_of_one_line, list_of_line_route_name, list_of_senario_name
     sena_num = len(list_of_senario_name)
     list_of_senario_name_kk = []
     if handy_modify :
-        list_of_senario_name_kk = ['c-1', 'c-2', 'c-3', 'c-4',
-                                  'c-5', 'c-6', 'c-7', 'c-8',
-                                  'c-9', 'c-10', 'c-11', 'c-12']
+        list_of_senario_name_kk = g_senario_name_list
         x = range(0, sena_num, 1)
-    if flag == 0 :
+    if flag == "delivery rate" :
         fig = plt.figure()
         #ax = fig.add_subplot(111, axes_class=AA.Axes, title='delivery_rate')
         ax = host_subplot(111, axes_class=AA.Axes)
         plt.title('senario name', y=1.03)
         #ax.set_xlabel('senario name', fontsize=18) 
         ax.set_ylabel('delivery rate', fontsize=16)
-    elif (flag == 1) :
+    elif (flag == "delivery delay") :
         fig = plt.figure()
         #ax = fig.add_subplot(111, axes_class=AA.Axes, title='delivery_delay')
         ax = host_subplot(111, axes_class=AA.Axes)
@@ -261,6 +262,7 @@ def draw_graph_of(map_of_one_line, list_of_line_route_name, list_of_senario_name
         #ax.set_xlabel('senario name', fontsize=18)
         ax.set_ylabel('average delivery delay', fontsize=16)
     else :
+        print("Error 10")
         sys.exit()
     for name in list_of_line_route_name :
         #index = list_of_line_route_name.index(name)
@@ -344,26 +346,181 @@ def one_work_main(file_folder_path) :
     #=========
     #== settings
     # ./stuff folder/
-    u_file_name_list = [
-                'tx201 with CGR-nodeN-7-timeT-1000.0-arriveN-29-scheduleN-29',
-                'tx201 with Heuristic-nodeN-7-timeT-1000.0-arriveN-18-scheduleN-29',
-                'tx201 with Spray-nodeN-7-timeT-1000.0-arriveN-14-scheduleN-29',
-                'tx201 with TEG-nodeN-7-timeT-1000.0-arriveN-29-scheduleN-29',
-                'tx202 with CGR-nodeN-7-timeT-1000.0-arriveN-58-scheduleN-58',
-                'tx202 with Heuristic-nodeN-7-timeT-1000.0-arriveN-43-scheduleN-58',
-                'tx202 with Spray-nodeN-7-timeT-1000.0-arriveN-27-scheduleN-58',
-                'tx202 with TEG-nodeN-7-timeT-1000.0-arriveN-58-scheduleN-58',
-                'tx203 with CGR-nodeN-7-timeT-1000.0-arriveN-87-scheduleN-87',
-                'tx203 with Heuristic-nodeN-7-timeT-1000.0-arriveN-70-scheduleN-87',
-                'tx203 with Spray-nodeN-7-timeT-1000.0-arriveN-56-scheduleN-87',
-                'tx203 with TEG-nodeN-7-timeT-1000.0-arriveN-87-scheduleN-87',
-                'tx204 with CGR-nodeN-7-timeT-1000.0-arriveN-116-scheduleN-116',
-                'tx204 with Heuristic-nodeN-7-timeT-1000.0-arriveN-88-scheduleN-116',
-                'tx204 with Spray-nodeN-7-timeT-1000.0-arriveN-62-scheduleN-116',
-                'tx204 with TEG-nodeN-7-timeT-1000.0-arriveN-116-scheduleN-116',
+                #'tx204 with TEG-nodeN-7-timeT-1000.0-arriveN-116-scheduleN-116',
+    x_01_file_name_list = [
+            'tx201 with CGR-nodeN-7-timeT-1000.0-arriveN-70-scheduleN-70',
+            'tx201 with Heuristic-nodeN-7-timeT-1000.0-arriveN-54-scheduleN-70',
+            'tx201 with Spray-nodeN-7-timeT-1000.0-arriveN-31-scheduleN-70',
+            'tx201 with TEG-nodeN-7-timeT-1000.0-arriveN-70-scheduleN-70',
+            'tx202 with CGR-nodeN-7-timeT-1000.0-arriveN-140-scheduleN-140',
+            'tx202 with Heuristic-nodeN-7-timeT-1000.0-arriveN-103-scheduleN-140',
+            'tx202 with Spray-nodeN-7-timeT-1000.0-arriveN-78-scheduleN-140',
+            'tx202 with TEG-nodeN-7-timeT-1000.0-arriveN-140-scheduleN-140',
+            'tx203 with CGR-nodeN-7-timeT-1000.0-arriveN-210-scheduleN-210',
+            'tx203 with Heuristic-nodeN-7-timeT-1000.0-arriveN-158-scheduleN-210',
+            'tx203 with Spray-nodeN-7-timeT-1000.0-arriveN-112-scheduleN-210',
+            'tx203 with TEG-nodeN-7-timeT-1000.0-arriveN-210-scheduleN-210',
+            'tx204 with CGR-nodeN-7-timeT-1000.0-arriveN-280-scheduleN-280',
+            'tx204 with Heuristic-nodeN-7-timeT-1000.0-arriveN-219-scheduleN-280',
+            'tx204 with Spray-nodeN-7-timeT-1000.0-arriveN-165-scheduleN-280',
+            'tx204 with TEG-nodeN-7-timeT-1000.0-arriveN-280-scheduleN-280',
+            'tx205 with CGR-nodeN-7-timeT-1000.0-arriveN-350-scheduleN-350',
+            'tx205 with Heuristic-nodeN-7-timeT-1000.0-arriveN-271-scheduleN-350',
+            'tx205 with Spray-nodeN-7-timeT-1000.0-arriveN-189-scheduleN-350',
+            'tx205 with TEG-nodeN-7-timeT-1000.0-arriveN-350-scheduleN-350',
+            'tx206 with CGR-nodeN-7-timeT-1000.0-arriveN-420-scheduleN-420',
+            'tx206 with Heuristic-nodeN-7-timeT-1000.0-arriveN-325-scheduleN-420',
+            'tx206 with Spray-nodeN-7-timeT-1000.0-arriveN-234-scheduleN-420',
+            'tx206 with TEG-nodeN-7-timeT-1000.0-arriveN-420-scheduleN-420',
+            'tx207 with CGR-nodeN-7-timeT-1000.0-arriveN-490-scheduleN-490',
+            'tx207 with Heuristic-nodeN-7-timeT-1000.0-arriveN-387-scheduleN-490',
+            'tx207 with Spray-nodeN-7-timeT-1000.0-arriveN-291-scheduleN-490',
+            'tx207 with TEG-nodeN-7-timeT-1000.0-arriveN-490-scheduleN-490',
+            'tx208 with CGR-nodeN-7-timeT-1000.0-arriveN-560-scheduleN-560',
+            'tx208 with Heuristic-nodeN-7-timeT-1000.0-arriveN-460-scheduleN-560',
+            'tx208 with Spray-nodeN-7-timeT-1000.0-arriveN-312-scheduleN-560',
+            'tx208 with TEG-nodeN-7-timeT-1000.0-arriveN-560-scheduleN-560',
+            'tx209 with CGR-nodeN-7-timeT-1000.0-arriveN-630-scheduleN-630',
+            'tx209 with Heuristic-nodeN-7-timeT-1000.0-arriveN-503-scheduleN-630',
+            'tx209 with Spray-nodeN-7-timeT-1000.0-arriveN-345-scheduleN-630',
+            'tx209 with TEG-nodeN-7-timeT-1000.0-arriveN-630-scheduleN-630',
+            'tx210 with CGR-nodeN-7-timeT-1000.0-arriveN-700-scheduleN-700',
+            'tx210 with Heuristic-nodeN-7-timeT-1000.0-arriveN-550-scheduleN-700',
+            'tx210 with Spray-nodeN-7-timeT-1000.0-arriveN-410-scheduleN-700',
+            'tx210 with TEG-nodeN-7-timeT-1000.0-arriveN-700-scheduleN-700',
+            'tx211 with CGR-nodeN-7-timeT-1000.0-arriveN-770-scheduleN-770',
+            'tx211 with Heuristic-nodeN-7-timeT-1000.0-arriveN-627-scheduleN-770',
+            'tx211 with Spray-nodeN-7-timeT-1000.0-arriveN-461-scheduleN-770',
+            'tx211 with TEG-nodeN-7-timeT-1000.0-arriveN-770-scheduleN-770',
+            'tx212 with CGR-nodeN-7-timeT-1000.0-arriveN-840-scheduleN-840',
+            'tx212 with Heuristic-nodeN-7-timeT-1000.0-arriveN-632-scheduleN-840',
+            'tx212 with Spray-nodeN-7-timeT-1000.0-arriveN-481-scheduleN-840',
+            'tx212 with TEG-nodeN-7-timeT-1000.0-arriveN-840-scheduleN-840',
+            'tx213 with CGR-nodeN-7-timeT-1000.0-arriveN-910-scheduleN-910',
+            'tx213 with Heuristic-nodeN-7-timeT-1000.0-arriveN-702-scheduleN-910',
+            'tx213 with Spray-nodeN-7-timeT-1000.0-arriveN-541-scheduleN-910',
+            'tx213 with TEG-nodeN-7-timeT-1000.0-arriveN-910-scheduleN-910',
+            'tx214 with CGR-nodeN-7-timeT-1000.0-arriveN-980-scheduleN-980',
+            'tx214 with Heuristic-nodeN-7-timeT-1000.0-arriveN-754-scheduleN-980',
+            'tx214 with Spray-nodeN-7-timeT-1000.0-arriveN-560-scheduleN-980',
+            'tx214 with TEG-nodeN-7-timeT-1000.0-arriveN-980-scheduleN-980',
                      ]
+
+    x_02_file_name_list = [
+                    "cycle1 with CGR-nodeN-12-timeT-802.0-arriveN-4-scheduleN-4",
+                    "cycle1 with Heuristic-nodeN-12-timeT-802.0-arriveN-1-scheduleN-4",
+                    "cycle1 with Spray-nodeN-12-timeT-802.0-arriveN-4-scheduleN-4",
+                    "cycle1 with TEG-nodeN-12-timeT-802.0-arriveN-4-scheduleN-4",
+                    "cycle2 with CGR-nodeN-12-timeT-802.0-arriveN-16-scheduleN-16",
+                    "cycle2 with Heuristic-nodeN-12-timeT-802.0-arriveN-5-scheduleN-16",
+                    "cycle2 with Spray-nodeN-12-timeT-802.0-arriveN-15-scheduleN-16",
+                    "cycle2 with TEG-nodeN-12-timeT-802.0-arriveN-16-scheduleN-16",
+                    "cycle3 with CGR-nodeN-12-timeT-802.0-arriveN-36-scheduleN-36",
+                    "cycle3 with Heuristic-nodeN-12-timeT-802.0-arriveN-24-scheduleN-36",
+                    "cycle3 with Spray-nodeN-12-timeT-802.0-arriveN-31-scheduleN-36",
+                    "cycle3 with TEG-nodeN-12-timeT-802.0-arriveN-36-scheduleN-36",
+                    "cycle4 with CGR-nodeN-12-timeT-802.0-arriveN-59-scheduleN-59",
+                    "cycle4 with Heuristic-nodeN-12-timeT-802.0-arriveN-36-scheduleN-59",
+                    "cycle4 with Spray-nodeN-12-timeT-802.0-arriveN-44-scheduleN-59",
+                    "cycle4 with TEG-nodeN-12-timeT-802.0-arriveN-59-scheduleN-59",
+                    "cycle5 with CGR-nodeN-12-timeT-802.0-arriveN-92-scheduleN-92",
+                    "cycle5 with Heuristic-nodeN-12-timeT-802.0-arriveN-66-scheduleN-92",
+                    "cycle5 with Spray-nodeN-12-timeT-802.0-arriveN-74-scheduleN-92",
+                    "cycle5 with TEG-nodeN-12-timeT-802.0-arriveN-92-scheduleN-92",
+                    "cycle6 with CGR-nodeN-12-timeT-802.0-arriveN-146-scheduleN-146",
+                    "cycle6 with Heuristic-nodeN-12-timeT-802.0-arriveN-88-scheduleN-146",
+                    "cycle6 with Spray-nodeN-12-timeT-802.0-arriveN-113-scheduleN-146",
+                    "cycle6 with TEG-nodeN-12-timeT-802.0-arriveN-146-scheduleN-146",
+                    "cycle7 with CGR-nodeN-12-timeT-802.0-arriveN-217-scheduleN-217",
+                    "cycle7 with Heuristic-nodeN-12-timeT-802.0-arriveN-106-scheduleN-217",
+                    "cycle7 with Spray-nodeN-12-timeT-802.0-arriveN-152-scheduleN-217",
+                    "cycle7 with TEG-nodeN-12-timeT-802.0-arriveN-217-scheduleN-217",
+                    "cycle8 with CGR-nodeN-12-timeT-802.0-arriveN-336-scheduleN-336",
+                    "cycle8 with Heuristic-nodeN-12-timeT-802.0-arriveN-169-scheduleN-336",
+                    "cycle8 with Spray-nodeN-12-timeT-802.0-arriveN-240-scheduleN-336",
+                    "cycle8 with TEG-nodeN-12-timeT-802.0-arriveN-336-scheduleN-336",
+                    "cycle9 with CGR-nodeN-12-timeT-802.0-arriveN-504-scheduleN-504",
+                    "cycle9 with Heuristic-nodeN-12-timeT-802.0-arriveN-267-scheduleN-504",
+                    "cycle9 with Spray-nodeN-12-timeT-802.0-arriveN-322-scheduleN-504",
+                    "cycle9 with TEG-nodeN-12-timeT-802.0-arriveN-504-scheduleN-504",
+                    "cycle10 with CGR-nodeN-12-timeT-802.0-arriveN-656-scheduleN-672",
+                    "cycle10 with Heuristic-nodeN-12-timeT-802.0-arriveN-400-scheduleN-672",
+                    "cycle10 with Spray-nodeN-12-timeT-802.0-arriveN-408-scheduleN-672",
+                    "cycle10 with TEG-nodeN-12-timeT-802.0-arriveN-640-scheduleN-672",
+                    "cycle11 with CGR-nodeN-12-timeT-802.0-arriveN-937-scheduleN-1024",
+                    "cycle11 with Heuristic-nodeN-12-timeT-802.0-arriveN-557-scheduleN-1024",
+                    "cycle11 with Spray-nodeN-12-timeT-802.0-arriveN-559-scheduleN-1024",
+                    "cycle11 with TEG-nodeN-12-timeT-802.0-arriveN-902-scheduleN-1024",
+                    "cycle12 with CGR-nodeN-12-timeT-802.0-arriveN-1039-scheduleN-1360",
+                    "cycle12 with Heuristic-nodeN-12-timeT-802.0-arriveN-580-scheduleN-1360",
+                    "cycle12 with Spray-nodeN-12-timeT-802.0-arriveN-641-scheduleN-1360",
+                    "cycle12 with TEG-nodeN-12-timeT-802.0-arriveN-1070-scheduleN-1360",
+                    ]
+
+    x_03_file_name_list = [
+            'ran301 with CGR-nodeN-6-timeT-1000.0-arriveN-51-scheduleN-51',
+            'ran301 with Heuristic-nodeN-6-timeT-1000.0-arriveN-24-scheduleN-51',
+            'ran301 with Spray-nodeN-6-timeT-1000.0-arriveN-24-scheduleN-51',
+            'ran301 with TEG-nodeN-6-timeT-1000.0-arriveN-51-scheduleN-51',
+            'ran302 with CGR-nodeN-6-timeT-1000.0-arriveN-102-scheduleN-102',
+            'ran302 with Heuristic-nodeN-6-timeT-1000.0-arriveN-75-scheduleN-102',
+            'ran302 with Spray-nodeN-6-timeT-1000.0-arriveN-77-scheduleN-102',
+            'ran302 with TEG-nodeN-6-timeT-1000.0-arriveN-102-scheduleN-102',
+            'ran303 with CGR-nodeN-6-timeT-1000.0-arriveN-153-scheduleN-153',
+            'ran303 with Heuristic-nodeN-6-timeT-1000.0-arriveN-124-scheduleN-153',
+            'ran303 with Spray-nodeN-6-timeT-1000.0-arriveN-98-scheduleN-153',
+            'ran303 with TEG-nodeN-6-timeT-1000.0-arriveN-153-scheduleN-153',
+            'ran304 with CGR-nodeN-6-timeT-1000.0-arriveN-204-scheduleN-204',
+            'ran304 with Heuristic-nodeN-6-timeT-1000.0-arriveN-161-scheduleN-204',
+            'ran304 with Spray-nodeN-6-timeT-1000.0-arriveN-153-scheduleN-204',
+            'ran304 with TEG-nodeN-6-timeT-1000.0-arriveN-204-scheduleN-204',
+            'ran305 with CGR-nodeN-6-timeT-1000.0-arriveN-255-scheduleN-255',
+            'ran305 with Heuristic-nodeN-6-timeT-1000.0-arriveN-175-scheduleN-255',
+            'ran305 with Spray-nodeN-6-timeT-1000.0-arriveN-199-scheduleN-255',
+            'ran305 with TEG-nodeN-6-timeT-1000.0-arriveN-255-scheduleN-255',
+            'ran306 with CGR-nodeN-6-timeT-1000.0-arriveN-306-scheduleN-306',
+            'ran306 with Heuristic-nodeN-6-timeT-1000.0-arriveN-253-scheduleN-306',
+            'ran306 with Spray-nodeN-6-timeT-1000.0-arriveN-237-scheduleN-306',
+            'ran306 with TEG-nodeN-6-timeT-1000.0-arriveN-306-scheduleN-306',
+            'ran307 with CGR-nodeN-6-timeT-1000.0-arriveN-357-scheduleN-357',
+            'ran307 with Heuristic-nodeN-6-timeT-1000.0-arriveN-295-scheduleN-357',
+            'ran307 with Spray-nodeN-6-timeT-1000.0-arriveN-212-scheduleN-357',
+            'ran307 with TEG-nodeN-6-timeT-1000.0-arriveN-357-scheduleN-357',
+            'ran308 with CGR-nodeN-6-timeT-1000.0-arriveN-408-scheduleN-408',
+            'ran308 with Heuristic-nodeN-6-timeT-1000.0-arriveN-289-scheduleN-408',
+            'ran308 with Spray-nodeN-6-timeT-1000.0-arriveN-347-scheduleN-408',
+            'ran308 with TEG-nodeN-6-timeT-1000.0-arriveN-408-scheduleN-408',
+            'ran309 with CGR-nodeN-6-timeT-1000.0-arriveN-459-scheduleN-459',
+            'ran309 with Heuristic-nodeN-6-timeT-1000.0-arriveN-400-scheduleN-459',
+            'ran309 with Spray-nodeN-6-timeT-1000.0-arriveN-355-scheduleN-459',
+            'ran309 with TEG-nodeN-6-timeT-1000.0-arriveN-458-scheduleN-459',
+            'ran310 with CGR-nodeN-6-timeT-1000.0-arriveN-510-scheduleN-510',
+            'ran310 with Heuristic-nodeN-6-timeT-1000.0-arriveN-424-scheduleN-510',
+            'ran310 with Spray-nodeN-6-timeT-1000.0-arriveN-334-scheduleN-510',
+            'ran310 with TEG-nodeN-6-timeT-1000.0-arriveN-510-scheduleN-510',
+            'ran311 with CGR-nodeN-6-timeT-1000.0-arriveN-561-scheduleN-561',
+            'ran311 with Heuristic-nodeN-6-timeT-1000.0-arriveN-350-scheduleN-561',
+            'ran311 with Spray-nodeN-6-timeT-1000.0-arriveN-402-scheduleN-561',
+            'ran311 with TEG-nodeN-6-timeT-1000.0-arriveN-561-scheduleN-561',
+            'ran312 with CGR-nodeN-6-timeT-1000.0-arriveN-612-scheduleN-612',
+            'ran312 with Heuristic-nodeN-6-timeT-1000.0-arriveN-443-scheduleN-612',
+            'ran312 with Spray-nodeN-6-timeT-1000.0-arriveN-422-scheduleN-612',
+            'ran312 with TEG-nodeN-6-timeT-1000.0-arriveN-612-scheduleN-612',
+            'ran313 with CGR-nodeN-6-timeT-1000.0-arriveN-663-scheduleN-663',
+            'ran313 with Heuristic-nodeN-6-timeT-1000.0-arriveN-489-scheduleN-663',
+            'ran313 with Spray-nodeN-6-timeT-1000.0-arriveN-540-scheduleN-663',
+            'ran313 with TEG-nodeN-6-timeT-1000.0-arriveN-663-scheduleN-663',
+            'ran314 with CGR-nodeN-6-timeT-1000.0-arriveN-714-scheduleN-714',
+            'ran314 with Heuristic-nodeN-6-timeT-1000.0-arriveN-605-scheduleN-714',
+            'ran314 with Spray-nodeN-6-timeT-1000.0-arriveN-496-scheduleN-714',
+            'ran314 with TEG-nodeN-6-timeT-1000.0-arriveN-713-scheduleN-714',
+            ]
+
+    
     file_name_list = []
-    for filename in u_file_name_list :
+    #=====
+    #==  change this TODO
+    for filename in x_03_file_name_list :
         file_name_list.append(file_folder_path + filename)
     #== end of settings
     #=================
@@ -381,7 +538,7 @@ def one_work_main(file_folder_path) :
     print('====================== draw jsonob list =======================')
     draw_jsonob_list(out_jsonob_list)
     print('====================== draw one senario by name =======================')
-    draw_one_senario_by_name('cycle with CGR-nodeN-11-timeT-802.0-arriveN-14-scheduleN-14', out_jsonob_list)
+    #draw_one_senario_by_name('cycle with CGR-nodeN-11-timeT-802.0-arriveN-14-scheduleN-14', out_jsonob_list)
 
 ###
 ######################
