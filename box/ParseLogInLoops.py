@@ -32,6 +32,7 @@ simulation_result_file = open(x_current_path + "/box/dtn_simulation_result/dtnru
 lines = simulation_result_file.readlines();
 simulation_result_file.close()
 #====
+g_total_hop_ = 0
 x_is_one_delivery_route = False
 x_jsonfile_save_path = x_current_path + "/box/jupyter/stuff folder/"
 x_jsonfile_name = 'haha' # TEG CGR Spray Heuristic  #"cycle12 with TEG"
@@ -189,6 +190,7 @@ for line in lines :
         x_is_one_delivery_route = True
     elif hop :
         #print(line)
+        g_total_hop_ += 1
         hop_receive_time = float(nums(hop.group(1)))
         hop_receive_id = int(nums(hop.group(2)))
         hop_dest_id = int(nums(hop.group(4)) - int(1))
@@ -218,6 +220,7 @@ for line in lines :
         x_simulation_time = float(simulation_preview.group(2))
     elif destination :
         #print(line)
+        g_total_hop_ += 1
         dst_receive_time = float(nums(destination.group(1)))
         dst_receive_id = int(nums(destination.group(2)))
         dst_dst_id = int(nums(destination.group(4)) - int(1))
@@ -437,16 +440,19 @@ def handy_draw_0(ax0, st, et, nid, seqnoindex, c) :
     dx = et - st
     ax0.bar3d(st, seqnoindex, nid, dx + 1.0, 0.2, 0.2, alpha=0.1, color=c, linewidth=0) # alpha = abs(dz[i]/max(dz))
 class JSONOB(object):
-    def __init__(self, name, tosend_list_ob, time_trace_map_ob):
+    def __init__(self, name, tosend_list_ob, time_trace_map_ob, total_hop):
         self.name = name
         self.tosend_list_ob = tosend_list_ob
         self.time_trace_map_ob = time_trace_map_ob
+        self.total_hop = total_hop
     def get_name(self) :
         return self.name
     def get_map(self) :
         return self.time_trace_map_ob
     def get_list(self) :
         return self.tosend_list_ob
+    def get_total_hop(self) :
+        return self.total_hop
 def save_this_jsonob_as(filename, jsonob_to) :
     fullpathname = x_jsonfile_save_path + filename
     serialized_json = jsonpickle.encode(jsonob_to)
@@ -506,7 +512,7 @@ print(title_str)
 print('====================== serialize to json format =====================')
 name = '{4}-nodeN-{0}-timeT-{1}-arriveN-{2}-scheduleN-{3}'.\
                     format(x_nodes, x_simulation_time, x_arrive_n, x_sch_n, x_jsonfile_name)
-jsonob_this = JSONOB(name, x_tosend_list, x_time_trace_map)
+jsonob_this = JSONOB(name, x_tosend_list, x_time_trace_map, g_total_hop_)
 save_this_jsonob_as(name, jsonob_this)
 
 #print('====================== print result in plain text =====================')

@@ -36,6 +36,7 @@ namespace ns3 {
                 std::string teg_file_;
                 std::string log_file_;
                 std::ofstream file_stream_;
+                map<int, int> config_storage_max_;
                 NodeContainer nodes_container_;
                 NetDeviceContainer net_devices_container_;
                 Ipv4InterfaceContainer ip_interface_container_;

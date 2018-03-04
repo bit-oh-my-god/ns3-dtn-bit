@@ -18,7 +18,7 @@ namespace ns3 {
 
         //enum BundleType {BundlePacket = 0, AntiPacket = 1, HelloPacket = 2, TransmissionAck = 3};
         enum class BundleType : std::uint32_t {
-            BundlePacket, AntiPacket, HelloPacket, TransmissionAck, UnKnow};
+            BundlePacket, AntiPacket, HelloPacket, TransmissionAck, StorageinfoMaintainPkt, UnKnow};
         std::ostream& operator<<(std::ostream& os, BundleType&& rh);
 
         class BPHeader : public Header {

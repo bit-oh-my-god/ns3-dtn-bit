@@ -383,5 +383,72 @@ def test02_functon() :
     write_trace_into_file(node4_trace, speed_vec_4, 1000, 2, 3)
     write_trace_into_file(node5_trace, speed_vec_5, 1000, 2, 4)
     write_trace_into_file(node6_trace, speed_vec_6, 1000, 2, 5)
+#====================
+# @brief another main function
+def test03_functon() :
+    print("python version:" + sys.version)
+    global g_precise, g_trace_file 
+    g_precise = 0.000001
+    x_current_path = os.getcwd()
+    g_trace_file = open(x_current_path + "/current_trace/current_trace_generate_one", "w")
+    #==
+    #
+    assert(dist_of([1000,1000,1000],[2000,1000,1000]) == 1000)
+    random.seed()
+    node1_trace = [[1000, 1000, 3000], [1000, 5000, 6000], [1000, 5000, 5200]]
+    node2_trace = [[1000, 1000, 1000], [5000, 1000, 4000], [5000, 1000, 5800]]
+    node3_trace = [[1000, 1000, 2000], [1010, 1010, 2002]]
+    node4_trace = [[5000, 5000, 10000], [5021, 5020, 10100]]
+    node5_trace = [[1000, 5000, 5800], [1000, 5000, 6000], [5000, 5000, 10800]]
+    node6_trace = [[5000, 1000, 4200], [5000, 1000, 4000], [5000, 5000, 9200]]
+    speed_vec_1 = [25, 2, 1]
+    speed_vec_2 = [25, 2, 1]
+    speed_vec_3 = [5]
+    speed_vec_4 = [5]
+    speed_vec_5 = [1, 30, 1]
+    speed_vec_6 = [1, 30, 1]
+    write_trace_into_file(node1_trace, speed_vec_1, 1000, 0, 0)
+    write_trace_into_file(node2_trace, speed_vec_2, 1000, 0, 1)
+    write_trace_into_file(node3_trace, speed_vec_3, 1000, 0, 2)
+    write_trace_into_file(node4_trace, speed_vec_4, 1000, 0, 3)
+    write_trace_into_file(node5_trace, speed_vec_5, 1000, 0, 4)
+    write_trace_into_file(node6_trace, speed_vec_6, 1000, 0, 5)
 #======================
-test02_functon()
+# @brief another main function
+def test04_functon() :
+    print("python version:" + sys.version)
+    global g_precise, g_trace_file 
+    g_precise = 0.000001
+    x_current_path = os.getcwd()
+    g_trace_file = open(x_current_path + "/current_trace/current_trace_generate_one", "w")
+    #==
+    #
+    assert(dist_of([1000,1000,1000],[2000,1000,1000]) == 1000)
+    random.seed()
+    node3_trace = [[1000, 1000, 2000], [1010, 1010, 2002]]
+    node4_trace = [[7000, 7000, 8000], [7021, 7020, 8100]]
+    node1_trace = [[1000, 1500, 2500], [1000, 5000, 6000], [1000, 5000, 5800]]
+    node5_trace = [[1000, 5000, 5800], [1000, 5000, 6000], [7000, 7000, 8800]]
+    node2_trace = [[1500, 1500, 2000], [5000, 5000, 2000], [5000, 5100, 2000]]
+    node6_trace = [[5000, 5100, 2000], [5000, 5000, 2000], [7000, 7000, 8200]]
+    node7_trace = [[1500, 1000, 2500], [5000, 1000, 6000], [5000, 1000, 6200]]
+    node8_trace = [[5000, 1000, 6200], [5000, 1000, 6000], [7000, 7000, 8300]]
+    speed_vec_1 = [25, 2, 1]
+    speed_vec_2 = [25, 2, 1]
+    speed_vec_3 = [5]
+    speed_vec_4 = [5]
+    speed_vec_5 = [1, 30, 1]
+    speed_vec_6 = [1, 30, 1]
+    speed_vec_7 = [25, 2, 1]
+    speed_vec_8 = [1, 30, 1]
+    write_trace_into_file(node1_trace, speed_vec_1, 1000, 0, 0)
+    write_trace_into_file(node2_trace, speed_vec_2, 1000, 0, 1)
+    write_trace_into_file(node3_trace, speed_vec_3, 1000, 0, 2)
+    write_trace_into_file(node4_trace, speed_vec_4, 1000, 0, 3)
+    write_trace_into_file(node5_trace, speed_vec_5, 1000, 0, 4)
+    write_trace_into_file(node6_trace, speed_vec_6, 1000, 0, 5)
+    write_trace_into_file(node7_trace, speed_vec_7, 1000, 0, 6)
+    write_trace_into_file(node8_trace, speed_vec_8, 1000, 0, 7)
+#======================
+
+test04_functon()

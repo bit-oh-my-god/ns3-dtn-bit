@@ -66,6 +66,7 @@ namespace ns3 {
             wifi_ph_p = wifi_d->GetPhy();
             CheckBuffer(CheckState::State_2);
             StateCheckDetail();
+            std::srand(std::time(0)); // use current time as seed for random generator
             NS_LOG_LOGIC(LogPrefixMacro << "Out of startapplication()");
         }
 
@@ -85,8 +86,6 @@ namespace ns3 {
             daemon_antipacket_queue_->SetAttribute("MaxPackets", UintegerValue(1000));
             daemon_bundle_queue_->SetAttribute("MaxPackets", UintegerValue(1000));
             daemon_consume_bundle_queue_->SetAttribute("MaxPackets", UintegerValue(1000));
-
-            daemon_baq_pkts_max_ = 13753;
         }
 
     } /* ns3dtnbit */ 
@@ -145,16 +144,18 @@ namespace ns3 {
             }
         }
 
-        bool DtnApp::DtnAppNeighborKeeper::HasNewNeighbor() {
+        pair<bool, Ipv4Address> DtnApp::DtnAppNeighborKeeper::HasNewNeighbor() {
             bool ret = false;
+            Ipv4Address newip;
             for (auto nei : neighbor_info_map_) {
                 auto nei_ip = get<0>(nei);
                 if (get<1>(nei).IsLastSeen()) {
                     if (cur_neighbor_.count(nei_ip)) {
-                        
+
                     } else {
                         cur_neighbor_.insert(nei_ip);
                         ret = true;
+                        newip = nei_ip;
                     }
                 } else {
                     if (cur_neighbor_.count(nei_ip)) {
@@ -164,7 +165,7 @@ namespace ns3 {
                     }
                 }
             }
-            return ret;
+            return {ret, newip};
         }
 
         void DtnApp::DtnAppTransmitSessionAssister::ReceiveBundleDetail(Ptr<Socket>& socket) {
@@ -230,7 +231,27 @@ namespace ns3 {
                         }
                         return;
                     }
-                } else {
+                } else if (bp_header.get_bundle_type() == BundleType::StorageinfoMaintainPkt) {
+                    // CGRQM TODO
+                    // send ack back and cope with StorageinfoMaintainInterface("receive neighbor storageinfo"), 
+                    map<int, pair<int, int>> parsed_storageinfo_from_neighbor;
+                    map<int, pair<int, int>> empty01;
+                    map<int, int> empty02;
+                    vector<int> empty03;
+                    {
+                        // parse 
+                        std::stringstream ss;
+                        int sizeofstorageinfo;
+                        p_pkt->CopyData(&ss, bp_header.get_payload_size());
+                        ss >> sizeofstorageinfo;
+                        for (int i = 0; i < sizeofstorageinfo; i++) {
+                            int nodeid, belivevalue, cachvalue;
+                            ss >> nodeid >> belivevalue >> cachvalue;
+                            parsed_storageinfo_from_neighbor[nodeid] = {belivevalue, cachvalue};
+                        }
+                    }
+                    out_app_.routing_assister_.StorageinfoMaintainInterface("receive neighbor Storageinfo", parsed_storageinfo_from_neighbor, empty01, empty02, empty03);
+                } else if (bp_header.get_bundle_type() == BundleType::TransmissionAck) {
                     // if not, send 'transmission ack' first
                     NS_LOG_INFO(LogPrefixMacro << "here, received anti or bundle, send ack back first, before ToSendAck" << "; ip=" << from_ip 
                             << "; bp_header=" << bp_header);
@@ -269,6 +290,9 @@ namespace ns3 {
                         } // later usage
                         NS_LOG_INFO(LogPrefixMacro << "out of recervebundle");
                     }
+                } else {
+                    // UnKnow
+                    std::abort();
                 }
             }
             NS_LOG_INFO(LogPrefixMacro << "ReceiveHelloDetail");
@@ -403,7 +427,6 @@ namespace ns3 {
             if (last_trans_was_acked) {
                 NS_LOG_INFO(LogPrefixMacro << "seqno=" << bh_info.info_source_seqno_ << "; this is acked, successed! ");
             } else {
-                // we don't need to roll back spray_map_, here
                 NS_LOG_INFO(LogPrefixMacro << "seqno=" << bh_info.info_source_seqno_ << "; this is not acked, retransmit!");
                 ToTransmit(bh_info);
             }
@@ -414,6 +437,22 @@ namespace ns3 {
                 return false;
             } else {
                 return true;
+            }
+        }
+
+        // CGRQM TODO
+        // add all arg in one method
+        void DtnApp::DtnAppRoutingAssister::StorageinfoMaintainInterface(string s
+                ,map<int, pair<int, int>> parsed_storageinfo_from_neighbor
+                ,map<int, pair<int, int>>& move_storageinfo_to_this
+                ,map<int, int> storagemax
+                ,vector<int> path_of_route
+                , pair<int, int> update
+                ) {
+            if (rm_ == RoutingMethod::QM) {
+                p_rm_in_->StorageinfoMaintainInterface(s, parsed_storageinfo_from_neighbor, move_storageinfo_to_this, storagemax, path_of_route, update);
+            } else {
+                NS_LOG_WARN("do nothing, fix me!");
             }
         }
 
@@ -436,16 +475,16 @@ namespace ns3 {
             if (IsSet()) {
                 dtn_seqno_t that_seqno = ref_bp_header.get_source_seqno();
                 if (get_rm() == RoutingMethod::SprayAndWait) {
-                    if (ref_bp_header.get_src_time_stamp().GetSeconds() + NS3DTNBIT_SPRAY_PHASE_TWO_TIME < Simulator::Now().GetSeconds()) {
-                        // time is over, SprayAndWait enter the phase two of it's routing
-                        int v = ref_bp_header.get_source_seqno();
-                        auto found = out_app_.spray_map_.find(v);
-                        if (found != out_app_.spray_map_.end()) {
-                            out_app_.spray_map_[v] -= 1;
-                        }
-                    }
                     // TODO get a random 'A' 
-                    //std::srand(std::time(0)); // use current time as seed for random generator
+                    int random_A = std::rand();
+                    NS_LOG_INFO(LogPrefixMacro << "Available has " << available.size() << " random_A is " << random_A);
+                    if (available.size() > 1) {
+                        NS_LOG_DEBUG(LogPrefixMacro << "FUCK!!!! Available has " << available.size() << " random_A is " << random_A);
+                        for (auto a : available) { NS_LOG_DEBUG(LogPrefixMacro << a); }
+                    }
+                    result = available[random_A % available.size()];
+                } else if (get_rm() == RoutingMethod::DirectForward) {
+                    // TODO get a random 'A' 
                     int random_A = std::rand();
                     NS_LOG_INFO(LogPrefixMacro << "Available has " << available.size());
                     result = available[random_A % available.size()];
@@ -456,6 +495,31 @@ namespace ns3 {
                     p_rm_in_->GetInfo(-1, -1, vector<int>(), -1, -1.1, -1, -1, out_app_.id2cur_exclude_vec_of_id_, -1.1, that_seqno);
                     result = RouteIt(out_app_.node_->GetId(), d);
                 } else if (get_rm() == RoutingMethod::CGR) {
+                    int destination_id = Ipv42NodeNo(ref_bp_header.get_destination_ip());
+                    int from_id = -1;
+                    auto found = out_app_.seqno2fromid_map_.find(ref_bp_header.get_source_seqno());
+                    if (found != out_app_.seqno2fromid_map_.end()) {
+                        from_id = out_app_.seqno2fromid_map_[ref_bp_header.get_source_seqno()];
+                    } else {
+                        from_id = out_app_.node_->GetId();
+                    }
+                    vector<int> vec_of_current_neighbor;
+                    for (auto nei : out_app_.neighbor_keeper_.neighbor_info_map_) {
+                        if (get<1>(nei).IsLastSeen()) {
+                            vec_of_current_neighbor.push_back(Ipv42NodeNo(get<0>(nei)));
+                        }
+                    }
+                    int own_id = out_app_.node_->GetId();
+                    dtn_time_t expired_time = ref_bp_header.get_src_time_stamp().GetSeconds() + NS3DTNBIT_HYPOTHETIC_BUNDLE_EXPIRED_TIME;
+                    int bundle_size = ref_bp_header.get_payload_size();
+                    int flag = 0;
+                    dtn_time_t current_time = Simulator::Now().GetSeconds();
+
+                    // -------------- dividing ----------
+                    p_rm_in_->GetInfo(destination_id, from_id, vec_of_current_neighbor, own_id, expired_time, 
+                            bundle_size, flag, out_app_.id2cur_exclude_vec_of_id_, current_time, that_seqno);
+                    result = RouteIt(out_app_.node_->GetId(), d);
+                } else if (get_rm() == RoutingMethod::QM) {
                     int destination_id = Ipv42NodeNo(ref_bp_header.get_destination_ip());
                     int from_id = -1;
                     auto found = out_app_.seqno2fromid_map_.find(ref_bp_header.get_source_seqno());
@@ -509,13 +573,13 @@ namespace ns3 {
 
         bool DtnApp::IsDuplicatedDetail(BPHeader& bp_header) {
             /*
-            auto found_in_before_receive_seqno_set = before_receive_seqno_set_.find(bp_header.get_source_seqno());
-            if (found_in_before_receive_seqno_set != before_receive_seqno_set_.end()) {
-                return true;
-            } else {
-                return false;
-            }
-            */
+               auto found_in_before_receive_seqno_set = before_receive_seqno_set_.find(bp_header.get_source_seqno());
+               if (found_in_before_receive_seqno_set != before_receive_seqno_set_.end()) {
+               return true;
+               } else {
+               return false;
+               }
+               */
             return before_receive_seqno_set_.count(bp_header.get_source_seqno());
         }
 
@@ -533,12 +597,17 @@ namespace ns3 {
                 {},
                 bp_header.get_retransmission_count(),
             };
-            bool transmist_session_already = false;
-            if (daemon_transmission_info_map_.count(tmp_header_info)) {
-                transmist_session_already = true;
-            }
-            if (transmist_session_already) {
-                NS_LOG_WARN(LogPrefixMacro << "WARN:transmit-session already exist, head = " << bp_header);
+            bool transmit_session_already = daemon_transmission_info_map_.count(tmp_header_info);
+            assert(transmit_session_already == (daemon_transmission_info_map_.find(tmp_header_info) != daemon_transmission_info_map_.end()));
+            if (transmit_session_already) {
+                NS_LOG_WARN(LogPrefixMacro << "WARN:transmit-session already exist, head = " << bp_header 
+                        << " \n headinfo=" << tmp_header_info.info_transmit_addr_ << " " << tmp_header_info.info_source_seqno_);
+#ifdef UGLY_DEBUG
+                NS_LOG_INFO(LogPrefixMacro << "Print daemon_transmission_info_map_\n");
+                for (auto& dti : daemon_transmission_info_map_) {
+                    NS_LOG_INFO(LogPrefixMacro << " ----- nei_ip=" << get<0>(dti).info_transmit_addr_ << " --- seqno=" << get<0>(dti).info_source_seqno_);
+                }
+#endif /* ifndef  */
                 is_exist = true;
             } else {
                 NS_LOG_DEBUG(LogPrefixMacro << "PKTTRACE:transmission session Enqueue" << " from node-" << Ipv42NodeNo(out_app_.own_ip_) << " to node-" << Ipv42NodeNo(nei_ip) << " seq " << bp_header.get_source_seqno() << " seq : " << bp_header.get_source_seqno());
@@ -646,6 +715,17 @@ namespace ns3 {
                 // parse raw content of pkt and update 'neighbor_info_vec_'
                 pkt_str_stream >> avli_s;
                 neighbor_info_map_[ip_from].info_daemon_baq_available_bytes_ = stoi(avli_s);
+                // CGRQM TODO
+                map<int, pair<int, int>> empty01;
+                map<int, pair<int, int>> empty02;
+                map<int, int> empty03;
+                vector<int> empty04;
+                out_app_.routing_assister_.StorageinfoMaintainInterface("update storage info from hello"
+                        ,empty01
+                        ,empty02
+                        ,empty03
+                        ,empty04
+                        ,{Ipv42NodeNo(ip_from), (stoi(avli_s) / NS3DTNBIT_HYPOTHETIC_CACHE_FACTOR)});
                 neighbor_info_map_[ip_from].info_last_seen_time_ = Simulator::Now().GetSeconds();
             }
         }
@@ -657,6 +737,17 @@ namespace ns3 {
         RoutingMethodInterface::RoutingMethodInterface(DtnApp& dp) : out_app_(dp) {}
         RoutingMethodInterface::~RoutingMethodInterface() {}
         void RoutingMethodInterface::GetInfo(int destination_id, int from_id, std::vector<int> vec_of_current_neighbor, int own_id, dtn_time_t expired_time, int bundle_size, int networkconfigurationflag, map<int, vector<int>> id2cur_exclude_vec_of_id, dtn_time_t local_time, dtn_seqno_t that_seqno) {
+            // nothing
+        }
+
+        // CGRQM TODO
+        void RoutingMethodInterface::StorageinfoMaintainInterface(string s
+                ,map<int, pair<int, int>> parsed_storageinfo_from_neighbor
+                ,map<int, pair<int, int>>& move_storageinfo_to_this
+                ,map<int, int> storagemax
+                ,vector<int> path_of_route
+                , pair<int, int> update
+                ) {
             // nothing
         }
         Adob RoutingMethodInterface::get_adob() { return out_app_.routing_assister_.vec_[0]; }
@@ -718,7 +809,54 @@ namespace ns3 {
                 }
             } else if (s == "ReceiveHello") {
                 NS_LOG_INFO(LogPrefixMacro << "React ReceiveHello");
-                if (neighbor_keeper_.CheckBufferTimePass() || neighbor_keeper_.HasNewNeighbor()) {  
+                auto t01 = neighbor_keeper_.HasNewNeighbor();
+                auto t011 = t01.first;
+                auto t012 = t01.second;
+                if (neighbor_keeper_.CheckBufferTimePass() || t011) {  
+                    if (t011) {
+                        // CGRQM TODO send routing_assister_.StorageinfoMaintainInterface("to send storageinfo to neighbor")
+                        Ipv4Address toneighbor_ip = t012;
+                        map<int, pair<int, int>> empty01;
+                        map<int, pair<int, int>> current_storageinfo;
+                        map<int, int> empty02;
+                        vector<int> empty03;
+                        routing_assister_.StorageinfoMaintainInterface("to send storageinfo to neighbor", empty01, current_storageinfo, empty02,empty03);
+                        {
+                            // send storageinfo to 
+                            std::string tmp_payload_str;
+                            {
+                                // fill up payload
+                                std::stringstream tmp_sstream;
+                                tmp_sstream << current_storageinfo.size();
+                                for (auto ccp : current_storageinfo) {
+                                    tmp_sstream << " ";
+                                    tmp_sstream << ccp.first;
+                                    tmp_sstream << " ";
+                                    tmp_sstream << ccp.second.first;
+                                    tmp_sstream << " ";
+                                    tmp_sstream << ccp.second.second;
+                                }
+                                tmp_payload_str = tmp_sstream.str();
+                            }
+                            Ptr<Packet> p_pkt = Create<Packet>(tmp_payload_str.c_str(), tmp_payload_str.size());
+                            BPHeader bp_header;
+                            {
+                                // fill up bp_header
+                                SemiFillBPHeaderDetail(&bp_header);
+                                bp_header.set_bundle_type(BundleType::StorageinfoMaintainPkt);
+                                bp_header.set_destination_ip(toneighbor_ip);
+                                bp_header.set_source_seqno(p_pkt->GetUid());
+                                bp_header.set_payload_size(tmp_payload_str.size());
+                                bp_header.set_offset(tmp_payload_str.size());
+                            }
+                            p_pkt->AddHeader(bp_header);
+                            InetSocketAddress toneighbor_addr = InetSocketAddress(toneighbor_ip, NS3DTNBIT_PORT_NUMBER);
+                            if (!transmit_assister_.SocketSendDetail(p_pkt, 0, toneighbor_addr)) {
+                                NS_LOG_ERROR("SOCKET send error");
+                                std::abort();
+                            }
+                        }
+                    }
                     ReactMain("NewTransmitCheck");
                 }
             } else if (s == "OneTransmited") {
@@ -753,11 +891,11 @@ namespace ns3 {
         void DtnApp::ToSendHello(Ptr<Socket> socket, dtn_time_t simulation_end_time, Time first_time) {
             if (hello_schedule_flag_) {
                 Simulator::Schedule(Seconds(NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME), 
-                    &DtnApp::ToSendHello, this, socket, simulation_end_time, first_time);
+                        &DtnApp::ToSendHello, this, socket, simulation_end_time, first_time);
                 neighbor_keeper_.SendHelloDetail(socket);
             } else {
                 Simulator::Schedule(first_time, 
-                    &DtnApp::ToSendHello, this, socket, simulation_end_time, first_time);
+                        &DtnApp::ToSendHello, this, socket, simulation_end_time, first_time);
                 hello_schedule_flag_ = true;
             }
         }
@@ -805,17 +943,26 @@ namespace ns3 {
          *  
          * */
         bool DtnApp::ReplicationGoodDetail(BPHeader& bp_header, int flag) {
+            NS_LOG_INFO(LogPrefixMacro << "in ReplicationGoodDetail");
             int v = bp_header.get_source_seqno();
             auto found = spray_map_.find(v);
             if (found == spray_map_.end()) {
-                spray_map_[v] = bp_header.get_spray();
+                if (routing_assister_.get_rm() == RoutingMethod::SprayAndWait && bp_header.get_src_time_stamp().GetSeconds() + NS3DTNBIT_SPRAY_PHASE_TWO_TIME < Simulator::Now().GetSeconds()) {
+                    // time is over, SprayAndWait enter the phase two of it's routing
+                    spray_map_[v] = 1;
+                } else {
+                    spray_map_[v] = bp_header.get_spray();
+                }
                 return true;
             } else {
                 if (spray_map_[v] > 0) {
+                    if (spray_map_[v] == NS3DTNBIT_SPRAY_ARGUMENT - 1 && flag == 1) {NS_LOG_DEBUG(LogPrefixMacro << "PKTTRACE: FUCK!!! Package has been replicated, SprayAndWait!!");}
                     spray_map_[v] -= flag;
                     return true;
-                } else {
+                } else if (spray_map_[v] == 0){
                     return false;
+                } else {
+                    std::abort();
                 }
             }
         }
@@ -843,6 +990,8 @@ namespace ns3 {
                 p_bp_header->set_spray(1);
             } else if (routing_assister_.get_rm() == RoutingMethod::SprayAndWait) {
                 p_bp_header->set_spray(NS3DTNBIT_SPRAY_ARGUMENT);
+            } else if (routing_assister_.get_rm() == RoutingMethod::DirectForward) {
+                p_bp_header->set_spray(1);
             } else if (routing_assister_.get_rm() == RoutingMethod::Other) {
                 p_bp_header->set_spray(1);
             } else if (routing_assister_.get_rm() == RoutingMethod::CGR) {

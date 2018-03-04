@@ -5,7 +5,6 @@
 namespace ns3 {
     namespace ns3dtnbit {
         DtnExampleInterface::DtnExampleInterface(DtnExampleInterface&& rh) {
-
         }
 
         void DtnExampleInterface::set_th(size_t th) {
@@ -130,6 +129,15 @@ namespace ns3 {
                 nodes_container_.Get(i)->AddApplication(apps_[i]);
                 apps_[i]->SetStartTime(Seconds(0.0));
                 apps_[i]->SetStopTime(Seconds(5000.0));
+                if (ex_rm_ == DtnApp::RoutingMethod::QM) {
+                    // CGRQM TODO
+                    // set (storage limit)queue parameter and id_of_d2cur_excluded_vec_of_d_
+                    if (config_storage_max_.count(i)) {
+                        apps_[i]->SetQueueParameter(config_storage_max_[i]);
+                    } else {
+
+                    }
+                }
                 // bundle send socket would be set inside DtnApp
                 // 
                 // set bundle receive socket
@@ -155,7 +163,7 @@ namespace ns3 {
                 if (ex_rm_ == DtnApp::RoutingMethod::Other || ex_rm_ == DtnApp::RoutingMethod::TimeExpanded || ex_rm_ == DtnApp::RoutingMethod::CGR) {
                     std::unique_ptr<RoutingMethodInterface> p_rm_in = CreateRouting(*apps_[i]);
                     apps_[i]->InvokeMeWhenInstallAppToSetupDtnAppRoutingAssister(ex_rm_, std::move(p_rm_in), adob);
-                } else if (ex_rm_ == DtnApp::RoutingMethod::SprayAndWait) {
+                } else if (ex_rm_ == DtnApp::RoutingMethod::SprayAndWait || ex_rm_ == DtnApp::RoutingMethod::DirectForward) {
                     apps_[i]->InvokeMeWhenInstallAppToSetupDtnAppRoutingAssister(ex_rm_, adob);
                 } else {
                     std::cout << "Error : can't find Routing method" << __LINE__ << std::endl;
@@ -213,6 +221,14 @@ namespace ns3 {
             //trace_file_ = "/home/dtn-012345/ns-3_build/ns3-dtn-bit/box/current_trace/current_trace.tcl";
             //teg_file_ = "/home/dtn-012345/ns-3_build/ns3-dtn-bit/box/current_trace/teg.txt";
             //log_file_ = "~/ns-3_build/ns3-dtn-bit/box/dtn_simulation_result/dtn_trace_log.txt";
+            config_storage_max_[0] = 1000;
+            config_storage_max_[1] = 500;
+            config_storage_max_[2] = 40;
+            config_storage_max_[3] = 500;
+            config_storage_max_[4] = 200;
+            config_storage_max_[5] = 1000;
+            config_storage_max_[6] = 600;
+            config_storage_max_[7] = 1000;
         }
 
 
@@ -327,7 +343,18 @@ namespace ns3 {
                 return std::unique_ptr<RoutingMethodInterface>(p);
             } else if (ex_rm_ == DtnApp::RoutingMethod::Other) {
                 auto p = new YouRouting(dtn);
-                cout << "BundleTrace:Itisnotonedeliverymethon\n" << endl;
+                cout << "BundleTrace:Itisonedeliverymethon\n" << endl;
+                return std::unique_ptr<RoutingMethodInterface>(p);
+            } else if (ex_rm_ == DtnApp::RoutingMethod::QM) {
+                auto p = new CGRQMRouting(dtn);
+                // CGRQM TODO
+                // hard-coded, later refactor would make it settable
+                map<int, pair<int, int>> empty01;
+                map<int, pair<int, int>> empty02;
+                map<int, int> storagemax = config_storage_max_;
+                vector<int> empty03;
+                p->StorageinfoMaintainInterface("give storage_max_", empty01, empty02, storagemax, empty03);
+                cout << "BundleTrace:Itisonedeliverymethon\n" << endl;
                 return std::unique_ptr<RoutingMethodInterface>(p);
             } else {
                 cout << "error: can't find routing" << endl;

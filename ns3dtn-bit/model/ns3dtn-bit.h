@@ -19,9 +19,12 @@ namespace ns3 {
                     TimeExpanded,
                     SprayAndWait,
                     CGR,
-                    Other
+                    DirectForward,
+                    QM,
+                    Other,
                 };
 
+                // DEPRECATED
                 enum class CheckState {
                     // lower layer is busy
                     State_0,
@@ -49,15 +52,24 @@ namespace ns3 {
                 struct DaemonBundleHeaderInfo {
                     Ipv4Address info_transmit_addr_;
                     dtn_seqno_t info_source_seqno_;
-                    bool operator==(struct DaemonBundleHeaderInfo& rhs) {
-                        auto ipl = info_transmit_addr_;
-                        auto ipr = rhs.info_transmit_addr_;
-                        return (ipl.IsEqual(ipr)  && info_source_seqno_ == rhs.info_source_seqno_);
+                    bool operator==(DaemonBundleHeaderInfo const & rhs)const  {
+                        auto& ipl = info_transmit_addr_;
+                        auto& ipr = rhs.info_transmit_addr_;
+                        if (ipl.IsEqual(ipr)  && info_source_seqno_ == rhs.info_source_seqno_) {
+                            return true;
+                        } else {
+                            return false;
+                        }
                     }
                     bool operator<(DaemonBundleHeaderInfo const & rhs) const {
-                        return info_source_seqno_ < rhs.info_source_seqno_;
+                        if (info_transmit_addr_.Get() < rhs.info_transmit_addr_.Get()) {
+                            return true;
+                        } else if (info_transmit_addr_.Get() == rhs.info_transmit_addr_.Get()){
+                            return info_source_seqno_ < rhs.info_source_seqno_;
+                        } else {
+                            return false;
+                        }
                     }
-                    DaemonBundleHeaderInfo() : info_transmit_addr_(Ipv4Address("10.0.0.55")) {}
                     DaemonBundleHeaderInfo(Ipv4Address ipaddr, dtn_seqno_t seq) : info_transmit_addr_(ipaddr), info_source_seqno_(seq) {}
                 };
 
@@ -105,6 +117,14 @@ namespace ns3 {
                     int FindTheNeighborThisBPHeaderTo(BPHeader& ref_bp_header);
                     std::string LogPrefix() {return out_app_.LogPrefix();}
                     friend RoutingMethodInterface;
+                    // CGRQM TODO
+                    void StorageinfoMaintainInterface(string s 
+                            ,map<int, pair<int, int>> parsed_storageinfo_from_neighbor
+                            ,map<int, pair<int, int>>& move_storageinfo_to_this
+                            ,map<int, int> storagemax
+                            ,vector<int> path_of_route
+                        ,pair<int, int> update ={ -1, -1 }
+                            );
 
                     // data
                     vector<Adob> vec_;
@@ -167,7 +187,7 @@ namespace ns3 {
                     // send hello
                     vector<Ipv4Address> PackageStillNeighborAvailableDetail(BPHeader& ref_bp_header);
                     void ReceiveHelloDetail(Ptr<Socket>& socket_handle);
-                    bool HasNewNeighbor();
+                    pair<bool, Ipv4Address> HasNewNeighbor();
                     std::string LogPrefix() {return out_app_.LogPrefix();}
                     bool CheckBufferTimePass() {
                         if (Simulator::Now().GetSeconds() - last_check_buffer_time_.GetSeconds() > NS3DTNBIT_BUFFER_CHECK_INTERVAL) {
@@ -198,6 +218,14 @@ namespace ns3 {
                 DtnAppLowLayerAdaptor lower_layer_adaptor_;
 
             public :
+
+                void SetQueueParameter(int v) {
+                    daemon_baq_pkts_max_ = v;
+                }
+
+                void SetId2cur(map<int, vector<int>> tmpmap) {
+                    id2cur_exclude_vec_of_id_ = tmpmap;
+                }
 
                 bool InvokeMeWhenInstallAppToSetupDtnAppRoutingAssister(RoutingMethod rm, vector<Adob>& adob) {
                     routing_assister_.set_rm(rm);
@@ -244,7 +272,7 @@ namespace ns3 {
                 map<dtn_seqno_t, int> seqno2fromid_map_;
                 set<dtn_seqno_t> before_receive_seqno_set_;
                 map<int, vector<int>> id2cur_exclude_vec_of_id_;    //used for CGR
-                uint32_t daemon_baq_pkts_max_;
+                uint32_t daemon_baq_pkts_max_ = 11111;
                 Ptr<Node> node_; 
                 Ipv4Address own_ip_;
                 //enum RunningFlag running_flag_;
@@ -270,6 +298,14 @@ namespace ns3 {
                  * TODO
                  * */
                 virtual void GetInfo(int destination_id, int from_id, std::vector<int> vec_of_current_neighbor, int own_id, dtn_time_t expired_time, int bundle_size, int networkconfigurationflag, map<int, vector<int>> id2cur_exclude_vec_of_id, dtn_time_t local_time, dtn_seqno_t that_seqno);
+                // CGRQM TODO
+                virtual void StorageinfoMaintainInterface(string s
+                        ,map<int, pair<int, int>> parsed_storageinfo_from_neighbor
+                        ,map<int, pair<int, int>>& move_storageinfo_to_this
+                        ,map<int, int> storagemax
+                        ,vector<int> path_of_route
+                        ,pair<int, int> update ={ -1, -1 }
+                        );
             protected :
                 // read only 
                 const DtnApp& out_app_;

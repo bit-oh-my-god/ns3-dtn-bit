@@ -31,6 +31,10 @@ namespace ns3 {
                         ex_rm_ = DtnApp::RoutingMethod::TimeExpanded;
                     } else if (method == "CGR") {
                         ex_rm_ = DtnApp::RoutingMethod::CGR;
+                    } else if (method == "DirectForward") {
+                        ex_rm_ = DtnApp::RoutingMethod::DirectForward;
+                    } else if (method == "QM") {
+                        ex_rm_ = DtnApp::RoutingMethod::CGR;
                     } else {
                         std::cerr << "can't find routing method name or don't assign one." << std::endl;
                         abort();
@@ -148,7 +152,7 @@ namespace ns3 {
                         // Schedule differently by schdule_for_n_trace
                         // following code is just handy used, not essential, you can do it yourself
                         if (schdule_for_n_trace > 100) {
-                            std::srand(std::time(0));
+                            std::srand(1102);
                             auto amount = schdule_for_n_trace % 100;
                             while (amount --) {
                                 if (schdule_for_n_trace > 300) {
