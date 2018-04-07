@@ -116,6 +116,7 @@ namespace ns3 {
                     int RouteIt(int src_node_n, int dest_node_n);
                     int FindTheNeighborThisBPHeaderTo(BPHeader& ref_bp_header);
                     std::string LogPrefix() {return out_app_.LogPrefix();}
+                    bool IsRouteMethodQM(){return rm_ == RoutingMethod::QM;}
                     friend RoutingMethodInterface;
                     // CGRQM TODO
                     void StorageinfoMaintainInterface(string s 

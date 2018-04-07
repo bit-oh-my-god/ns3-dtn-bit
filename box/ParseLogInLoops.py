@@ -1,4 +1,4 @@
-#!/home/dtn-012345/miniconda3/bin/python
+#!/home/tara/anaconda3/bin/python
 
 import re
 import sys
@@ -17,44 +17,23 @@ from matplotlib.colors import cnames
 from matplotlib import animation
 #==================================
 # This parse script won't parse sprayandwait for full footprints, just the longest one.
-##################
+#========
+def get_path_suffix_of(suffix):
+    def getupper(path):
+        return os.path.dirname(os.path.realpath(path))
+    cur = __file__
+    while (cur != '/'):
+        cur = getupper(cur)
+        if cur.endswith(suffix):
+            print('get path suffix of {0}, return {1}'.format(suffix, cur))
+            return cur
+    raise Exception('can\'t')
 # define handy func
 def nums(s):
     try:
         return int(s)
     except ValueError:
         return float(s)
-################
-#====
-# read the result file
-x_current_path = os.getcwd()
-simulation_result_file = open(x_current_path + "/box/dtn_simulation_result/dtnrunninglog.txt", "r")
-lines = simulation_result_file.readlines();
-simulation_result_file.close()
-#====
-g_total_hop_ = 0
-x_is_one_delivery_route = False
-x_jsonfile_save_path = x_current_path + "/box/jupyter/stuff folder/"
-x_jsonfile_name = 'haha' # TEG CGR Spray Heuristic  #"cycle12 with TEG"
-if len(sys.argv) > 1 :
-    print("successfully get the argument :{0} {1} {2}".format(sys.argv[1], sys.argv[2], sys.argv[3]))
-    x_jsonfile_name = sys.argv[1] + " " + sys.argv[2] + " " + sys.argv[3]
-x_total_cgr_reuse_optimal_count = 0
-x_total_cgr_exhaust_optimal_count = 0
-x_totoal_cgr_enter_count = 0
-x_simulation_time = -1
-x_nodes = -1
-x_sch_n = -1
-x_arrive_n = 0
-#                                                                                    dstination
-x_time_trace_map = {} # seqno -> [src_t, sr_id, hop_t, rec_t, rec_id, hop_t, ... , rec_t, rec_id, x_simulation_time]
-x_tosend_list = [] # element is also a list [source, time, destination, seqno] this is used to substitude x_schedule_list
-x_schedule_list = [] # element is also a list[source, time, destination, seqno]
-x_pkt_trace_map = {} # seqno -> [one_hop_snap, one_hop_snap... destination_snap]
-# hop_snap , destination_snap = 
-#[receive_time, receive_id, dest_id, source_id, seqno, src_generate_time, hop_transmit_time, pkt_type, is_dst, hop_id]
-############
-# define
 def snap_print(snap) :
     nomeaning = 1
     #print('''seqno :{0}, pkt-type={4}, receive at time-{1} at node-{2}, transmit at time-{3} at node-{5}'''
@@ -71,220 +50,7 @@ class B_Tree(object):
 def create_tree_from_list(list):
     root = B_Tree(None, None, None, None, None)
     return root
-#############
-test_string = r'Here In DtnExampleInterface::ReportExBundleTrace:node_number_=5;simulation_duration_=802'
-r11 = re.compile(r'BundleTrace:node_number_=(\d+\.*\d*);simulation_duration_=(\d+\.*\d*)', re.VERBOSE)
-test_regx = r11.search(test_string)
-if test_regx :
-    print("good0")
-else :
-    print("bad0")
-    sys.exit()
-    
-#strss = r'''[time-5.40052;node-1;line-638]NOTE:BundleTrace:good! one bun\
-#dle recept, it's one hop! bp_header=,destination ip=10.0.0.3,sour\
-#ce ip=10.0.0.1,source seqno=139,payload size=345,offset size=345,src time sta\
-#mp=5,hop time stamp=5,bundle type=BundlePacket'''
-#
-#r22 = re.compile(r'\[time-(\d+\.*\d*);node-(\d+\.*\d*);line-(\d+\.*\d*)\]NOTE:BundleTr\
-#ace:good!\sone\sbundle\srecept,\sit\'s\sone\shop!\sbp_header=,destination\sip=10.0.0.(\d+\.*\d*),sou\
-#rce\sip=10.0.0.(\d+\.*\d*),source\sseqno=(\d+\.*\d*),payload\ssize=(\d+\.*\d*),offset\ssi\
-#ze=(\d+\.*\d*),src\stime\sstamp=(\d+\.*\d*),hop\stime\sstamp=(\d+\.*\d*),bundle\stype=([a-zA-Z]+)', re.VERBOSE)
-#
-#hopt = r22.match(strss)
-#if hopt :
-#    print("good1")
-#else :
-#    print("bad1")
-#    sys.exit()
-
-#================================================ dividing parse ========================================
-# parse for x_ nodes and x_ simualtion_time
-# parse for bundle trace and schedule
-avoid_log_twice_bug = False
-for line in lines :
-    #In DtnExampleRunner
-    r0 = re.compile(r'In\sDtnExampleRunner', re.VERBOSE)
-    parse_begin = r0.search(line)
-    if parse_begin :
-        avoid_log_twice_bug = True
-        continue
-    elif avoid_log_twice_bug :
-        # do nothing
-        onenomeaning = 1
-    else :
-        continue
-    
-    #BundleTrace:node_number_=5;simulation_duration_=802
-    r1 = re.compile(r'BundleTrace:node_number_=(\d+\.*\d*);simulation_duration_=(\d+\.*\d*)', re.VERBOSE)
-    simulation_preview = r1.search(line)
-    
-    #[time-5.40052;node-1;line-638]NOTE:BundleTrace:good! one bundle recept, it's one hop! bp_header=,destination ip=10.0.0.3,source ip=10.0.0.1,source seqno=139,payload size=345,offset size=345,src time stamp=5,hop time stamp=5,bundle type=BundlePacket
-    r2 = re.compile(r'''\[time\-(\d+\.*\d*);node\-(\d+\.*\d*);line\-(\d+\.*\d*)\]NOTE:BundleTrace:go
-    od!\sone\sbundle\srecept\,\sit\'s\sone\shop!\sbp_header=\,destination\sip=10\.0\.0\.(\d+\.*\d*)\,sour
-    ce\sip=10\.0\.0\.(\d+\.*\d*)\,source\sseqno=(\d+\.*\d*)\,payload\ssize=(\d+\.*\d*)\,offset\ssiz
-    e=(\d+\.*\d*)\,src\stime\sstamp=(\d+\.*\d*)\,hop\stime\ssta
-    mp=(\d+\.*\d*)\,hop\sip=10\.0\.0\.(\d+\.*\d*)\,bundle\stype=([a-zA-Z]+)''', re.VERBOSE)
-    hop = r2.search(line)
-    
-    #[time-3.30744;node-1;line-630]NOTE:BundleTrace:Great! one bundle arrive destination! bp_header=,destination ip=10.0.0.2,source ip=10.0.0.1,source seqno=75,payload size=345,offset size=345,src time stamp=3,hop time stamp=3,bundle type=BundlePacket
-    r3 = re.compile(r'''\[time\-(\d+\.*\d*);node\-(\d+\.*\d*);line\-(\d+\.*\d*)\]NOTE:BundleTrace:Great!\son
-    e\sbundle\sarrive\sdestination!\sbp_header=\,destination\sip=10\.0\.0\.(\d+\.*\d*)\,so
-    urce\sip=10\.0\.0\.(\d+\.*\d*)\,source\sseqno=(\d+\.*\d*)\,payload\ssize=(\d+\.*\d*)\,offset\ss
-    ize=(\d+\.*\d*)\,src\stime\sstamp=(\d+\.*\d*)\,hop\stime\ssta
-    mp=(\d+\.*\d*)\,hop\sip=10\.0\.0\.(\d+\.*\d*)\,bundle\stype=([a-zA-Z]+)''', re.VERBOSE)
-    destination = r3.search(line)
-    
-    #[time-0;node-0;line-1553]enter ScheduleTx(), time-+3000000000.0ns,size=345, to node-1
-    r4 = re.compile(r'''node\-(\d+\.*\d*);line\-(\d+\.*\d*)]enter\sScheduleTx\(\)\,\sti
-    me\-\+(\d+\.*\d*)ns\,size=(\d+\.*\d*)\,\sto\snode\-(\d+\.*\d*)''', re.VERBOSE)
-    schedule = r4.search(line)
-    
-    #BundleTrace:Itisonedeliverymethon
-    r5 = re.compile(r'''BundleTrace:Itisonedeliverymethon''', re.VERBOSE)
-    isonedelivery = r5.search(line)
-    
-    #ScheduleTx,inToSendBundle(),bp_header=,destination ip=10.0.0.4,source ip=10.0.0.3,source seqno=47,payload size=345,offset size=345,src time stamp=0.562494,hop time stamp=0.562494,hop ip=10.0.0.3,bundle type=BundlePacket
-    r6 = re.compile(r'''ScheduleTx\,inToSendBundle\(\)\,bp_header=\,destination\sip=10\.0\.0\.(\d+\.*\d*)\,so
-    urce\sip=10\.0\.0\.(\d+\.*\d*)\,source\sseqno=(\d+\.*\d*)\,payload\ssize=(\d+\.*\d*)\,offset\ss
-    ize=(\d+\.*\d*)\,src\stime\sstamp=(\d+\.*\d*)\,hop\stime\ssta
-    mp=(\d+\.*\d*)\,hop\sip=10\.0\.0\.(\d+\.*\d*)\,bundle\stype=([a-zA-Z]+)''', re.VERBOSE)
-    tosendbundle = r6.search(line)
-    
-    #BundleTrace:entertimes=1times
-    r7 = re.compile(r'''BundleTrace:entertimes=(\d+\.*\d*)times''', re.VERBOSE)
-    cgrcount = r7.search(line)
-    
-    #may make bad routing-2
-    r8 = re.compile(r'''may\smake\sbad\srouting-2''', re.VERBOSE)
-    cgr_reuse = r8.search(line)
-    
-    #may make bad routing-1
-    r9 = re.compile(r'''may\smake\sbad\srouting-1''', re.VERBOSE)
-    cgr_exhaust = r9.search(line)
-    
-    if schedule :
-        #print(line)
-        sche_source = int(nums(schedule.group(1)))
-        sche_time = float(nums(schedule.group(3)) / 1000000000.0)
-        sche_destination = int(nums(schedule.group(5)))
-        tmp = [sche_source, sche_time, sche_destination, -1]
-        x_schedule_list.append(tmp)
-    elif cgr_reuse :
-        x_total_cgr_reuse_optimal_count += 1
-    elif cgr_exhaust :
-        x_total_cgr_exhaust_optimal_count += 1
-    elif cgrcount :
-        #print(line)
-        x_totoal_cgr_enter_count += int(nums(cgrcount.group(1)))
-    elif tosendbundle :
-        #print(line)
-        tosend_source = int(nums(tosendbundle.group(2)) - int(1))
-        tosend_time = float(nums(tosendbundle.group(6)))
-        tosend_destination = int(nums(tosendbundle.group(1)) - int(1))
-        tosend_seqno = int(nums(tosendbundle.group(3)))
-        tmp = [tosend_source, tosend_time, tosend_destination, tosend_seqno]
-        x_tosend_list.append(tmp)
-    elif isonedelivery :
-        #print(line)
-        x_is_one_delivery_route = True
-    elif hop :
-        #print(line)
-        g_total_hop_ += 1
-        hop_receive_time = float(nums(hop.group(1)))
-        hop_receive_id = int(nums(hop.group(2)))
-        hop_dest_id = int(nums(hop.group(4)) - int(1))
-        hop_source_id = int(nums(hop.group(5)) - int(1))
-        hop_seqno = int(nums(hop.group(6)))
-        hop_src_generate_time = float(nums(hop.group(9))) # TODO
-        hop_hop_transmit_time = float(nums(hop.group(10)))
-        hop_hop_id = int(nums(hop.group(11)) - int(1))
-        hop_pkt_type = hop.group(12)
-        if (hop_hop_transmit_time > hop_receive_time) :
-            print('receive time:{0} should < hop_transmit time{1}'.format(hop_receive_time, hop_hop_transmit_time))
-            sys.exit()
-        tmp = [hop_receive_time, hop_receive_id, hop_dest_id, hop_source_id, hop_seqno,
-               hop_src_generate_time, hop_hop_transmit_time, hop_pkt_type, False, hop_hop_id]
-        if hop_seqno in x_pkt_trace_map.keys():
-            old_list = x_pkt_trace_map[hop_seqno]
-            old_list.append(tmp)
-            old_list.sort(key=lambda tup: tup[0])
-            x_pkt_trace_map[hop_seqno] = old_list
-        else:
-            new_list = []
-            new_list.append(tmp)
-            x_pkt_trace_map[hop_seqno] = new_list
-    elif simulation_preview :
-        #print(line)
-        x_nodes = int(simulation_preview.group(1))
-        x_simulation_time = float(simulation_preview.group(2))
-    elif destination :
-        #print(line)
-        g_total_hop_ += 1
-        dst_receive_time = float(nums(destination.group(1)))
-        dst_receive_id = int(nums(destination.group(2)))
-        dst_dst_id = int(nums(destination.group(4)) - int(1))
-        dst_src_id = int(nums(destination.group(5)) - int(1))
-        dst_seqno = int(nums(destination.group(6)))
-        dst_src_generate_time = float(nums(destination.group(9)))
-        dst_hop_transmit_time = float(nums(destination.group(10)))
-        dst_hop_id = int(nums(destination.group(11)) - int(1))
-        dst_pkt_type = destination.group(12)
-        if (dst_hop_transmit_time > dst_receive_time) :
-            print('receive time')
-            sys.exit()
-        tmp = [dst_receive_time, dst_receive_id, dst_dst_id, dst_src_id, dst_seqno,
-               dst_src_generate_time, dst_hop_transmit_time, dst_pkt_type, True, dst_hop_id]
-        if dst_seqno in x_pkt_trace_map.keys() :
-            old_list = x_pkt_trace_map[dst_seqno]
-            old_list.append(tmp)
-            old_list.sort(key=lambda tup: tup[0])
-            x_pkt_trace_map[dst_seqno] = old_list
-        else :
-            new_list = []
-            new_list.append(tmp)
-            x_pkt_trace_map[dst_seqno] = new_list
-            
-#========================================= end of parse ===================================================
-
-print(r'============= dividing end of parse =============')
-if (x_nodes == -1) or (x_simulation_time == -1) :
-    print('error_04')
-    sys.exit()
-#================ now we have every thing we need, refine the data and prepare for visualization
-#===== refine x_schedule_list
-for sch in x_schedule_list :
-    sk = [sch[0], sch[1], sch[2]] # s, t, d
-    sn = sch[3]
-    if sn != -1 :
-        print('error_03')
-        sys.exit()
-    for key, value in x_pkt_trace_map.items() : #
-        #print('value len={0}'.format(len(value)))
-        #print(value)
-        tk = [value[0][3], value[0][5], value[0][2]]
-        seqno = value[0][4]
-        if (tk[0] == sk[0] and tk[2] == sk[2] and tk[1] - sk[1] < 0.1) :
-            sn = seqno
-            break
-    if (sn != -1) :
-        sch[3] = sn
-    else :
-        print('warn_05:this may happen when one pkt scheduled but not successfully hoped')
-
-print('============= \n === print your schedule')
-#print(x_schedule_list)
-print('============= \n === print your tosendbundle')
-#print(x_tosend_list)
-#===================================== get graph needed list
-#
-x_sch_n = len(x_tosend_list)
-print('==============\n print your x_pkt_trace_map')
-#print(x_pkt_trace_map)
-#######################################
-####################
-#definition
-def get_x_time_trace_map_detail(p_x_time_trace_map, p_x_tosend_list, p_x_pkt_trace_map, ref_x_arrive_n) :
+def get_x_time_trace_map_detail(p_x_time_trace_map, p_x_tosend_list, p_x_pkt_trace_map, ref_x_arrive_n,x_simulation_time) :
     ref_x_arrive_n = 0
     for sch in p_x_tosend_list :
             src_t = sch[1]
@@ -318,10 +84,10 @@ def get_x_time_trace_map_detail(p_x_time_trace_map, p_x_tosend_list, p_x_pkt_tra
                 print('key not exist-{0}'.format(seqno))
                 p_x_time_trace_map[seqno] = tmp
     return ref_x_arrive_n
-def get_x_time_trace_map(p_x_time_trace_map, p_x_tosend_list, p_x_pkt_trace_map, ref_x_arrive_n) :
+def get_x_time_trace_map(p_x_time_trace_map, p_x_tosend_list, p_x_pkt_trace_map, ref_x_arrive_n,x_simulation_time,x_is_one_delivery_route) :
     ref_x_arrive_n = 0
     if x_is_one_delivery_route :
-        ref_x_arrive_n = get_x_time_trace_map_detail(p_x_time_trace_map,p_x_tosend_list, p_x_pkt_trace_map, ref_x_arrive_n)
+        ref_x_arrive_n = get_x_time_trace_map_detail(p_x_time_trace_map,p_x_tosend_list, p_x_pkt_trace_map, ref_x_arrive_n,x_simulation_time)
     else :
         print('if not one delivery route, this would cause one seqno -> multiply path, it\'s hard to parse, would\
         differ against normal one delivery parse')
@@ -340,7 +106,7 @@ def get_x_time_trace_map(p_x_time_trace_map, p_x_tosend_list, p_x_pkt_trace_map,
         print('================ debug  p_x_pkt_trace_map 1=========')
         print(p_x_pkt_trace_map)
         print('================ debug  p_x_pkt_trace_map 1=========')
-        ref_x_arrive_n = get_x_time_trace_map_detail(p_x_time_trace_map,p_x_tosend_list, p_x_pkt_trace_map, ref_x_arrive_n)
+        ref_x_arrive_n = get_x_time_trace_map_detail(p_x_time_trace_map,p_x_tosend_list, p_x_pkt_trace_map, ref_x_arrive_n,x_simulation_time)
     return ref_x_arrive_n
 def get_list_of_pkt_trace(key, snaps, p_x_tosend_list) :
     snaps_count = len(snaps)
@@ -453,15 +219,20 @@ class JSONOB(object):
         return self.tosend_list_ob
     def get_total_hop(self) :
         return self.total_hop
-def save_this_jsonob_as(filename, jsonob_to) :
+def save_this_jsonob_as(filename, jsonob_to,x_jsonfile_save_path) :
     fullpathname = x_jsonfile_save_path + filename
     serialized_json = jsonpickle.encode(jsonob_to)
-    with open(fullpathname, "w") as text_file:
+    directory=os.path.dirname(fullpathname)
+    print('open file {0}'.format(fullpathname))
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    with open(fullpathname, "w+") as text_file:
         print(serialized_json, file=text_file)
 def draw_it(p_x_tosend_list, p_x_time_trace_map, p_x_simulation_time) :
     fig = plt.figure()
     ax = fig.gca(projection='3d')
-    colors = plt.cm.jet(np.linspace(0, 1, len(p_x_tosend_list)))
+    colors = plt.cm.ScalarMappable(cmap=plt.cm.get_cmap('jet')).to_rgba(x=np.linspace(0, 1, len(p_x_tosend_list)))
+    #colors = plt.cm.jet(np.linspace(0, 1, len(p_x_tosend_list)))
     seqno_number_list = []
     for xsele in p_x_tosend_list :
         seqno_number_list.append(xsele[3])  
@@ -503,28 +274,237 @@ def draw_it(p_x_tosend_list, p_x_time_trace_map, p_x_simulation_time) :
     plt.show()
 #end of definition
 #################################
-###################################
-print('===================================================================================================\
-\n===================== report parse result ================')
-x_arrive_n = get_x_time_trace_map(x_time_trace_map, x_tosend_list, x_pkt_trace_map, x_arrive_n)
-title_str = '{0} / {1} arrived'.format(x_arrive_n, x_sch_n)
-print(title_str)
-print('====================== serialize to json format =====================')
-name = '{4}-nodeN-{0}-timeT-{1}-arriveN-{2}-scheduleN-{3}'.\
-                    format(x_nodes, x_simulation_time, x_arrive_n, x_sch_n, x_jsonfile_name)
-jsonob_this = JSONOB(name, x_tosend_list, x_time_trace_map, g_total_hop_)
-save_this_jsonob_as(name, jsonob_this)
+def mainsmain():
+    #====
+    # read the result file
+    simulation_result_file = open(get_path_suffix_of('ns3-dtn-bit') + "/box/dtn_simulation_result/dtnrunninglog.txt", "r")
+    lines = simulation_result_file.readlines();
+    simulation_result_file.close()
+    #====
+    g_total_hop_ = 0
+    x_is_one_delivery_route = False
+    x_jsonfile_save_path = get_path_suffix_of('ns3-dtn-bit') + "/box/jupyter/stuff folder/"
+    x_jsonfile_name = 'haha' # TEG CGR Spray Heuristic  #"cycle12 with TEG"
+    if len(sys.argv) > 1 :
+        print("successfully get the argument :{0} {1} {2}".format(sys.argv[1], sys.argv[2], sys.argv[3]))
+        x_jsonfile_name = sys.argv[1] + " " + sys.argv[2] + " " + sys.argv[3]
+    x_total_cgr_reuse_optimal_count = 0
+    x_total_cgr_exhaust_optimal_count = 0
+    x_totoal_cgr_enter_count = 0
+    x_simulation_time = -1
+    x_nodes = -1
+    x_sch_n = -1
+    x_arrive_n = 0
+    #                                                                                    dstination
+    x_time_trace_map = {} # seqno -> [src_t, sr_id, hop_t, rec_t, rec_id, hop_t, ... , rec_t, rec_id, x_simulation_time]
+    x_tosend_list = [] # element is also a list [source, time, destination, seqno] this is used to substitude x_schedule_list
+    x_schedule_list = [] # element is also a list[source, time, destination, seqno]
+    x_pkt_trace_map = {} # seqno -> [one_hop_snap, one_hop_snap... destination_snap]
+    # hop_snap , destination_snap = 
+    #[receive_time, receive_id, dest_id, source_id, seqno, src_generate_time, hop_transmit_time, pkt_type, is_dst, hop_id]
+    ############
+    #================================================ dividing parse ========================================
+    # parse for x_ nodes and x_ simualtion_time
+    # parse for bundle trace and schedule
+    avoid_log_twice_bug = False
+    for line in lines :
+        #In DtnExampleRunner
+        r0 = re.compile(r'In\sDtnExampleRunner', re.VERBOSE)
+        parse_begin = r0.search(line)
+        if parse_begin :
+            avoid_log_twice_bug = True
+            continue
+        elif avoid_log_twice_bug :
+            # do nothing
+            onenomeaning = 1
+        else :
+            continue
+        
+        #BundleTrace:node_number_=5;simulation_duration_=802
+        r1 = re.compile(r'BundleTrace:node_number_=(\d+\.*\d*);simulation_duration_=(\d+\.*\d*)', re.VERBOSE)
+        simulation_preview = r1.search(line)
+        
+        #[time-5.40052;node-1;line-638]NOTE:BundleTrace:good! one bundle recept, it's one hop! bp_header=,destination ip=10.0.0.3,source ip=10.0.0.1,source seqno=139,payload size=345,offset size=345,src time stamp=5,hop time stamp=5,bundle type=BundlePacket
+        r2 = re.compile(r'''\[time\-(\d+\.*\d*);node\-(\d+\.*\d*);line\-(\d+\.*\d*)\]NOTE:BundleTrace:go
+        od!\sone\sbundle\srecept\,\sit\'s\sone\shop!\sbp_header=\,destination\sip=10\.0\.0\.(\d+\.*\d*)\,sour
+        ce\sip=10\.0\.0\.(\d+\.*\d*)\,source\sseqno=(\d+\.*\d*)\,payload\ssize=(\d+\.*\d*)\,offset\ssiz
+        e=(\d+\.*\d*)\,src\stime\sstamp=(\d+\.*\d*)\,hop\stime\ssta
+        mp=(\d+\.*\d*)\,hop\sip=10\.0\.0\.(\d+\.*\d*)\,bundle\stype=([a-zA-Z]+)''', re.VERBOSE)
+        hop = r2.search(line)
+        
+        #[time-3.30744;node-1;line-630]NOTE:BundleTrace:Great! one bundle arrive destination! bp_header=,destination ip=10.0.0.2,source ip=10.0.0.1,source seqno=75,payload size=345,offset size=345,src time stamp=3,hop time stamp=3,bundle type=BundlePacket
+        r3 = re.compile(r'''\[time\-(\d+\.*\d*);node\-(\d+\.*\d*);line\-(\d+\.*\d*)\]NOTE:BundleTrace:Great!\son
+        e\sbundle\sarrive\sdestination!\sbp_header=\,destination\sip=10\.0\.0\.(\d+\.*\d*)\,so
+        urce\sip=10\.0\.0\.(\d+\.*\d*)\,source\sseqno=(\d+\.*\d*)\,payload\ssize=(\d+\.*\d*)\,offset\ss
+        ize=(\d+\.*\d*)\,src\stime\sstamp=(\d+\.*\d*)\,hop\stime\ssta
+        mp=(\d+\.*\d*)\,hop\sip=10\.0\.0\.(\d+\.*\d*)\,bundle\stype=([a-zA-Z]+)''', re.VERBOSE)
+        destination = r3.search(line)
+        
+        #[time-0;node-0;line-1553]enter ScheduleTx(), time-+3000000000.0ns,size=345, to node-1
+        r4 = re.compile(r'''node\-(\d+\.*\d*);line\-(\d+\.*\d*)]enter\sScheduleTx\(\)\,\sti
+        me\-\+(\d+\.*\d*)ns\,size=(\d+\.*\d*)\,\sto\snode\-(\d+\.*\d*)''', re.VERBOSE)
+        schedule = r4.search(line)
+        
+        #BundleTrace:Itisonedeliverymethon
+        r5 = re.compile(r'''BundleTrace:Itisonedeliverymethon''', re.VERBOSE)
+        isonedelivery = r5.search(line)
+        
+        #ScheduleTx,inToSendBundle(),bp_header=,destination ip=10.0.0.4,source ip=10.0.0.3,source seqno=47,payload size=345,offset size=345,src time stamp=0.562494,hop time stamp=0.562494,hop ip=10.0.0.3,bundle type=BundlePacket
+        r6 = re.compile(r'''ScheduleTx\,inToSendBundle\(\)\,bp_header=\,destination\sip=10\.0\.0\.(\d+\.*\d*)\,so
+        urce\sip=10\.0\.0\.(\d+\.*\d*)\,source\sseqno=(\d+\.*\d*)\,payload\ssize=(\d+\.*\d*)\,offset\ss
+        ize=(\d+\.*\d*)\,src\stime\sstamp=(\d+\.*\d*)\,hop\stime\ssta
+        mp=(\d+\.*\d*)\,hop\sip=10\.0\.0\.(\d+\.*\d*)\,bundle\stype=([a-zA-Z]+)''', re.VERBOSE)
+        tosendbundle = r6.search(line)
+        
+        #BundleTrace:entertimes=1times
+        r7 = re.compile(r'''BundleTrace:entertimes=(\d+\.*\d*)times''', re.VERBOSE)
+        cgrcount = r7.search(line)
+        
+        #may make bad routing-2
+        r8 = re.compile(r'''may\smake\sbad\srouting-2''', re.VERBOSE)
+        cgr_reuse = r8.search(line)
+        
+        #may make bad routing-1
+        r9 = re.compile(r'''may\smake\sbad\srouting-1''', re.VERBOSE)
+        cgr_exhaust = r9.search(line)
+        
+        if schedule :
+            #print(line)
+            sche_source = int(nums(schedule.group(1)))
+            sche_time = float(nums(schedule.group(3)) / 1000000000.0)
+            sche_destination = int(nums(schedule.group(5)))
+            tmp = [sche_source, sche_time, sche_destination, -1]
+            x_schedule_list.append(tmp)
+        elif cgr_reuse :
+            x_total_cgr_reuse_optimal_count += 1
+        elif cgr_exhaust :
+            x_total_cgr_exhaust_optimal_count += 1
+        elif cgrcount :
+            #print(line)
+            x_totoal_cgr_enter_count += int(nums(cgrcount.group(1)))
+        elif tosendbundle :
+            #print(line)
+            tosend_source = int(nums(tosendbundle.group(2)) - int(1))
+            tosend_time = float(nums(tosendbundle.group(6)))
+            tosend_destination = int(nums(tosendbundle.group(1)) - int(1))
+            tosend_seqno = int(nums(tosendbundle.group(3)))
+            tmp = [tosend_source, tosend_time, tosend_destination, tosend_seqno]
+            x_tosend_list.append(tmp)
+        elif isonedelivery :
+            #print(line)
+            x_is_one_delivery_route = True
+        elif hop :
+            #print(line)
+            g_total_hop_ += 1
+            hop_receive_time = float(nums(hop.group(1)))
+            hop_receive_id = int(nums(hop.group(2)))
+            hop_dest_id = int(nums(hop.group(4)) - int(1))
+            hop_source_id = int(nums(hop.group(5)) - int(1))
+            hop_seqno = int(nums(hop.group(6)))
+            hop_src_generate_time = float(nums(hop.group(9))) # TODO
+            hop_hop_transmit_time = float(nums(hop.group(10)))
+            hop_hop_id = int(nums(hop.group(11)) - int(1))
+            hop_pkt_type = hop.group(12)
+            if (hop_hop_transmit_time > hop_receive_time) :
+                print('receive time:{0} should < hop_transmit time{1}'.format(hop_receive_time, hop_hop_transmit_time))
+                sys.exit()
+            tmp = [hop_receive_time, hop_receive_id, hop_dest_id, hop_source_id, hop_seqno,
+                hop_src_generate_time, hop_hop_transmit_time, hop_pkt_type, False, hop_hop_id]
+            if hop_seqno in x_pkt_trace_map.keys():
+                old_list = x_pkt_trace_map[hop_seqno]
+                old_list.append(tmp)
+                old_list.sort(key=lambda tup: tup[0])
+                x_pkt_trace_map[hop_seqno] = old_list
+            else:
+                new_list = []
+                new_list.append(tmp)
+                x_pkt_trace_map[hop_seqno] = new_list
+        elif simulation_preview :
+            #print(line)
+            x_nodes = int(simulation_preview.group(1))
+            x_simulation_time = float(simulation_preview.group(2))
+        elif destination :
+            #print(line)
+            g_total_hop_ += 1
+            dst_receive_time = float(nums(destination.group(1)))
+            dst_receive_id = int(nums(destination.group(2)))
+            dst_dst_id = int(nums(destination.group(4)) - int(1))
+            dst_src_id = int(nums(destination.group(5)) - int(1))
+            dst_seqno = int(nums(destination.group(6)))
+            dst_src_generate_time = float(nums(destination.group(9)))
+            dst_hop_transmit_time = float(nums(destination.group(10)))
+            dst_hop_id = int(nums(destination.group(11)) - int(1))
+            dst_pkt_type = destination.group(12)
+            if (dst_hop_transmit_time > dst_receive_time) :
+                print('receive time')
+                sys.exit()
+            tmp = [dst_receive_time, dst_receive_id, dst_dst_id, dst_src_id, dst_seqno,
+                dst_src_generate_time, dst_hop_transmit_time, dst_pkt_type, True, dst_hop_id]
+            if dst_seqno in x_pkt_trace_map.keys() :
+                old_list = x_pkt_trace_map[dst_seqno]
+                old_list.append(tmp)
+                old_list.sort(key=lambda tup: tup[0])
+                x_pkt_trace_map[dst_seqno] = old_list
+            else :
+                new_list = []
+                new_list.append(tmp)
+                x_pkt_trace_map[dst_seqno] = new_list
+                
+    #========================================= end of parse ===================================================
 
-#print('====================== print result in plain text =====================')
-#for key, value in x_time_trace_map.items() :
-#    handy_print_1(key, value, x_tosend_list)
-#print(x_time_trace_map)
+    print(r'============= dividing end of parse =============')
+    if (x_nodes == -1) or (x_simulation_time == -1) :
+        print('error_04')
+        sys.exit()
+    #================ now we have every thing we need, refine the data and prepare for visualization
+    #===== refine x_schedule_list
+    for sch in x_schedule_list :
+        sk = [sch[0], sch[1], sch[2]] # s, t, d
+        sn = sch[3]
+        if sn != -1 :
+            print('error_03')
+            sys.exit()
+        for key, value in x_pkt_trace_map.items() : #
+            #print('value len={0}'.format(len(value)))
+            #print(value)
+            tk = [value[0][3], value[0][5], value[0][2]]
+            seqno = value[0][4]
+            if (tk[0] == sk[0] and tk[2] == sk[2] and tk[1] - sk[1] < 0.1) :
+                sn = seqno
+                break
+        if (sn != -1) :
+            sch[3] = sn
+        else :
+            print('warn_05:this may happen when one pkt scheduled but not successfully hoped')
+    #print('============= \n === print your schedule:\n{0}'.format(x_schedule_list)) 
+    #print('============= \n === print your tosendbundle:\n{0}'.format(x_tosend_list)) 
+    x_sch_n = len(x_tosend_list)
+    #print('==============\n print your x_pkt_trace_map:\n{0}'.format(x_pkt_trace_map))
+    print('=====================================================\
+    \n===================== report parse result ================')
+    x_arrive_n = get_x_time_trace_map(x_time_trace_map, x_tosend_list, x_pkt_trace_map, x_arrive_n,x_simulation_time,x_is_one_delivery_route)
+    title_str = '{0} / {1} arrived'.format(x_arrive_n, x_sch_n)
+    print(title_str)
+    print('====================== serialize to json format =====================')
+    name = '{4}-nodeN-{0}-timeT-{1}-arriveN-{2}-scheduleN-{3}'.\
+                        format(x_nodes, x_simulation_time, x_arrive_n, x_sch_n, x_jsonfile_name)
+    jsonob_this = JSONOB(name, x_tosend_list, x_time_trace_map, g_total_hop_)
+    print('json file is {0}'.format(name))
+    save_this_jsonob_as(name, jsonob_this,x_jsonfile_save_path)
 
-print('================================= dividing ========================')
-#draw_it(x_tosend_list, x_time_trace_map, x_simulation_time)
+    print('====================== print one result in plain text =====================')
+    for key, value in x_time_trace_map.items() :
+        handy_print_1(key, value, x_tosend_list)
+        break
+    #print(x_time_trace_map)
 
-if x_totoal_cgr_enter_count > 0 :
-    print('================================= CGR only print for debug ========================')
-    print('totoal cgr enter count = {0}'.format(x_totoal_cgr_enter_count))
-    print('running time optimal routing result successive routing reuse count = {0}'.format(x_total_cgr_reuse_optimal_count))
-    print('running time optimal routing result exhaust routing reuse count = {0}'.format(x_total_cgr_exhaust_optimal_count))
+    print('================================= dividing ========================')
+    #draw_it(x_tosend_list, x_time_trace_map, x_simulation_time)
+
+    if x_totoal_cgr_enter_count > 0 :
+        print('================================= CGR only print for debug ========================')
+        print('totoal cgr enter count = {0}'.format(x_totoal_cgr_enter_count))
+        print('running time optimal routing result successive routing reuse count = {0}'.format(x_total_cgr_reuse_optimal_count))
+        print('running time optimal routing result exhaust routing reuse count = {0}'.format(x_total_cgr_exhaust_optimal_count))
+############
+mainsmain()

@@ -1,7 +1,7 @@
 # Preface
-This Project is a newbie-readable simulation for dtn on ns-3 environment, easy to use for research purples, supporting customed routing definition and scenario definition.
+This Project is a newbie-friendly simulation for dtn on ns-3 environment, easy to use for research purples, supporting customed routing definition and scenario definition.
 
-This project is highly inspirited by [Lakkakorpi](https://www.netlab.tkk.fi/tutkimus/dtn/ns/)
+This project is inspirited by [Lakkakorpi](https://www.netlab.tkk.fi/tutkimus/dtn/ns/)
 
 Read this teg-[paper](https://smartech.gatech.edu/bitstream/handle/1853/6492/GIT-CC-04-07.pdf?sequence=1&isAllowed=y) if you want know about TEG(time-expanded graph)
 
@@ -9,12 +9,12 @@ Read this [paper](http://www.sciencedirect.com/science/article/pii/S009457651200
 
 # Begin
 
-  1. Download source code, ns-allineone-3.26 under this directory and make sure you can use[ns3](Installhttps://www.nsnam.org/releases/)
+  1. Download source code, ns-allineone-3.26 under this directory(or make softlink) and make sure you can use[ns3](Installhttps://www.nsnam.org/releases/)
   2. Copy ./box/ns2mobilityhelper.cc to ./ns-allineone-3.26/src/mobility, this file was modified and would help us parse 3d-motion
-  3. Modify your current_trace_file.tcl by your hand or by [bonnmotion](#A) or by ./create_trace_file.sh
-  4. Set node_number and simulation_time to jupytor and your-example.cc
+  3. Modify your current_trace.tcl by your hand or by ./box/WriteTraceFileLib.py
+  4. Set node_number and simulation_time ./box/PrepareSim.py and your-example.cc, must equal to your current_trace.tcl
         
-            // in jupytor PreparSimulation
+            // in ./box/PrepareSim.py
             T_max = 802                #change me !!!!!!!
             teg_slice_n = 802          #change me !!!!!!!
 
@@ -22,31 +22,15 @@ Read this [paper](http://www.sciencedirect.com/science/article/pii/S009457651200
             node_number_ = 5;           // change me!!
             simulation_duration_ = 802;         // change me!!!
 
-  5. Run jupytor notebook animation to generate teg.txt, see [jupytor](#B)
+  5. Run ./box/PrepareSim.py to make animation and generate teg.txt
   6. Modify ns3dtn-bit-your-example.cc to set simulation settings, see [example-interface](#C)
-  7. Make sure you have your **teg.txt** **current_trace_file** **yourexample.cpp** done. Then run ./build.sh to run simulation
-  8. Run jupytor notebook to parse result to json file, and visualize your simulation result
-
-            // in jupyter ParseSimulationResult
-            x_jsonfile_name = 'please_change_this_name'   // change me!!!
-  9. Run jupytor MakeGraph script to get compare between scenario
+  7. Make sure you have your **teg.txt** **current_trace_file** **yourexample.cpp** done. Then run ./build.sh to build(not run) 
+  8. Run ./run_loops.sh and would parse your result and write them into a json file
+  9. Run ./box/MakeGraphByJson.py to get graph
 
 # structure of this project
 
 * editor tool : editor Vim do I use, if you are using YCM for code complete, remember add pull path of include to ~/.ycm_extra_config.py
-
-* bonnmotion <a name="A"></a>
-it is a software depending on java used to generate node trace files
-we just need the **.ns_movements** file
-
-* bonnmotion + ns2 + nam + nsg2.1
-[ref](http://www.nsnam.com/2015/03/bonnmotion-mobile-scenario-generator.html) [ref](http://chandra-ns2.blogspot.com/2009/01/how-to-run-bonnmotion-for-ns-2.html)
-[how to use this combo](https://www.slideshare.net/manasGaur1/bonn-motion-traffic-generation-and-nam)
-
-* CMU setdest
-The [author of that project](https://www.netlab.tkk.fi/tutkimus/dtn/ns/), Lakkakorpi used this CMU setdest program. [ref](http://www.isi.edu/nsnam/ns/tutorial/nsscript7.html)
-But, we can't get 3d in "setdest", this problem aside, let's focus on how to use this setdest, in my machine, I did this "$sudo apt install ns2"
-so I have the setdest in my "/usr/bin/setdest"
 
 * ns3 example-interface
 This file defines how your scenario structed, how your network configured.
@@ -56,8 +40,6 @@ Note that time-interval of two lines of teg.txt is exactly ** one second ** in r
 * ns3 and ns3-dtn-bit module <a name="C"></a>
 The main methods for DtnApp are 1. checkbuffer - totransmit 2. receive bundle 3. sendhello - receive hello.
 We modify ns2-mobility-helper.cc, to support 3d-parse for us. you can find it at /box
-Also, you can find image in /box
-![ns3-dtn-bit module image][image01]
 
 * jupyter and python-matplotlib <a name="B"></a>
 There is one tutorial that I think may help you [ref](https://www.youtube.com/watch?v=HW29067qVWk&t=1568s).

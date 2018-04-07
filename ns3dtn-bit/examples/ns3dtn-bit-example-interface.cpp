@@ -120,7 +120,7 @@ namespace ns3 {
             // create adob for app
             std::cout << "=============== CreateAdjacentList ===============" << endl;
             auto adob = CreateAdjacentList();
-            std::cout << "=============== End of create ===============" << endl;
+            std::cout << "=============== End of CreateAdjacentList ===============" << endl;
             //Ptr<DtnApp> app[node_number_];
             for (uint32_t i = 0; i < node_number_; ++i) { 
                 // create app and set
@@ -332,18 +332,22 @@ namespace ns3 {
             if (ex_rm_ == DtnApp::RoutingMethod::SprayAndWait) {
                 auto p = new EmptyRouting(dtn);
                 cout << "BundleTrace:Itisnotonedeliverymethon\n" << endl;
+                cout << "BundleTrace:install route :sprayandwait\n" << endl;
                 return std::unique_ptr<RoutingMethodInterface>(p);
             } else if (ex_rm_ == DtnApp::RoutingMethod::TimeExpanded) {
                 auto p = new TegRouting(dtn);
                 cout << "BundleTrace:Itisonedeliverymethon\n" << endl;
+                cout << "BundleTrace:install route :teg\n" << endl;
                 return std::unique_ptr<RoutingMethodInterface>(p);
             } else if (ex_rm_ == DtnApp::RoutingMethod::CGR) {
                 auto p = new CGRRouting(dtn);
                 cout << "BundleTrace:Itisonedeliverymethon\n" << endl;
+                cout << "BundleTrace:install route :cgr\n" << endl;
                 return std::unique_ptr<RoutingMethodInterface>(p);
             } else if (ex_rm_ == DtnApp::RoutingMethod::Other) {
                 auto p = new YouRouting(dtn);
                 cout << "BundleTrace:Itisonedeliverymethon\n" << endl;
+                cout << "BundleTrace:install route :heuris\n" << endl;
                 return std::unique_ptr<RoutingMethodInterface>(p);
             } else if (ex_rm_ == DtnApp::RoutingMethod::QM) {
                 auto p = new CGRQMRouting(dtn);
@@ -355,6 +359,7 @@ namespace ns3 {
                 vector<int> empty03;
                 p->StorageinfoMaintainInterface("give storage_max_", empty01, empty02, storagemax, empty03);
                 cout << "BundleTrace:Itisonedeliverymethon\n" << endl;
+                cout << "BundleTrace:install route :qm\n" << endl;
                 return std::unique_ptr<RoutingMethodInterface>(p);
             } else {
                 cout << "error: can't find routing" << endl;

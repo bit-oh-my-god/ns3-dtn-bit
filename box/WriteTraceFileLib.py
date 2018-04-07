@@ -1,5 +1,7 @@
-#!/home/dtn-012345/miniconda3/bin/python
-
+#!/home/tara/anaconda3/bin/python
+#------------------------------
+# run this to generate /box/current_trace/current_trace_generate_one
+#------------------------------
 import re
 import sys
 import random
@@ -21,7 +23,18 @@ from matplotlib import animation
 #========================================
 # this is a file used to generate current_trace_file
 #=========================================
-
+#========
+def get_path_suffix_of(suffix):
+    def getupper(path):
+        return os.path.dirname(os.path.realpath(path))
+    cur = __file__
+    while (cur != '/'):
+        cur = getupper(cur)
+        if cur.endswith(suffix):
+            print('get path suffix of {0}, return {1}'.format(suffix, cur))
+            return cur
+    raise Exception('can\'t')
+#=========================== 
 #========================
 # @brief refine a vector to length 1
 def refine_mode_one(v) :
@@ -29,7 +42,7 @@ def refine_mode_one(v) :
     return [v[0] / dis, v[1] / dis, v[2] / dis]
 #=========================
 # @brief this func would generate the corner of a 'n' edge polygon with core of 'core', long axis(length in 'X' axis), short axis, vertical_line, angle between long axis and xz surface
-# @return a vector of points of polygon
+# @return a vector of vertex of polygon
 def generate_points_of_polygon_with_core_size_slope(n, core, size_long, size_width, vertical_line, angle_of_long_axis_and_xz_surface, is_clock_wise, root_1_or_2, axis_x) :
     #assert n
     #assert core
@@ -173,8 +186,9 @@ def dist_of(vec1, vec2) :
     return sqrt(pow(vec1[0] - vec2[0], 2) + pow(vec1[1] - vec2[1], 2) + pow(vec1[2] - vec2[2], 2))
 
 #========================
-# @brief this func would write a sequence of trace into file with vector of points and speed and time, start at vector_of_points[m]
-# @input
+# @brief this func would write a sequence of trace into file with vector of points and speed and time, start at vector_of_points[m] as nodeid n
+# @input vector_of_points is 'list of points you plan'
+# @input speed_vec is speed you plan
 def write_trace_into_file(vector_of_points, speed_vec, alltime, m, n) :
     #assert
     print("nothing")
@@ -277,8 +291,7 @@ def test01_functon() :
     print("python version:" + sys.version)
     global g_precise, g_trace_file 
     g_precise = 0.000001
-    x_current_path = os.getcwd()
-    g_trace_file = open(x_current_path + "/current_trace/current_trace_generate_one", "w")
+    g_trace_file = open(get_path_suffix_of('nd3-dtn-bit') + "/box/current_trace/current_trace_generate_one", "w")
     #==
     #
     assert(dist_of([1000,1000,1000],[2000,1000,1000]) == 1000)
@@ -304,9 +317,8 @@ def test01_functon() :
 def test02_functon() :
     print("python version:" + sys.version)
     global g_precise, g_trace_file 
-    g_precise = 0.000001
-    x_current_path = os.getcwd()
-    g_trace_file = open(x_current_path + "/current_trace/current_trace_generate_one", "w")
+    g_precise = 0.000001 
+    g_trace_file = open(get_path_suffix_of('nd3-dtn-bit') + "/box/current_trace/current_trace_generate_one", "w")
     #==
     #
     assert(dist_of([1000,1000,1000],[2000,1000,1000]) == 1000)
@@ -388,9 +400,8 @@ def test02_functon() :
 def test03_functon() :
     print("python version:" + sys.version)
     global g_precise, g_trace_file 
-    g_precise = 0.000001
-    x_current_path = os.getcwd()
-    g_trace_file = open(x_current_path + "/current_trace/current_trace_generate_one", "w")
+    g_precise = 0.000001 
+    g_trace_file = open(get_path_suffix_of('nd3-dtn-bit') + "/box/current_trace/current_trace_generate_one", "w")
     #==
     #
     assert(dist_of([1000,1000,1000],[2000,1000,1000]) == 1000)
@@ -418,9 +429,8 @@ def test03_functon() :
 def test04_functon() :
     print("python version:" + sys.version)
     global g_precise, g_trace_file 
-    g_precise = 0.000001
-    x_current_path = os.getcwd()
-    g_trace_file = open(x_current_path + "/current_trace/current_trace_generate_one", "w")
+    g_precise = 0.000001 
+    g_trace_file = open(get_path_suffix_of('nd3-dtn-bit') + "/box/current_trace/current_trace_generate_one", "w")
     #==
     #
     assert(dist_of([1000,1000,1000],[2000,1000,1000]) == 1000)

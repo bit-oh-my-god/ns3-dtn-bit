@@ -39,10 +39,21 @@ namespace ns3 {
             void GetInfo(node_id_t destination_id, node_id_t from_id, std::vector<node_id_t> vec_of_current_neighbor, node_id_t own_id, dtn_time_t expired_time, int bundle_size, int networkconfigurationflag, map<int, vector<int>> id2cur_exclude_vec_of_id, dtn_time_t local_time, dtn_seqno_t that_seqno) override;
 
             private :
-            void DebugPrintXmit(vector<CgrXmit>& cgr_xmit_vec_ref, int cur_d);
+            
+            class RouteResultCandidate {
 
+            };
             void Init();
+            // @return if can't route
+            bool foundExhausted();
+            // @return if cashed
+            bool foundCashedRouteTable();
+            // @brief record for foundExhausted() & foundCashedRouteTable() use 
+            void RecordCRPResult(string str);
 
+            // @brief first step of CGR-three-steps
+            void Init();
+            // @brief second step of CGR-three-steps
             //Please read this link, if you want to know about this. https://tools.ietf.org/html/draft-burleigh-dtnrg-cgr-00
             //---- cur_d 
             //---- cur_deadline
@@ -51,31 +62,48 @@ namespace ns3 {
             //---- forfeit_time_
             //---- best_delivery_time_
             void ContactReviewProcedure(node_id_t cur_d, dtn_time_t cur_deadline, dtn_time_t best_deli);
-
-            int ForwardDecision();
+            // @brief third step of CGR-three-steps
+            // when if_cannot_find_route=false if_route_candidate_cashed=false then invoke NCMDecision()
+            // if_cannot_find_route=true return -1
+            // if_route_candidate_cashed=true return cashed result
+            int ForwardDecision(bool if_cannot_find_route=false,bool if_route_candidate_cashed=false);
 
             // implement this! TODO
             // check https://tools.ietf.org/html/draft-burleigh-dtnrg-cgr-00 -------- 2.5.3
+            // @brief return index of proximate_vec_
             int NCMDecision();
 
-            // -----------------
-
-            private :
-            node_id_t destination_id_; 
+            // ----------------- start of debug
             bool cgr_debug_flag_0 = false;
             bool cgr_debug_flag_1 = false;
-            node_id_t own_id_;
-            dtn_time_t local_time_;
-            int cgr_find_proximate_count_;
             int debug_recurrsive_deep_;
             int debug_crp_enter_count_;
             map<int, int> debug_node_access_count_map_;
             stack<int> debug_recurrsive_path_stack_;
             bool debug_cgr_this_exhausted_search_not_found_;
             dtn_seqno_t debug_cgr_that_seqno_;
+            // @brief inspect recurrsive deep and stack 
+            void debugFunc01(node_id_t cur_d,string str);
+            // @brief inspect Cgr_xmit
+            void debugFunc02(node_id_t cur_d, vector<CgrXmit>& cgr_xmit_vec_ref) const;
+            // @brief print some
+            void debugFunc03(string str) const;
+            // @brief print some
+            void debugFunc04(CgrXmit& m, dtn_time_t cur_deadline,dtn_time_t local_forfeit_time, double next_deadline, string str) const;
+            void DebugPrintXmit(vector<CgrXmit>& cgr_xmit_vec_ref, int cur_d) const;
+            // -------------- end of debug
+            private :
+            //          dest        seqno
             vector<pair<node_id_t, dtn_seqno_t>> exhausted_search_target_list_;
             //           dest  /   forfeit time  / best delivery time / hop / seqno / routing time
             vector<tuple<node_id_t, dtn_time_t, dtn_time_t, node_id_t, dtn_seqno_t, dtn_time_t>> routed_table_;
+            vector<RouteResultCandidate> routed_result_candidates_;
+            node_id_t destination_id_; 
+            
+            node_id_t own_id_;
+            dtn_time_t local_time_;
+            int cgr_find_proximate_count_;
+            
             int ecc_;
             int networkconfigurationflag_;
             node_id_t node_id_transmit_from_;

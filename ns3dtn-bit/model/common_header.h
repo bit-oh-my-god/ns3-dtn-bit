@@ -37,13 +37,13 @@
 #include <boost/graph/graphviz.hpp>
 #include "ns3/config.txt"    // a string , contains the PWD, update every time invoke build.sh
 
-#define CGR_DEBUG_1
-#define CGR_DEBUG_0
+#define CGR_DEBUG_1 // print stack winding and abort when deep(loop) recurrsive
+#define CGR_DEBUG_0 // print detail of CgrXmit
 //#define UGLY_DEBUG 
 #define NS3DTNBIT_CGR_QM_ALGORITHM_DECAY_TIME 30.0
 #define NS3DTNBIT_CGR_OPTIMAL_DECISION_AMOUNT 1
 #define NS3DTNBIT_CGR_OPTIMAL_OPTION_REUSE_INTERVAL 10.0
-#define NS3DTNBIT_CGR_OPTIMAL_OPTION true   // you should always open this for running time concerns
+#define NS3DTNBIT_CGR_OPTIMAL_OPTION true   // you should always open this for reduce simulation time 
 #define NS3DTNBIT_CGR_DEBUG_SEQ_1 0
 #define NS3DTNBIT_CGR_DEBUG_SEQ_2 0
 #define NS3DTNBIT_RETRANSMISSION_INTERVAL 0.4
@@ -51,7 +51,7 @@
 #define NS3DTNBIT_BUFFER_CHECK_INTERVAL 0.25     
 #define NS3DTNBIT_NO_FRAGMENT true
 #define NS3DTNBIT_NO_ROBUST_TRANSMIT false
-#define NS3DTNBIT_MAXRANGE 2000.0
+#define NS3DTNBIT_MAXRANGE 3000.0
 #define NS3DTNBIT_PORT_NUMBER 1234
 #define NS3DTNBIT_HELLO_PORT_NUMBER 188
 #define NS3DTNBIT_MAC_MTU 2296  

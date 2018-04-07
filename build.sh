@@ -5,6 +5,9 @@ LOG_FILE=${ROOT_PATH}/box/dtn_simulation_result/dtnrunninglog.txt
 DATE=`date +%Y-%m-%d`
 CXX="g++"
 CXXFLAGS="-Wno-error"
+cd ./ns-allinone-3.26/ns-3.26/src
+LINK_NAME=${PWD}/ns3dtn-bit
+cd ../../../
 
 function config_func {
     echo -e "\033[96m ***************** config.txt *********"
@@ -21,7 +24,7 @@ function symbol_func {
         echo -e "\033[96m ${LINK_NAME} exist and is a symbol link"
     else 
         echo -e "\033[96m ${LINK_NAME} do not exist or is not symbol link, create one"
-        ln -s ${LINK_NAME} ../../../ns3dtn-bit
+        ln -s ${LINK_NAME} ${ROOT_PATH}/ns3dtn-bit
     fi
 }
 

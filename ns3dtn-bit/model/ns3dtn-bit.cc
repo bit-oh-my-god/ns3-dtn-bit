@@ -95,7 +95,7 @@ namespace ns3 {
     namespace ns3dtnbit {
 
         bool DtnApp::NeighborInfo::IsLastSeen() {
-            return Simulator::Now().GetSeconds() - info_last_seen_time_ < NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME;
+            return Simulator::Now().GetSeconds() - info_last_seen_time_ < NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME * 2;
         }
 
         string DtnApp::DtnAppNeighborKeeper::HelloContent() {
@@ -201,7 +201,7 @@ namespace ns3 {
                     };
                     NS_LOG_LOGIC(LogPrefixMacro << "tmp_bh_info - seqno=" << tmp_bh_info.info_source_seqno_);
                     if (NS3DTNBIT_NO_FRAGMENT) {
-                        NS_LOG_DEBUG(LogPrefixMacro << "well! we know the bundle has been accept, this transmit-session can be close");
+                        NS_LOG_INFO(LogPrefixMacro << "well! we know the bundle has been accept, this transmit-session can be close");
                         int last = daemon_transmission_info_map_[tmp_bh_info].info_transmission_bundle_last_sent_bytes_;
                         daemon_transmission_info_map_[tmp_bh_info].info_transmission_current_sent_acked_bytes_ += last;
                         daemon_transmission_info_map_[tmp_bh_info].info_transmission_bundle_last_sent_bytes_ = 0;
@@ -213,7 +213,7 @@ namespace ns3 {
                         int current = daemon_transmission_info_map_[tmp_bh_info].info_transmission_current_sent_acked_bytes_;
                         int last = daemon_transmission_info_map_[tmp_bh_info].info_transmission_bundle_last_sent_bytes_;
                         if (total ==  current + last) {
-                            NS_LOG_DEBUG(LogPrefixMacro << "well! we know the bundle has been accept, this transmit-session can be close");
+                            NS_LOG_INFO(LogPrefixMacro << "well! we know the bundle has been accept, this transmit-session can be close");
                             daemon_transmission_info_map_[tmp_bh_info].info_transmission_current_sent_acked_bytes_ += last;
                             daemon_transmission_info_map_[tmp_bh_info].info_transmission_bundle_last_sent_bytes_ = 0;
                             //daemon_transmission_info_map_.erase(daemon_transmission_info_map_.find(tmp_bh_info)); don't erase yet, TODO
@@ -232,6 +232,10 @@ namespace ns3 {
                         return;
                     }
                 } else if (bp_header.get_bundle_type() == BundleType::StorageinfoMaintainPkt) {
+                    if (out_app_.routing_assister_.IsRouteMethodQM()) {
+                        NS_LOG_ERROR(LogPrefixMacro << "Error, not qm, but receive");
+                        std::abort();
+                    }
                     // CGRQM TODO
                     // send ack back and cope with StorageinfoMaintainInterface("receive neighbor storageinfo"), 
                     map<int, pair<int, int>> parsed_storageinfo_from_neighbor;
@@ -251,11 +255,11 @@ namespace ns3 {
                         }
                     }
                     out_app_.routing_assister_.StorageinfoMaintainInterface("receive neighbor Storageinfo", parsed_storageinfo_from_neighbor, empty01, empty02, empty03);
-                } else if (bp_header.get_bundle_type() == BundleType::TransmissionAck) {
+                } else if (bp_header.get_bundle_type() == BundleType::BundlePacket) {
                     // if not, send 'transmission ack' first
                     NS_LOG_INFO(LogPrefixMacro << "here, received anti or bundle, send ack back first, before ToSendAck" << "; ip=" << from_ip 
                             << "; bp_header=" << bp_header);
-                    NS_LOG_DEBUG(LogPrefixMacro << "receive bundle from node-" << Ipv42NodeNo(from_ip) << " to node-" << Ipv42NodeNo(out_app_.own_ip_));
+                    NS_LOG_INFO(LogPrefixMacro << "receive bundle from node-" << Ipv42NodeNo(from_ip) << " to node-" << Ipv42NodeNo(out_app_.own_ip_));
                     ToSendAckDetail(bp_header, from_ip);
                     out_app_.seqno2fromid_map_[bp_header.get_source_seqno()] = Ipv42NodeNo(from_ip);
                     {
@@ -292,6 +296,7 @@ namespace ns3 {
                     }
                 } else {
                     // UnKnow
+                    NS_LOG_ERROR(LogPrefixMacro << "receive unknown pkt type:" << bp_header.get_bundle_type() << " seqno =" << bp_header.get_source_seqno());
                     std::abort();
                 }
             }
@@ -346,7 +351,7 @@ namespace ns3 {
             }
             if (out_app_.daemon_socket_handle_) {
                 NS_LOG_INFO(LogPrefixMacro << "one bundle trans, trans_addr is " << Addr2Ip(trans_addr) << " " << trans_addr.GetPort());
-                NS_LOG_DEBUG(LogPrefixMacro << "PKTTRACE: one bundle trans, from node-" << Ipv42NodeNo(out_app_.own_ip_) << " to node-" << Ipv42NodeNo(Addr2Ip(trans_addr)) << " seq : " << bp_header.get_source_seqno());
+                NS_LOG_INFO(LogPrefixMacro << "PKTTRACE: one bundle trans, from node-" << Ipv42NodeNo(out_app_.own_ip_) << " to node-" << Ipv42NodeNo(Addr2Ip(trans_addr)) << " seq : " << bp_header.get_source_seqno());
                 int result = out_app_.daemon_socket_handle_->SendTo(p_pkt, flags, trans_addr);
                 return result != -1 ? true : false;
             } else {
@@ -369,7 +374,7 @@ namespace ns3 {
                 if (pre) {
                     result.push_back(get<0>(nk));
                 } else {
-                    NS_LOG_INFO(LogPrefixMacro<<" not yet");
+                    NS_LOG_INFO(LogPrefixMacro<<" not yet " << ",pre.nei_last_seen_bool,nei_have_space,nei_is_not_source,nei_is_not_from="<< nei_last_seen_bool<<nei_have_space<<nei_is_not_source<<nei_is_not_from);
                 }
             }
             return result;
@@ -392,7 +397,7 @@ namespace ns3 {
                 }
                 if (bp_header.get_destination_ip().IsEqual(out_app_.own_ip_)) {
                     NS_LOG_DEBUG(LogPrefixMacro << "NOTE:BundleTrace:Great! one bundle arrive destination! bp_header=" << bp_header);
-                    NS_LOG_DEBUG(LogPrefixMacro << "PKTTRACE:BundleTrace:Great! one bundle arrive destination! bp_header=" << bp_header << " seq : " << bp_header.get_source_seqno());
+                    //NS_LOG_DEBUG(LogPrefixMacro << "PKTTRACE:BundleTrace:Great! one bundle arrive destination! bp_header=" << bp_header << " seq : " << bp_header.get_source_seqno());
                     //ToSendAntipacketBundle(bp_header);
                     tmp_p_pkt->AddHeader(bp_header);
                     out_app_.daemon_consume_bundle_queue_->Enqueue(Packet2Queueit(tmp_p_pkt));
@@ -452,7 +457,7 @@ namespace ns3 {
             if (rm_ == RoutingMethod::QM) {
                 p_rm_in_->StorageinfoMaintainInterface(s, parsed_storageinfo_from_neighbor, move_storageinfo_to_this, storagemax, path_of_route, update);
             } else {
-                NS_LOG_WARN("do nothing, fix me!");
+                NS_LOG_INFO("do nothing, is not RoutingMethod::QM");
             }
         }
 
@@ -479,8 +484,8 @@ namespace ns3 {
                     int random_A = std::rand();
                     NS_LOG_INFO(LogPrefixMacro << "Available has " << available.size() << " random_A is " << random_A);
                     if (available.size() > 1) {
-                        NS_LOG_DEBUG(LogPrefixMacro << "FUCK!!!! Available has " << available.size() << " random_A is " << random_A);
-                        for (auto a : available) { NS_LOG_DEBUG(LogPrefixMacro << a); }
+                        NS_LOG_INFO(LogPrefixMacro << "FUCK!!!! Available has " << available.size() << " random_A is " << random_A);
+                        for (auto a : available) { NS_LOG_INFO(LogPrefixMacro << a); }
                     }
                     result = available[random_A % available.size()];
                 } else if (get_rm() == RoutingMethod::DirectForward) {
@@ -610,7 +615,7 @@ namespace ns3 {
 #endif /* ifndef  */
                 is_exist = true;
             } else {
-                NS_LOG_DEBUG(LogPrefixMacro << "PKTTRACE:transmission session Enqueue" << " from node-" << Ipv42NodeNo(out_app_.own_ip_) << " to node-" << Ipv42NodeNo(nei_ip) << " seq " << bp_header.get_source_seqno() << " seq : " << bp_header.get_source_seqno());
+                NS_LOG_INFO(LogPrefixMacro << "PKTTRACE:transmission session Enqueue" << " from node-" << Ipv42NodeNo(out_app_.own_ip_) << " to node-" << Ipv42NodeNo(nei_ip) << " seq " << bp_header.get_source_seqno() << " seq : " << bp_header.get_source_seqno());
                 daemon_transmission_info_map_[tmp_header_info] = tmp_transmission_info;
                 out_app_.ReplicationGoodDetail(bp_header, 1);
             }
@@ -715,17 +720,19 @@ namespace ns3 {
                 // parse raw content of pkt and update 'neighbor_info_vec_'
                 pkt_str_stream >> avli_s;
                 neighbor_info_map_[ip_from].info_daemon_baq_available_bytes_ = stoi(avli_s);
-                // CGRQM TODO
-                map<int, pair<int, int>> empty01;
-                map<int, pair<int, int>> empty02;
-                map<int, int> empty03;
-                vector<int> empty04;
-                out_app_.routing_assister_.StorageinfoMaintainInterface("update storage info from hello"
-                        ,empty01
-                        ,empty02
-                        ,empty03
-                        ,empty04
-                        ,{Ipv42NodeNo(ip_from), (stoi(avli_s) / NS3DTNBIT_HYPOTHETIC_CACHE_FACTOR)});
+                if (out_app_.routing_assister_.IsRouteMethodQM()){
+                    // CGRQM TODO
+                    map<int, pair<int, int>> empty01;
+                    map<int, pair<int, int>> empty02;
+                    map<int, int> empty03;
+                    vector<int> empty04;
+                    out_app_.routing_assister_.StorageinfoMaintainInterface("update storage info from hello"
+                            ,empty01
+                            ,empty02
+                            ,empty03
+                            ,empty04
+                            ,{Ipv42NodeNo(ip_from), (stoi(avli_s) / NS3DTNBIT_HYPOTHETIC_CACHE_FACTOR)});
+                }
                 neighbor_info_map_[ip_from].info_last_seen_time_ = Simulator::Now().GetSeconds();
             }
         }
@@ -760,24 +767,27 @@ namespace ns3 {
 
         void DtnApp::ReactMain(string s) {
             if (s == "NewTransmitCheck") {
+                NS_LOG_INFO(LogPrefixMacro << "into one TransmitCheck");
                 int decision_neighbor = -1;
                 BPHeader bp_header;
                 if (wifi_ph_p->IsStateIdle()) {
                     NS_LOG_LOGIC(LogPrefixMacro << "is stateidle");
-                    //NS_LOG_DEBUG(LogPrefixMacro << "we have NPackets = " << daemon_bundle_queue_->GetNPackets());
+                    NS_LOG_INFO(LogPrefixMacro << "we have NPackets = " << daemon_bundle_queue_->GetNPackets());
                     for (size_t n = 0; n < daemon_bundle_queue_->GetNPackets(); n++) {
                         Ptr<Packet> p_pkt = daemon_bundle_queue_->Dequeue()->GetPacket();
                         //int p_pkt_size = p_pkt->GetSize();
                         p_pkt->RemoveHeader(bp_header);
                         //assert(p_pkt_size == bp_header.get_payload_size() + bp_header.GetSerializedSize());
                         if (Simulator::Now().GetSeconds() - bp_header.get_src_time_stamp().GetSeconds() < NS3DTNBIT_HYPOTHETIC_BUNDLE_EXPIRED_TIME) {
+                            // this for loop is too hot, find way to make it cool
+                            NS_LOG_LOGIC(LogPrefixMacro << "checking for pkt");
                             bool bundle_check_good = (ReplicationGoodDetail(bp_header, 0));
                             bool bundle_lazy_transmit_check = Simulator::Now().GetSeconds() - bp_header.get_hop_time_stamp().GetSeconds() > NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME;
                             bool bundle_dest_not_this_check = !bp_header.get_destination_ip().IsEqual(own_ip_);
                             if (bundle_check_good && bundle_dest_not_this_check && bundle_lazy_transmit_check) {
                                 decision_neighbor = routing_assister_.FindTheNeighborThisBPHeaderTo(bp_header);
-                                if (decision_neighbor == -1) { p_pkt->AddHeader(bp_header); daemon_bundle_queue_->Enqueue(Packet2Queueit(p_pkt)); continue; } else {
-                                    NS_LOG_DEBUG(LogPrefixMacro << "PKTTRACE: One decision is made, " << "from node-" << Ipv42NodeNo(own_ip_) << " to node-" << decision_neighbor << " seq : " << bp_header.get_source_seqno());
+                                if (decision_neighbor == -1) { p_pkt->AddHeader(bp_header); daemon_bundle_queue_->Enqueue(Packet2Queueit(p_pkt)); NS_LOG_LOGIC(LogPrefixMacro << "decision is -1");continue; } else {
+                                    NS_LOG_INFO(LogPrefixMacro << "PKTTRACE: One decision is made, " << "from node-" << Ipv42NodeNo(own_ip_) << " to node-" << decision_neighbor << " seq : " << bp_header.get_source_seqno());
                                 }
                                 auto nei_ip = NodeNo2Ipv4(decision_neighbor);
                                 bool is_exist = false;
@@ -794,9 +804,11 @@ namespace ns3 {
                                     transmit_assister_.ToTransmit(tmp_header_info);
                                 }
                             } else {
+                                NS_LOG_LOGIC(LogPrefixMacro << "bundle_check_good,bundle_lazy_transmit_check,bundle_dest_not_this_check="<< bundle_check_good<<bundle_lazy_transmit_check<<bundle_dest_not_this_check);
                                 p_pkt->AddHeader(bp_header); daemon_bundle_queue_->Enqueue(Packet2Queueit(p_pkt)); continue; 
                             }
                         } else {
+                            NS_LOG_LOGIC(LogPrefixMacro << "would remove expired package,seqno="<<bp_header.get_source_seqno());
                             continue;   // would remove expired package
                         }
                     }
@@ -813,7 +825,7 @@ namespace ns3 {
                 auto t011 = t01.first;
                 auto t012 = t01.second;
                 if (neighbor_keeper_.CheckBufferTimePass() || t011) {  
-                    if (t011) {
+                    if (t011 && routing_assister_.IsRouteMethodQM()) {
                         // CGRQM TODO send routing_assister_.StorageinfoMaintainInterface("to send storageinfo to neighbor")
                         Ipv4Address toneighbor_ip = t012;
                         map<int, pair<int, int>> empty01;
@@ -939,7 +951,7 @@ namespace ns3 {
         }
 
         /*
-         *  real send flags == 1
+         *  @param flag == 1,when replicationcheck, 0, when real send
          *  
          * */
         bool DtnApp::ReplicationGoodDetail(BPHeader& bp_header, int flag) {
@@ -956,7 +968,7 @@ namespace ns3 {
                 return true;
             } else {
                 if (spray_map_[v] > 0) {
-                    if (spray_map_[v] == NS3DTNBIT_SPRAY_ARGUMENT - 1 && flag == 1) {NS_LOG_DEBUG(LogPrefixMacro << "PKTTRACE: FUCK!!! Package has been replicated, SprayAndWait!!");}
+                    if (spray_map_[v] == NS3DTNBIT_SPRAY_ARGUMENT - 1 && flag == 1) {NS_LOG_INFO(LogPrefixMacro << "PKTTRACE: FUCK!!! Package has been replicated, SprayAndWait!!");}
                     spray_map_[v] -= flag;
                     return true;
                 } else if (spray_map_[v] == 0){
