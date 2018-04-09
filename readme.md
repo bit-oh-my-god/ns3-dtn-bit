@@ -10,7 +10,7 @@ Read this [paper](http://www.sciencedirect.com/science/article/pii/S009457651200
 # Begin
 
   1. Download source code, ns-allineone-3.26 under this directory(or make softlink) and make sure you can use[ns3](Installhttps://www.nsnam.org/releases/)
-  2. Copy ./box/ns2mobilityhelper.cc to ./ns-allineone-3.26/src/mobility, this file was modified and would help us parse 3d-motion
+  2. Copy ./box/ns2mobilityhelper.cc to ./ns-allineone-3.26/ns-3/src/mobility/helper, this file was modified and would help us parse 3d-motion
   3. Modify your current_trace.tcl by your hand or by ./box/WriteTraceFileLib.py
   4. Set node_number and simulation_time ./box/PrepareSim.py and your-example.cc, must equal to your current_trace.tcl
         

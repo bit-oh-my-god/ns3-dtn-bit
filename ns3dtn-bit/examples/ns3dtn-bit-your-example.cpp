@@ -108,17 +108,17 @@ namespace ns3 {
                                     int rand3 = std::rand() % 6;
                                     while (rand1 == rand2) {rand2 = std::rand() % 6;}
                                     while (rand2 == rand3 || rand1 == rand3) {rand3 = std::rand() % 6;}
-                                    handy_func_x(100 + amount * 17, rand1, rand2, 17);
-                                    handy_func_x(100 + amount * 17, rand2, rand3, 17);
-                                    handy_func_x(100 + amount * 17, rand3, rand1, 17);
+                                    handy_func_x(100, rand1, rand2, 17);
+                                    handy_func_x(100, rand2, rand3, 17);
+                                    handy_func_x(100, rand3, rand1, 17);
                                 } else if ((scenario_number / 100) == 2) {
-                                    handy_func_x(100 + amount * 12, 5, 6, 35);
-                                    handy_func_x(300 + amount * 15, 6, 5, 35);
+                                    handy_func_x(100, 5, 6, 35);
+                                    handy_func_x(300, 6, 5, 35);
                                 } else if ((scenario_number / 100) == 1) {
-                                    handy_func_x(200 + amount * 20, 4, 10, 6);
-                                    handy_func_x(100 + amount * 20, 0, 10, 7);
+                                    handy_func_x(200, 4, 10, 6);
+                                    handy_func_x(100, 0, 10, 7);
                                 } else if ((scenario_number / 100) == 4) {
-                                    handy_func_x(200 + amount * 20, 2, 3, 6);
+                                    handy_func_x(200, 2, 3, 6);
                                 } else if (scenario_number > 500) {
                                     cout << "warn: " << __FILE__ << __LINE__ << endl;
                                     abort();
@@ -157,10 +157,14 @@ namespace ns3 {
 
 int main(int argc, char *argv[]) {
     //!important LOG control
-    //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_DEBUG);
-    LogComponentEnable ("DtnRunningLog",LOG_LEVEL_INFO);
-    //LogComponentEnable ("DtnRunningLog",LOG_LEVEL_LOGIC);
-    //LogComponentEnable ("DtnRunningLog", LOG_LEVEL_ALL);
+    //LogComponentEnable ("DtnCGRRouting",LOG_LEVEL_DEBUG);
+    //LogComponentEnable ("DtnCGRRouting",LOG_LEVEL_INFO);
+    //LogComponentEnable ("DtnRouting",LOG_LEVEL_DEBUG);
+    //LogComponentEnable ("DtnRouting",LOG_LEVEL_INFO);
+    //LogComponentEnable ("DtnApp",LOG_LEVEL_DEBUG);
+    LogComponentEnable ("DtnApp",LOG_LEVEL_INFO);
+    //LogComponentEnable ("DtnApp",LOG_LEVEL_LOGIC);
+    //LogComponentEnable ("DtnApp", LOG_LEVEL_ALL);
     LogComponentEnable("Ns2MobilityHelper", LOG_LEVEL_INFO);
     //LogComponentEnable("UdpSocket", LOG_LEVEL_INFO);
     //LogComponentEnable("UdpL4Protocol", LOG_LEVEL_INFO);

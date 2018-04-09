@@ -2,7 +2,7 @@
 #define NS3DTN_BIT_EXAMPLE_INTERFACE_H value
 
 #include "ns3/ns3dtn-bit.h"
-#include "ns3/routing.h"
+#include "ns3/routingInterface.h"
 
 namespace ns3 {
     namespace ns3dtnbit {

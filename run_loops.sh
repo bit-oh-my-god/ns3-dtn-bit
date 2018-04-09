@@ -46,15 +46,15 @@ function simulation_run_tx1_func {
     for x_running_argument_0 in {201..201..1}
     do
         echo "one"
-        #x_running_argument_1="TEG"
-        #x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
-        #one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+        x_running_argument_1="TEG"
+        x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
+        one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
         #x_running_argument_1="CGR"
         #x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
         #one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
-        x_running_argument_1="Spray"
-        x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
-        one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+        #x_running_argument_1="Spray"
+        #x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
+        #one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
         #x_running_argument_1="Heuristic"
         #x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
         #one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument

@@ -16,6 +16,9 @@ def build(bld):
         'helper/ns3dtn-bit-helper.cc',
         'model/routing.cpp',
         'examples/ns3dtn-bit-example-interface.cpp',
+        'model/routingInterface.cpp',
+        'model/cgrrouting.cpp',
+        'model/cgrqmrouting.cpp',
         ]
     module.cxxflags = ['-std=c++11', '-Wall', '-Wextra', '-fpermissive', '-w']
     #module.cxxflags = ['-std=c++11', '-Wall']
@@ -29,6 +32,9 @@ def build(bld):
         'helper/ns3dtn-bit-helper.h',
         'examples/ns3dtn-bit-example-interface.h',
         'model/routing.h',
+        'model/cgrrouting.h',
+        'model/cgrqmrouting.h',
+        'model/routingInterface.h',
         'config.txt'
         ]
 
