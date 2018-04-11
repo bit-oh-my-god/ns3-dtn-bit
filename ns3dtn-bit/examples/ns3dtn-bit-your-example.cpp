@@ -116,6 +116,7 @@ namespace ns3 {
                                     //handy_func_x(300, 6, 5, 35);
                                     handy_func_x(100, 5, 6, 10);
                                     handy_func_x(300, 6, 5, 10);
+
                                 } else if ((scenario_number / 100) == 1) {
                                     handy_func_x(200, 4, 10, 6);
                                     handy_func_x(100, 0, 10, 7);

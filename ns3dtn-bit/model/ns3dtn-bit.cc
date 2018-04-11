@@ -512,6 +512,7 @@ namespace ns3 {
                     node_id_t destination_id = Ipv42NodeNo(ref_bp_header.get_destination_ip());
                     node_id_t from_id = -1;
                     if (out_app_.seqno2fromid_map_.count(ref_bp_header.get_source_seqno())){
+
                         from_id = out_app_.seqno2fromid_map_[ref_bp_header.get_source_seqno()];
                     }
                     vector<int> vec_of_current_neighbor;
@@ -581,6 +582,7 @@ namespace ns3 {
                     return -1;
                 } else {
                     NS_LOG_ERROR(LogPrefixMacro<<"can't sada" << ";result=" << result);
+
                     std::abort();
                 }
             } else {

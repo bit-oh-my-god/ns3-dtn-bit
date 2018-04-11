@@ -154,6 +154,7 @@ namespace ns3 {
                 uint32_t bundle_size, map<node_id_t, vector<node_id_t>> id2cur_exclude_vec_of_id, 
                 dtn_time_t local_time, dtn_seqno_t that_seqno) {
             id_of_d2cur_excluded_vec_of_d_=id2cur_exclude_vec_of_id;
+
             local_time_ = local_time;
             destination_id_ = destination_id;
             node_id_transmit_from_ = from_id;

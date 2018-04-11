@@ -15,11 +15,16 @@ namespace ns3 {
             // s is source index, d is dest index, return next hop
             int DoRoute(int s, int d) override;
 
+<<<<<<< HEAD
             void GetInfo(node_id_t destination_id, 
                 node_id_t from_id, std::vector<node_id_t> vec_of_current_neighbor, 
                 node_id_t own_id, dtn_time_t expired_time, 
                 uint32_t bundle_size, map<node_id_t, vector<node_id_t>> id2cur_exclude_vec_of_id, 
                 dtn_time_t local_time, dtn_seqno_t that_seqno);
+=======
+            void GetInfo(node_id_t destination_id, node_id_t from_id, std::vector<node_id_t> vec_of_current_neighbor, node_id_t own_id, dtn_time_t expired_time, int bundle_size, int networkconfigurationflag, map<int, vector<int>> id2cur_exclude_vec_of_id, dtn_time_t local_time, dtn_seqno_t that_seqno) override;
+
+>>>>>>> dffd67e48f8b3f879df1cdb2868e437e8c694811
             private :
             
             class RouteResultCandidate {
@@ -28,6 +33,7 @@ namespace ns3 {
                     auto c = RouteResultCandidate();
                     c.dest_ = dest;
                     c.is_exhausted_ = true;
+<<<<<<< HEAD
                     c.cannot_arrive_until_ = expiretime;
                     return c;
                 }
@@ -59,6 +65,19 @@ namespace ns3 {
                     seqpkt_=rhs.seqpkt_;
                     debug_id_ = rhs.debug_id_;
                     return *this;
+=======
+                    c.cannot_arrive_until_ = expiretime + NS3DTNBIT_CGR_OPTIMAL_OPTION_REUSE_INTERVAL2;
+                    return c;
+                }
+                RouteResultCandidate(){
+                    result_cash_end_ = -0.1;
+                    result_cash_begin_=-0.1;
+                    nexthop_=-1;
+                    dest_=-1;
+                    forfeit_time_=-0.1;
+                    cannot_arrive_until_=-0.1;
+                    is_exhausted_=false;
+>>>>>>> dffd67e48f8b3f879df1cdb2868e437e8c694811
                 }
                 void PushXmit(CgrXmit cgrxmit) {
                     vec_.push_back(cgrxmit);
@@ -67,6 +86,7 @@ namespace ns3 {
                     vec_.pop_back();
                 }
                 string ToString() {
+<<<<<<< HEAD
                     auto bb = is_exhausted_?"True":"False";
                     stringstream ss;
                     if (!is_exhausted_) {
@@ -116,12 +136,20 @@ namespace ns3 {
                         assert(vec_.empty());
                         return "";
                     }
+=======
+                    char str[200];
+                    sprintf(str, "result_cash_begin_=%f,result_cash_end_=%f,nexthop_=%d, dest_=%d,forfeit_time_=%f,cannot_arrive_until_=%f,is_exhausted_=%s", 
+                    result_cash_begin_, result_cash_end_, nexthop_, dest_, 
+                    forfeit_time_, cannot_arrive_until_, is_exhausted_);
+                    return string(str);
+>>>>>>> dffd67e48f8b3f879df1cdb2868e437e8c694811
                 }
                 dtn_time_t result_cash_end_;    // cash no longer work at this time
                 dtn_time_t result_cash_begin_;  // cash works at this time
                 node_id_t nexthop_; // if is exhausted, nexthop_ should be -1
                 node_id_t dest_;
                 dtn_time_t forfeit_time_;
+<<<<<<< HEAD
                 dtn_seqno_t seqpkt_;    // debug
                 dtn_time_t cannot_arrive_until_;    // if later pkt expired time is before this, it's exhausted.
                 bool is_exhausted_;
@@ -130,6 +158,11 @@ namespace ns3 {
                 void Complete(int id){debug_id_ = id;}
                 private:
                 int debug_id_;
+=======
+                dtn_time_t cannot_arrive_until_;    // if later pkt expired time is before this, it's exhausted.
+                bool is_exhausted_;
+                private:
+>>>>>>> dffd67e48f8b3f879df1cdb2868e437e8c694811
                 vector<CgrXmit> vec_;
             };
             // @brief record for later use 
@@ -149,16 +182,19 @@ namespace ns3 {
                 string CCPathStr() const{return cur_candidate_.VecPathStr();}
                 private:
                 std::string LogPrefix() {return out_app_.LogPrefix();}
+
                 CGRRouting const & out_app_;
                 RouteResultCandidate cur_candidate_;
                 vector<RouteResultCandidate> table_;
                 vector<RouteResultCandidate> this_route_;
                 int seqno_for_rrc_ = 0;
+
             };
             CashedRouteTable CRT_;
 
             // @brief first step of CGR-three-steps
             virtual void Init();
+
             // @brief second step of CGR-three-steps
             //Please read this link, if you want to know about this. https://tools.ietf.org/html/draft-burleigh-dtnrg-cgr-00
             //---- cur_d 
@@ -176,12 +212,14 @@ namespace ns3 {
             // @brief return index of rrc_vec
             virtual int NCMDecision(vector<RouteResultCandidate> const & rrc_vec);
 
+
             // ----------------- start of debug
             bool cgr_debug_flag_0 = false;
             bool cgr_debug_flag_1 = false;
             int debug_recurrsive_deep_;
             int debug_crp_enter_count_;
             map<node_id_t, int> debug_node_access_count_map_;
+
             stack<int> debug_recurrsive_path_stack_;
             bool debug_cgr_this_exhausted_search_not_found_;
             dtn_seqno_t debug_cgr_that_seqno_;
@@ -194,6 +232,7 @@ namespace ns3 {
             // @brief print some
             void debugFunc04(CgrXmit const & m, dtn_time_t cur_deadline,dtn_time_t local_forfeit_time, double next_deadline, string str) const;
             void DebugPrintXmit(vector<CgrXmit> const & cgr_xmit_vec_ref, int cur_d) const;
+
             // -------------- end of debug
 
             private :
@@ -208,6 +247,7 @@ namespace ns3 {
             vector<node_id_t> proximate_vec_;
             vector<node_id_t> excluded_vec_;
             map<node_id_t, vector<node_id_t>> id_of_d2cur_excluded_vec_of_d_;
+
             dtn_time_t forfeit_time_;
             dtn_time_t best_delivery_time_;
         };

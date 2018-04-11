@@ -1,6 +1,7 @@
 #include "cgrrouting.h"
 
 namespace ns3 {
+
     //
     // ======================================== CGR standard
     namespace ns3dtnbit {
@@ -9,6 +10,7 @@ namespace ns3 {
 
         vector<CGRRouting::RouteResultCandidate> CGRRouting::CashedRouteTable::RecordCRPResult(string str,node_id_t dest, dtn_time_t expiretime, bool flag) {
             NS_LOG_INFO(LogPrefixMacro<<"into RecordCRPResult");
+
             if (str != "out of CRP") {
                 NS_LOG_ERROR(LogPrefixMacro);
                 std::abort();
@@ -34,6 +36,7 @@ namespace ns3 {
                         ,rrc.forfeit_time_);
                     rrc.Complete(seqno_for_rrc_++);
                     NS_LOG_INFO(LogPrefixMacro<<"one nonexhausted-RRC pushed in" << rrc.ToString());
+
                     table_.push_back(rrc);
                 }
                 return this_route_;
@@ -68,6 +71,7 @@ namespace ns3 {
                     assert(rerrc.empty());
                     rerrc.push_back(rrc);
                     break;
+
                 }
                 if (rrc.dest_ == dest && !rrc.is_exhausted_) {
                     rerrc.push_back(rrc);
@@ -87,6 +91,7 @@ namespace ns3 {
                 NS_LOG_ERROR(LogPrefixMacro);
                 std::abort();
             }
+
             return rerrc;
             NS_LOG_INFO(LogPrefixMacro<< "end of reuseoldresult");
         }
@@ -168,6 +173,7 @@ namespace ns3 {
             local_time_ = local_time;
             destination_id_ = destination_id;
             NS_LOG_INFO(LogPrefixMacro<<"from_id="<<from_id);
+
             node_id_transmit_from_ = from_id;
             expired_time_ = expired_time;
             own_id_ = own_id;
@@ -188,6 +194,7 @@ namespace ns3 {
             excluded_vec_ = vector<int>();
             proximate_vec_ = vector<int>();
             // app tells which nodeid should not in route path
+
             auto cur_excluded = id_of_d2cur_excluded_vec_of_d_[destination_id_];
             for (auto nei : id_of_current_neighbor_) {
                 auto found = find(cur_excluded.begin(), cur_excluded.end(), nei);
@@ -206,6 +213,7 @@ namespace ns3 {
                 cout << "DEBUG_CGR:" << " ====== for node-" << cur_d 
                     << " xmit is :" << endl;
                 for (auto const & m : cgr_xmit_vec_ref) {
+
                     cout << "\n m ==> m.contact_start_time_ =" << m.contact_start_time_
                         << ";m.contact_end_time_=" << m.contact_end_time_
                         << ";m.node_id_of_from_=" << m.node_id_of_from_
@@ -221,6 +229,7 @@ namespace ns3 {
             if (str == "push") {
                 if (cgr_debug_flag_1) {
                     debug_crp_enter_count_ += 1;
+
                     debug_recurrsive_path_stack_.push(cur_d);
                     debug_recurrsive_deep_ += 1;
                     auto found = debug_node_access_count_map_.find(cur_d);
@@ -257,6 +266,7 @@ namespace ns3 {
         }
 
         void CGRRouting::debugFunc02(node_id_t cur_d, vector<CgrXmit> const & cgr_xmit_vec_ref) const{
+
             if (cgr_debug_flag_0) {
                 if (debug_cgr_that_seqno_ == NS3DTNBIT_CGR_DEBUG_SEQ_1 || debug_cgr_that_seqno_ == NS3DTNBIT_CGR_DEBUG_SEQ_2) {
                     cout << "CGR_DEBUG:temporary debug use, deleteme when you don't need me, xmitdebug-seqno-" << debug_cgr_that_seqno_ << __FILE__ << ":" <<  __LINE__ 
@@ -284,6 +294,7 @@ namespace ns3 {
         }
 
          void CGRRouting::debugFunc04(CgrXmit const & m,dtn_time_t cur_deadline,dtn_time_t local_forfeit_time, double next_deadline, string str) const{
+
              if (str == "tail") {
                 if (cgr_debug_flag_0) {
                     if (debug_cgr_that_seqno_ == NS3DTNBIT_CGR_DEBUG_SEQ_1 || debug_cgr_that_seqno_ == NS3DTNBIT_CGR_DEBUG_SEQ_2) {
@@ -327,6 +338,7 @@ namespace ns3 {
             NS_LOG_INFO(LogPrefixMacro<<"in new CRP,cur_d="<< cur_d <<";cur_deadline="<< cur_deadline);
             assert(debug_crp_enter_count_ < 300);
             if (cgr_find_proximate_count_ >= NS3DTNBIT_CGR_OPTIMAL_DECISION_AMOUNT) {
+
                 return;
             }
             // 1.
@@ -344,6 +356,7 @@ namespace ns3 {
                 bool start_before_deadline = (m.contact_start_time_ + NS3DTNBIT_CGR_CRP_REMAIN_INNODE ) < cur_deadline ;
                 bool end_after_now = local_time_ < (m.contact_end_time_ - NS3DTNBIT_CGR_CRP_REMAIN_INNODE);
                 bool last_moment_check = localcheck && end_after_now && start_before_deadline;
+
                 dtn_time_t local_forfeit_time = cur_deadline;
                 dtn_time_t local_best_delivery_time = best_deli;
                 if (!last_moment_check) {
@@ -352,6 +365,7 @@ namespace ns3 {
                     <<"localcheck="<<localcheck
                     <<"start_before_deadline="<<start_before_deadline
                     <<"end_after_now="<<end_after_now);
+
                     continue;
                 } else {
                     // 2.B
@@ -365,6 +379,7 @@ namespace ns3 {
                         assert(m.contact_end_time_ - m.contact_start_time_ < 5000);
                         // not accurate, just a hypothetic value
                         int ecc_of_other_bundles = NS3DTNBIT_CGR_CRP_ECC_OF_OTHERS;
+
                         int residual_capacity = ((m.contact_end_time_ - m.contact_start_time_) * m.data_transmission_rate_) - ecc_of_other_bundles; 
                         assert(residual_capacity > 10000);
                         auto found_1 = find(proximate_vec_.begin(), proximate_vec_.end(), cur_d);
@@ -374,6 +389,7 @@ namespace ns3 {
                             continue;
                         } else if (d_is_in_proximate) {
                             NS_LOG_INFO(LogPrefixMacro<<"contine-3:");
+
                             continue;
                         } else {
                             if (m.contact_end_time_ < local_forfeit_time) {
@@ -392,6 +408,7 @@ namespace ns3 {
                             debugFunc04(m,cur_deadline,local_forfeit_time,-1, "tail"); 
                             CRT_.PushFinalXmit(m, local_forfeit_time, local_best_delivery_time);
                             CRT_.PopOneXmit();
+
                         }
                     } else {
                         debugFunc03("body of recurrsive");
@@ -400,6 +417,7 @@ namespace ns3 {
                         bool s_is_in_excluded = found_2 != excluded_vec_.end();
                         if (s_is_in_excluded) {
                             NS_LOG_INFO(LogPrefixMacro<<"contine-4:current excluded_vec=" << vecstr(excluded_vec_));
+
                             continue;
                         } else {
                             if (m.contact_end_time_ < local_forfeit_time) {
@@ -412,6 +430,7 @@ namespace ns3 {
                             double next_deadline = min((m.contact_end_time_ - forwarding_latency), cur_deadline) - NS3DTNBIT_CGR_CRP_REMAIN_INNODE;
                             if (next_deadline < local_time_) {
                                 NS_LOG_INFO(LogPrefixMacro<<"contine-5:");
+
                                 continue;
                             }
                             debugFunc04(m,cur_deadline,local_forfeit_time,next_deadline,"body");
@@ -422,6 +441,7 @@ namespace ns3 {
                             NS_LOG_INFO(LogPrefixMacro<<"back to upper CRP,cur_d="<< cur_d <<";cur_deadline="<< cur_deadline);
                             debugFunc01(-1,"pop");
                             CRT_.PopOneXmit();
+
                         }
                     }
                 }
@@ -443,12 +463,14 @@ namespace ns3 {
             for (auto rrc:rrc_vec) {
                 if (rrc.is_exhausted_ && rrc_vec.size() != 1) {
                     NS_LOG_ERROR(LogPrefixMacro << rrc.ToString());
+
                     std::abort();
                 }
             }
             if (rrc_vec.size() >= 2) {
                 NS_LOG_INFO(LogPrefixMacro<<"It's random . we need to implement a network configuration matter decision!");
                 return rrc_vec[NCMDecision(rrc_vec)].nexthop_;
+
             } else if (rrc_vec.size() == 1) {
                 if (rrc_vec[0].is_exhausted_) {
                     return -2;
@@ -466,6 +488,7 @@ namespace ns3 {
             assert(rrc_vec.size() >= 2);
             int ret = std::rand();
             return ret % rrc_vec.size();
+
         }
 
     }

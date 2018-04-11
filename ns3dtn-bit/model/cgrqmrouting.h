@@ -20,6 +20,7 @@ namespace ns3 {
                 node_id_t own_id, dtn_time_t expired_time, 
                 uint32_t bundle_size, map<node_id_t, vector<node_id_t>> id2cur_exclude_vec_of_id, 
                 dtn_time_t local_time, dtn_seqno_t that_seqno);
+
             // CGRQM TODO
             void StorageinfoMaintainInterface(string action
                     ,map<int, pair<int, int>> parsed_storageinfo_from_neighbor
