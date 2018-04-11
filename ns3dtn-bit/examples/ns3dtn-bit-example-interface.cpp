@@ -1,6 +1,9 @@
 /*
 */
 #include "ns3dtn-bit-example-interface.h"
+#include "../model/routing.h"
+#include "../model/cgrrouting.h"
+#include "../model/cgrqmrouting.h"
 
 namespace ns3 {
     namespace ns3dtnbit {
@@ -40,6 +43,7 @@ namespace ns3 {
 
         // use vector for further modify
         vector<Adob> DtnExampleInterface::CreateAdjacentList() {
+            std::cout << "=============== CreateAdjacentList ===============" << endl;
             vector<Adob> result;
             std::map<int, std::map<int, vector<int>>> ntpos_map;
             {
@@ -112,17 +116,18 @@ namespace ns3 {
             adob_ob.AdobDo_04();
             std::cout << "NOTE: after AdobDo_04()" <<std::endl;
             result.emplace_back(std::move(adob_ob));
+            std::cout << "=============== End of CreateAdjacentList ===============" << endl;
             return result;
         }
 
         void DtnExampleInterface::InstallApplications() {
+            std::cout << "=============== InstallApplications ===============" << endl;
             TypeId udp_tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
             // create adob for app
-            std::cout << "=============== CreateAdjacentList ===============" << endl;
             auto adob = CreateAdjacentList();
-            std::cout << "=============== End of CreateAdjacentList ===============" << endl;
             //Ptr<DtnApp> app[node_number_];
             for (uint32_t i = 0; i < node_number_; ++i) { 
+                cout << "---> install app for node-" << i << endl;
                 // create app and set
                 apps_.push_back(CreateObject<DtnApp>());
                 apps_[i]->SetUp(nodes_container_.Get(i));
@@ -139,7 +144,6 @@ namespace ns3 {
                     }
                 }
                 // bundle send socket would be set inside DtnApp
-                // 
                 // set bundle receive socket
                 Ptr<Socket> dst = Socket::CreateSocket(nodes_container_.Get(i), udp_tid);
                 char dststring[1024]="";
@@ -170,6 +174,7 @@ namespace ns3 {
                     std::abort();
                 }
             }
+            std::cout << "=============== End of InstallApplications ===============" << endl;
         }
 
         void DtnExampleInterface::ScheduleTask() {

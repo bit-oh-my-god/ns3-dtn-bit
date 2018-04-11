@@ -251,7 +251,7 @@ namespace ns3 {
                     while (!no_more_xmits) {
                         dtn_time_t contact_start_time, contact_end_time;
                         int node_id_of_to = d, node_id_of_from = s;
-                        double data_transmission_rate = 80000;
+                        double data_transmission_rate = NS3DTNBIT_XMIT_DATARATE;
                         bool found_xmit = false;
                         {
                             // init -> 0, when find available one, -> 1, when available one become not available -> 2
@@ -304,6 +304,10 @@ namespace ns3 {
                         cout << xmit.contact_start_time_ << endl;
                     }
                     assert(vec_of_xmits[0].contact_start_time_ <= vec_of_xmits[1].contact_start_time_);
+                }
+                // print and load
+                for (auto const & xmit: vec_of_xmits) {
+                    cout << "xmit:" << xmit.ToString() << endl;
                 }
                 node_id2cgr_xmit_vec_map_[d] = vec_of_xmits;
             }

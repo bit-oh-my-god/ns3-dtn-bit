@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 
 #include "ns3dtn-bit.h"
-#define LogPrefixMacro LogPrefix()<<"line-"<<__LINE__<<"]"
+#include "routingInterface.h"
 
 namespace ns3 {
     namespace ns3dtnbit {
-        NS_LOG_COMPONENT_DEFINE ("DtnRunningLog");
+        NS_LOG_COMPONENT_DEFINE ("DtnApp");
+        #define LogPrefixMacro LogPrefix()<<"[DtnApp]line-"<<__LINE__<<"]"
         /*
          * Can't use CreateObject<>, so do it myself
          */
@@ -14,7 +15,7 @@ namespace ns3 {
             return Ptr<QueueItem>(p);
         }
 
-        Ipv4Address NodeNo2Ipv4(int node_no) {
+        Ipv4Address NodeNo2Ipv4(node_id_t node_no) {
             auto ip_base = Ipv4Address("10.0.0.1");
             auto ip_v = ip_base.Get();
             ip_v += node_no;
@@ -23,7 +24,7 @@ namespace ns3 {
             return result;
         }
 
-        int Ipv42NodeNo(Ipv4Address ip) {
+        node_id_t Ipv42NodeNo(Ipv4Address ip) {
             auto ip_base = Ipv4Address("10.0.0.1");
             auto ip_base_v = ip_base.Get();
             auto ip_v = ip.Get();
@@ -95,7 +96,7 @@ namespace ns3 {
     namespace ns3dtnbit {
 
         bool DtnApp::NeighborInfo::IsLastSeen() {
-            return Simulator::Now().GetSeconds() - info_last_seen_time_ < NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME * 2;
+            return (Simulator::Now().GetSeconds() - info_last_seen_time_) < (NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME * 2);
         }
 
         string DtnApp::DtnAppNeighborKeeper::HelloContent() {
@@ -147,17 +148,19 @@ namespace ns3 {
         pair<bool, Ipv4Address> DtnApp::DtnAppNeighborKeeper::HasNewNeighbor() {
             bool ret = false;
             Ipv4Address newip;
-            for (auto nei : neighbor_info_map_) {
-                auto nei_ip = get<0>(nei);
+            for (auto & nei : neighbor_info_map_) {
+                auto const & nei_ip = get<0>(nei);
                 if (get<1>(nei).IsLastSeen()) {
                     if (cur_neighbor_.count(nei_ip)) {
 
                     } else {
+                        // only one should return vector
                         cur_neighbor_.insert(nei_ip);
                         ret = true;
                         newip = nei_ip;
                     }
                 } else {
+                    //NS_LOG_INFO(LogPrefixMacro << "remove from neighbor: ip=" << nei_ip);
                     if (cur_neighbor_.count(nei_ip)) {
                         cur_neighbor_.erase(cur_neighbor_.find(nei_ip));
                     } else {
@@ -368,13 +371,16 @@ namespace ns3 {
                 bool nei_last_seen_bool = neighbor_info_this_.IsLastSeen();
                 bool nei_have_space = neighbor_info_this_.info_daemon_baq_available_bytes_ > ref_bp_header.get_payload_size() + ref_bp_header.GetSerializedSize();
                 bool nei_is_not_source = !nei_ip.IsEqual(ref_bp_header.get_source_ip());
-                bool nei_is_not_from = out_app_.seqno2fromid_map_[ref_bp_header.get_source_seqno()] != Ipv42NodeNo(nei_ip);
+                bool nei_is_not_from = !(out_app_.seqno2fromid_map_.count(ref_bp_header.get_source_seqno()) && (out_app_.seqno2fromid_map_[ref_bp_header.get_source_seqno()] == Ipv42NodeNo(nei_ip)));
+                //bool nei_is_not_from = out_app_.seqno2fromid_map_[ref_bp_header.get_source_seqno()] != Ipv42NodeNo(nei_ip); this cause bug
                 bool pre = nei_last_seen_bool && nei_have_space && nei_is_not_source && nei_is_not_from;
 
                 if (pre) {
                     result.push_back(get<0>(nk));
                 } else {
-                    NS_LOG_INFO(LogPrefixMacro<<" not yet " << ",pre.nei_last_seen_bool,nei_have_space,nei_is_not_source,nei_is_not_from="<< nei_last_seen_bool<<nei_have_space<<nei_is_not_source<<nei_is_not_from);
+                    NS_LOG_INFO(LogPrefixMacro<<"when checking neighbor available, not yet for neighbor"
+                    << Ipv42NodeNo(nei_ip) << ", pre.nei_last_seen_bool,nei_have_space,nei_is_not_source,nei_is_not_from="
+                    << nei_last_seen_bool<<nei_have_space<<nei_is_not_source<<nei_is_not_from);
                 }
             }
             return result;
@@ -462,6 +468,7 @@ namespace ns3 {
         }
 
         int DtnApp::DtnAppRoutingAssister::FindTheNeighborThisBPHeaderTo(BPHeader& ref_bp_header) {
+            NS_LOG_INFO(LogPrefixMacro << "find neighbor this bpheader to seqno=" << ref_bp_header.get_source_seqno());
             int s, d, result;
             {
                 // init s, d
@@ -475,14 +482,13 @@ namespace ns3 {
             vector<int> available;
             for (auto ip : available_ip) { available.push_back(Ipv42NodeNo(ip)); }
             if (available.empty()) {NS_LOG_INFO(LogPrefixMacro << "available is none, return false"); return -1;}
-
             // check the routing method and invoke by their way
             if (IsSet()) {
                 dtn_seqno_t that_seqno = ref_bp_header.get_source_seqno();
                 if (get_rm() == RoutingMethod::SprayAndWait) {
                     // TODO get a random 'A' 
                     int random_A = std::rand();
-                    NS_LOG_INFO(LogPrefixMacro << "Available has " << available.size() << " random_A is " << random_A);
+                    NS_LOG_INFO(LogPrefixMacro << "SprayAndWait" << "Available has " << available.size() << " random_A is " << random_A);
                     if (available.size() > 1) {
                         NS_LOG_INFO(LogPrefixMacro << "FUCK!!!! Available has " << available.size() << " random_A is " << random_A);
                         for (auto a : available) { NS_LOG_INFO(LogPrefixMacro << a); }
@@ -491,22 +497,22 @@ namespace ns3 {
                 } else if (get_rm() == RoutingMethod::DirectForward) {
                     // TODO get a random 'A' 
                     int random_A = std::rand();
-                    NS_LOG_INFO(LogPrefixMacro << "Available has " << available.size());
+                    NS_LOG_INFO(LogPrefixMacro <<"DirectForward" << "Available has " << available.size());
                     result = available[random_A % available.size()];
                 } else if (get_rm() == RoutingMethod::Other) {
-                    p_rm_in_->GetInfo(-1, -1, vector<int>(), -1, -1.1, -1, -1, out_app_.id2cur_exclude_vec_of_id_, -1.1, that_seqno);
+                    NS_LOG_INFO(LogPrefixMacro <<"Heurist" << "Available has " << available.size());
+                    p_rm_in_->GetInfo(-1, -1, vector<int>(), -1, -1.1, 0, out_app_.id2cur_exclude_vec_of_id_, -1.1, that_seqno);
                     result = RouteIt(out_app_.node_->GetId(), d);
                 } else if (get_rm() == RoutingMethod::TimeExpanded) {
-                    p_rm_in_->GetInfo(-1, -1, vector<int>(), -1, -1.1, -1, -1, out_app_.id2cur_exclude_vec_of_id_, -1.1, that_seqno);
+                    NS_LOG_INFO(LogPrefixMacro <<"TEG" << "Available has " << available.size());
+                    p_rm_in_->GetInfo(-1, -1, vector<int>(), -1, -1.1, 0, out_app_.id2cur_exclude_vec_of_id_, -1.1, that_seqno);
                     result = RouteIt(out_app_.node_->GetId(), d);
                 } else if (get_rm() == RoutingMethod::CGR) {
-                    int destination_id = Ipv42NodeNo(ref_bp_header.get_destination_ip());
-                    int from_id = -1;
-                    auto found = out_app_.seqno2fromid_map_.find(ref_bp_header.get_source_seqno());
-                    if (found != out_app_.seqno2fromid_map_.end()) {
+                    NS_LOG_INFO(LogPrefixMacro <<"CGR" << "Available has " << available.size());
+                    node_id_t destination_id = Ipv42NodeNo(ref_bp_header.get_destination_ip());
+                    node_id_t from_id = -1;
+                    if (out_app_.seqno2fromid_map_.count(ref_bp_header.get_source_seqno())){
                         from_id = out_app_.seqno2fromid_map_[ref_bp_header.get_source_seqno()];
-                    } else {
-                        from_id = out_app_.node_->GetId();
                     }
                     vector<int> vec_of_current_neighbor;
                     for (auto nei : out_app_.neighbor_keeper_.neighbor_info_map_) {
@@ -516,22 +522,21 @@ namespace ns3 {
                     }
                     int own_id = out_app_.node_->GetId();
                     dtn_time_t expired_time = ref_bp_header.get_src_time_stamp().GetSeconds() + NS3DTNBIT_HYPOTHETIC_BUNDLE_EXPIRED_TIME;
+                    //NS_LOG_INFO(LogPrefixMacro << "sts=" << ref_bp_header.get_src_time_stamp() << ";sts.getseconds=" << ref_bp_header.get_src_time_stamp() << ";expire time =" << expired_time);
                     int bundle_size = ref_bp_header.get_payload_size();
-                    int flag = 0;
                     dtn_time_t current_time = Simulator::Now().GetSeconds();
 
                     // -------------- dividing ----------
                     p_rm_in_->GetInfo(destination_id, from_id, vec_of_current_neighbor, own_id, expired_time, 
-                            bundle_size, flag, out_app_.id2cur_exclude_vec_of_id_, current_time, that_seqno);
+                            bundle_size, out_app_.id2cur_exclude_vec_of_id_, current_time, that_seqno);
                     result = RouteIt(out_app_.node_->GetId(), d);
                 } else if (get_rm() == RoutingMethod::QM) {
+                    NS_LOG_INFO(LogPrefixMacro <<"CGRQM" << "Available has " << available.size());
                     int destination_id = Ipv42NodeNo(ref_bp_header.get_destination_ip());
                     int from_id = -1;
                     auto found = out_app_.seqno2fromid_map_.find(ref_bp_header.get_source_seqno());
                     if (found != out_app_.seqno2fromid_map_.end()) {
                         from_id = out_app_.seqno2fromid_map_[ref_bp_header.get_source_seqno()];
-                    } else {
-                        from_id = out_app_.node_->GetId();
                     }
                     vector<int> vec_of_current_neighbor;
                     for (auto nei : out_app_.neighbor_keeper_.neighbor_info_map_) {
@@ -542,24 +547,25 @@ namespace ns3 {
                     int own_id = out_app_.node_->GetId();
                     dtn_time_t expired_time = ref_bp_header.get_src_time_stamp().GetSeconds() + NS3DTNBIT_HYPOTHETIC_BUNDLE_EXPIRED_TIME;
                     int bundle_size = ref_bp_header.get_payload_size();
-                    int flag = 0;
                     dtn_time_t current_time = Simulator::Now().GetSeconds();
 
                     // -------------- dividing ----------
                     p_rm_in_->GetInfo(destination_id, from_id, vec_of_current_neighbor, own_id, expired_time, 
-                            bundle_size, flag, out_app_.id2cur_exclude_vec_of_id_, current_time, that_seqno);
+                            bundle_size, out_app_.id2cur_exclude_vec_of_id_, current_time, that_seqno);
                     result = RouteIt(out_app_.node_->GetId(), d);
                 } else {
+                    NS_LOG_ERROR(LogPrefixMacro<< " not yet");
                     std::abort();
                 }
-                if (result == int(out_app_.node_->GetId())) {NS_LOG_WARN(LogPrefixMacro << "WARN: routing self!  " << ";d=" << d << ";result = " << result);}
-                if (result != -1) {
+                // after get result from route , check again.
+                if (result >= 0 && result < 1000) {
+                    if (result == int(out_app_.node_->GetId())) {NS_LOG_WARN(LogPrefixMacro << "WARN: routing self!  " << ";d=" << d << ";result = " << result);}
                     auto ipkey = NodeNo2Ipv4(result);
                     if (out_app_.neighbor_keeper_.neighbor_info_map_.count(ipkey) 
                             && out_app_.neighbor_keeper_.neighbor_info_map_[ipkey].IsLastSeen()) {
                         return result;
                     }
-                    NS_LOG_INFO(LogPrefixMacro << "routing decision is not in available, or have be sent; we would wait and abond this" << " all available is: ");
+                    NS_LOG_INFO(LogPrefixMacro << "routing decision is not in available, or have be sent; we would wait and abond this, decision is-> "<< result << " all available is: ");
                     for (auto v : available) { NS_LOG_INFO("v = " << v << "."); }
                     if (ShallWait()) {
                         return -1;
@@ -567,8 +573,15 @@ namespace ns3 {
                         int random_A = std::rand();
                         return available[random_A % available.size()];
                     }
-                } else {
+                } else if (result == -2) {
+                    // remove pkt from queue and return -1
+                    out_app_.AddToRemovePktseq(that_seqno);
                     return -1;
+                } else if (result == -1) {
+                    return -1;
+                } else {
+                    NS_LOG_ERROR(LogPrefixMacro<<"can't sada" << ";result=" << result);
+                    std::abort();
                 }
             } else {
                 NS_LOG_ERROR("can't find the routing method or method not assigned, routing_assister_ is set=" << IsSet());
@@ -734,6 +747,8 @@ namespace ns3 {
                             ,{Ipv42NodeNo(ip_from), (stoi(avli_s) / NS3DTNBIT_HYPOTHETIC_CACHE_FACTOR)});
                 }
                 neighbor_info_map_[ip_from].info_last_seen_time_ = Simulator::Now().GetSeconds();
+                NS_LOG_INFO(LogPrefixMacro << "[ReceiveHelloDetail] last see node-" << Ipv42NodeNo(ip_from) 
+                << " at node-" << Ipv42NodeNo(out_app_.own_ip_));
             }
         }
 
@@ -741,29 +756,32 @@ namespace ns3 {
             return p_rm_in_->DoRoute(s, d);
         }
 
-        RoutingMethodInterface::RoutingMethodInterface(DtnApp& dp) : out_app_(dp) {}
-        RoutingMethodInterface::~RoutingMethodInterface() {}
-        void RoutingMethodInterface::GetInfo(int destination_id, int from_id, std::vector<int> vec_of_current_neighbor, int own_id, dtn_time_t expired_time, int bundle_size, int networkconfigurationflag, map<int, vector<int>> id2cur_exclude_vec_of_id, dtn_time_t local_time, dtn_seqno_t that_seqno) {
-            // nothing
-        }
-
-        // CGRQM TODO
-        void RoutingMethodInterface::StorageinfoMaintainInterface(string s
-                ,map<int, pair<int, int>> parsed_storageinfo_from_neighbor
-                ,map<int, pair<int, int>>& move_storageinfo_to_this
-                ,map<int, int> storagemax
-                ,vector<int> path_of_route
-                , pair<int, int> update
-                ) {
-            // nothing
-        }
-        Adob RoutingMethodInterface::get_adob() { return out_app_.routing_assister_.vec_[0]; }
-
+        
     } /* ns3dtnbit */ 
 }
 
 namespace ns3 {
     namespace ns3dtnbit {
+
+        void DtnApp::AddToRemovePktseq(dtn_seqno_t seq) {
+            if (to_remove_pktseqnos_by_routing_.count(seq)) {
+
+            } else {
+                to_remove_pktseqnos_by_routing_.emplace(seq);
+            }
+        }
+
+        bool DtnApp::IsToRemovePkt(dtn_seqno_t seq) {
+            if (to_remove_pktseqnos_by_routing_.count(seq)) {
+                to_remove_pktseqnos_by_routing_.erase(
+                    to_remove_pktseqnos_by_routing_.find(seq)
+                );
+                NS_LOG_INFO(LogPrefixMacro<<"toremove pkt seq=" << seq);
+                return true;
+            } else {
+                return false;
+            }
+        }
 
         void DtnApp::ReactMain(string s) {
             if (s == "NewTransmitCheck") {
@@ -778,9 +796,11 @@ namespace ns3 {
                         //int p_pkt_size = p_pkt->GetSize();
                         p_pkt->RemoveHeader(bp_header);
                         //assert(p_pkt_size == bp_header.get_payload_size() + bp_header.GetSerializedSize());
-                        if (Simulator::Now().GetSeconds() - bp_header.get_src_time_stamp().GetSeconds() < NS3DTNBIT_HYPOTHETIC_BUNDLE_EXPIRED_TIME) {
+                        bool not_expired = Simulator::Now().GetSeconds() - bp_header.get_src_time_stamp().GetSeconds() < NS3DTNBIT_HYPOTHETIC_BUNDLE_EXPIRED_TIME;
+                        bool is_toremove = IsToRemovePkt(bp_header.get_source_seqno());
+                        if (not_expired || !is_toremove) {
                             // this for loop is too hot, find way to make it cool
-                            NS_LOG_LOGIC(LogPrefixMacro << "checking for pkt");
+                            NS_LOG_INFO(LogPrefixMacro<<"check for pkt");
                             bool bundle_check_good = (ReplicationGoodDetail(bp_header, 0));
                             bool bundle_lazy_transmit_check = Simulator::Now().GetSeconds() - bp_header.get_hop_time_stamp().GetSeconds() > NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME;
                             bool bundle_dest_not_this_check = !bp_header.get_destination_ip().IsEqual(own_ip_);
@@ -804,12 +824,17 @@ namespace ns3 {
                                     transmit_assister_.ToTransmit(tmp_header_info);
                                 }
                             } else {
-                                NS_LOG_LOGIC(LogPrefixMacro << "bundle_check_good,bundle_lazy_transmit_check,bundle_dest_not_this_check="<< bundle_check_good<<bundle_lazy_transmit_check<<bundle_dest_not_this_check);
+                                // bundle this time is not routed
+                                NS_LOG_LOGIC(LogPrefixMacro << "bundle_check_good,bundle_lazy_transmit_check,bundle_dest_not_this_check="
+                                << bundle_check_good<<bundle_lazy_transmit_check<<bundle_dest_not_this_check);
                                 p_pkt->AddHeader(bp_header); daemon_bundle_queue_->Enqueue(Packet2Queueit(p_pkt)); continue; 
                             }
                         } else {
-                            NS_LOG_LOGIC(LogPrefixMacro << "would remove expired package,seqno="<<bp_header.get_source_seqno());
-                            continue;   // would remove expired package
+                            // would remove expired package and toremove pkt
+                            NS_LOG_LOGIC(LogPrefixMacro 
+                            << "would remove expired package or pkt which routing thinks to remove,seqno="
+                            <<bp_header.get_source_seqno() << " not expired, toremove=" << not_expired << is_toremove);
+                            continue;   
                         }
                     }
                 }
@@ -901,6 +926,7 @@ namespace ns3 {
         }
 
         void DtnApp::ToSendHello(Ptr<Socket> socket, dtn_time_t simulation_end_time, Time first_time) {
+            NS_LOG_INFO(LogPrefixMacro << "[ToSendHello]");
             if (hello_schedule_flag_) {
                 Simulator::Schedule(Seconds(NS3DTNBIT_HELLO_BUNDLE_INTERVAL_TIME), 
                         &DtnApp::ToSendHello, this, socket, simulation_end_time, first_time);
@@ -913,6 +939,7 @@ namespace ns3 {
         }
 
         void DtnApp::ToSendBundle(uint32_t dstnode_number, uint32_t payload_size) {
+            NS_LOG_INFO(LogPrefixMacro << "[ToSendBundle]");
             // fill up payload 
             std::string tmp_payload_str;
             tmp_payload_str = std::string(payload_size, 'x');
@@ -955,7 +982,6 @@ namespace ns3 {
          *  
          * */
         bool DtnApp::ReplicationGoodDetail(BPHeader& bp_header, int flag) {
-            NS_LOG_INFO(LogPrefixMacro << "in ReplicationGoodDetail");
             int v = bp_header.get_source_seqno();
             auto found = spray_map_.find(v);
             if (found == spray_map_.end()) {

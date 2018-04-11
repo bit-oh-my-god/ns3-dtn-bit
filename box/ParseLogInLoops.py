@@ -324,24 +324,24 @@ def mainsmain():
         r1 = re.compile(r'BundleTrace:node_number_=(\d+\.*\d*);simulation_duration_=(\d+\.*\d*)', re.VERBOSE)
         simulation_preview = r1.search(line)
         
-        #[time-5.40052;node-1;line-638]NOTE:BundleTrace:good! one bundle recept, it's one hop! bp_header=,destination ip=10.0.0.3,source ip=10.0.0.1,source seqno=139,payload size=345,offset size=345,src time stamp=5,hop time stamp=5,bundle type=BundlePacket
-        r2 = re.compile(r'''\[time\-(\d+\.*\d*);node\-(\d+\.*\d*);line\-(\d+\.*\d*)\]NOTE:BundleTrace:go
+        #[time-5.40052;node-1;[DtnApp]line-638]NOTE:BundleTrace:good! one bundle recept, it's one hop! bp_header=,destination ip=10.0.0.3,source ip=10.0.0.1,source seqno=139,payload size=345,offset size=345,src time stamp=5,hop time stamp=5,bundle type=BundlePacket
+        r2 = re.compile(r'''\[time\-(\d+\.*\d*);node\-(\d+\.*\d*);\[DtnApp\]line\-(\d+\.*\d*)\]NOTE:BundleTrace:go
         od!\sone\sbundle\srecept\,\sit\'s\sone\shop!\sbp_header=\,destination\sip=10\.0\.0\.(\d+\.*\d*)\,sour
         ce\sip=10\.0\.0\.(\d+\.*\d*)\,source\sseqno=(\d+\.*\d*)\,payload\ssize=(\d+\.*\d*)\,offset\ssiz
         e=(\d+\.*\d*)\,src\stime\sstamp=(\d+\.*\d*)\,hop\stime\ssta
         mp=(\d+\.*\d*)\,hop\sip=10\.0\.0\.(\d+\.*\d*)\,bundle\stype=([a-zA-Z]+)''', re.VERBOSE)
         hop = r2.search(line)
         
-        #[time-3.30744;node-1;line-630]NOTE:BundleTrace:Great! one bundle arrive destination! bp_header=,destination ip=10.0.0.2,source ip=10.0.0.1,source seqno=75,payload size=345,offset size=345,src time stamp=3,hop time stamp=3,bundle type=BundlePacket
-        r3 = re.compile(r'''\[time\-(\d+\.*\d*);node\-(\d+\.*\d*);line\-(\d+\.*\d*)\]NOTE:BundleTrace:Great!\son
+        #[time-3.30744;node-1;[DtnApp]line-630]NOTE:BundleTrace:Great! one bundle arrive destination! bp_header=,destination ip=10.0.0.2,source ip=10.0.0.1,source seqno=75,payload size=345,offset size=345,src time stamp=3,hop time stamp=3,bundle type=BundlePacket
+        r3 = re.compile(r'''\[time\-(\d+\.*\d*);node\-(\d+\.*\d*);\[DtnApp\]line\-(\d+\.*\d*)\]NOTE:BundleTrace:Great!\son
         e\sbundle\sarrive\sdestination!\sbp_header=\,destination\sip=10\.0\.0\.(\d+\.*\d*)\,so
         urce\sip=10\.0\.0\.(\d+\.*\d*)\,source\sseqno=(\d+\.*\d*)\,payload\ssize=(\d+\.*\d*)\,offset\ss
         ize=(\d+\.*\d*)\,src\stime\sstamp=(\d+\.*\d*)\,hop\stime\ssta
         mp=(\d+\.*\d*)\,hop\sip=10\.0\.0\.(\d+\.*\d*)\,bundle\stype=([a-zA-Z]+)''', re.VERBOSE)
         destination = r3.search(line)
         
-        #[time-0;node-0;line-1553]enter ScheduleTx(), time-+3000000000.0ns,size=345, to node-1
-        r4 = re.compile(r'''node\-(\d+\.*\d*);line\-(\d+\.*\d*)]enter\sScheduleTx\(\)\,\sti
+        #[time-0;node-0;[DtnApp]line-1553]enter ScheduleTx(), time-+3000000000.0ns,size=345, to node-1
+        r4 = re.compile(r'''node\-(\d+\.*\d*);\[DtnApp\]line\-(\d+\.*\d*)]enter\sScheduleTx\(\)\,\sti
         me\-\+(\d+\.*\d*)ns\,size=(\d+\.*\d*)\,\sto\snode\-(\d+\.*\d*)''', re.VERBOSE)
         schedule = r4.search(line)
         

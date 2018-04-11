@@ -12,7 +12,9 @@ function one_loop_func {
     LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ns-allinone-3.26/ns-3.26/build/:
     export LD_LIBRARY_PATH
     #export NS_LOG=UdpL4Protocol
+    echo "./ns-allinone-3.26/ns-3.26/build/src/ns3dtn-bit/examples/ns3.26-ns3dtn-bit-your-example-debug $1 $2 &>${LOG_FILE}"
     ./ns-allinone-3.26/ns-3.26/build/src/ns3dtn-bit/examples/ns3.26-ns3dtn-bit-your-example-debug $1 $2 &>${LOG_FILE}
+    #valgrind --track-fds=yes --leak-check=full --undef-value-errors=yes ./ns-allinone-3.26/ns-3.26/build/src/ns3dtn-bit/examples/ns3.26-ns3dtn-bit-your-example-debug $1 $2 &>${LOG_FILE}
     ./box/ParseLogInLoops.py $newargu
 }
 
@@ -38,6 +40,23 @@ function cycle_func {
     done
 }
 
+# this run would run TEG and CGR, where both should achive 100% delivery rate
+function test_target_simulation_run_func {
+    echo "in tx1_func"
+    ./changetrace.sh 200
+    prefix="tx" # should be [a-z]{1,9}
+    for x_running_argument_0 in {201..201..1}
+    do
+        echo "one"
+        x_running_argument_1="TEG"
+        x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
+        one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+        x_running_argument_1="CGR"
+        x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
+        one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+    done
+}
+
 # one source one destination scenario
 function simulation_run_tx1_func {
     echo "in tx1_func"
@@ -49,12 +68,12 @@ function simulation_run_tx1_func {
         #x_running_argument_1="TEG"
         #x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
         #one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
-        #x_running_argument_1="CGR"
-        #x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
-        #one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
-        x_running_argument_1="Spray"
+        x_running_argument_1="CGR"
         x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
         one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+        #x_running_argument_1="Spray"
+        #x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
+        #one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
         #x_running_argument_1="Heuristic"
         #x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
         #one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
@@ -118,6 +137,9 @@ function simulation_run_switch_func {
     done
 }
 
+#####################################
+
+#test_target_simulation_run_func
 simulation_run_tx1_func
 #simulation_run_ran_func
 #simulation_run_switch_func

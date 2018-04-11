@@ -99,6 +99,8 @@ namespace ns3 {
                 void ReceiveBundle(Ptr<Socket> socket);
                 void ReceiveHello(Ptr<Socket> socket_handle);
                 void Report(std::ostream& os);
+                node_id_t GetNodeId() const {return node_->GetId();}
+                std::string LogPrefix();
 
             private :
                 /*
@@ -113,8 +115,8 @@ namespace ns3 {
                     void set_rm(RoutingMethod rm) {rm_ = rm;}
                     void set_rmob(std::unique_ptr<RoutingMethodInterface> p_rm_in) {p_rm_in_ = std::move(p_rm_in);}
                     void load_ob(const vector<Adob>& v) { vec_ = v; }
-                    int RouteIt(int src_node_n, int dest_node_n);
-                    int FindTheNeighborThisBPHeaderTo(BPHeader& ref_bp_header);
+                    node_id_t RouteIt(node_id_t src_node_n, node_id_t dest_node_n);
+                    node_id_t FindTheNeighborThisBPHeaderTo(BPHeader& ref_bp_header);
                     std::string LogPrefix() {return out_app_.LogPrefix();}
                     bool IsRouteMethodQM(){return rm_ == RoutingMethod::QM;}
                     friend RoutingMethodInterface;
@@ -263,19 +265,22 @@ namespace ns3 {
                 void StateCheckDetail();
                 // periodly check the state of this app, remove expired package
                 void CheckBuffer(CheckState check_state);
-                //
-                std::string LogPrefix();
+                // add to remove pktseqno which will be remove in next 'ReacMain("NewTransCheck")'
+                void AddToRemovePktseq(dtn_seqno_t seq);
+                // 
+                bool IsToRemovePkt(dtn_seqno_t seq);
                 // to check state of wireless device
                 Ptr<WifiPhy> wifi_ph_p;
                 // for ReplicationGoodDetail
                 bool hello_schedule_flag_ = false;
                 std::map<dtn_seqno_t, int> spray_map_;
-                map<dtn_seqno_t, int> seqno2fromid_map_;
+                map<dtn_seqno_t, node_id_t> seqno2fromid_map_;
                 set<dtn_seqno_t> before_receive_seqno_set_;
-                map<int, vector<int>> id2cur_exclude_vec_of_id_;    //used for CGR
+                map<node_id_t, vector<node_id_t>> id2cur_exclude_vec_of_id_;    //used for CGR
                 uint32_t daemon_baq_pkts_max_ = 11111;
                 Ptr<Node> node_; 
                 Ipv4Address own_ip_;
+                set<dtn_seqno_t> to_remove_pktseqnos_by_routing_;
                 //enum RunningFlag running_flag_;
                 Ptr<Socket> daemon_socket_handle_; // note that hello socket is another socket
                 Ptr<Queue> daemon_antipacket_queue_;
@@ -283,35 +288,6 @@ namespace ns3 {
                 Ptr<Queue> daemon_bundle_queue_; // m_queue, daemon bundle queue, this is where "store and forward" semantic stores
         };
 
-        class RoutingMethodInterface {
-            public :
-                RoutingMethodInterface(DtnApp& dp);
-                virtual ~RoutingMethodInterface();
-                // Aim :
-                // src is the node number for traffic source node
-                // dst is the node number for traffic sink node
-                // return the next hop node number
-                // Note : 
-                // use adob in the out_app_
-                virtual int DoRoute(int src, int dst) = 0;
-                /*
-                 * this time I modify this interface for CGR, next time I would do it again! Change RoutingMethodInterface to Generic!!!
-                 * TODO
-                 * */
-                virtual void GetInfo(int destination_id, int from_id, std::vector<int> vec_of_current_neighbor, int own_id, dtn_time_t expired_time, int bundle_size, int networkconfigurationflag, map<int, vector<int>> id2cur_exclude_vec_of_id, dtn_time_t local_time, dtn_seqno_t that_seqno);
-                // CGRQM TODO
-                virtual void StorageinfoMaintainInterface(string s
-                        ,map<int, pair<int, int>> parsed_storageinfo_from_neighbor
-                        ,map<int, pair<int, int>>& move_storageinfo_to_this
-                        ,map<int, int> storagemax
-                        ,vector<int> path_of_route
-                        ,pair<int, int> update ={ -1, -1 }
-                        );
-            protected :
-                // read only 
-                const DtnApp& out_app_;
-                Adob get_adob();
-        };
     } /* ns3dtnbit */ 
 }
 

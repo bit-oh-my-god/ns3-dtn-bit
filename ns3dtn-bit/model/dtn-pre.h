@@ -29,7 +29,7 @@ namespace ns3 {
         /*
          * by default, get the function name called the logfunc which called this
          */
-        std::string GetCallStack(int);
+        std::string GetCallSta(int);
         std::string FilePrint(std::string);
         std::string GetLogStr(std::string);
 
@@ -38,9 +38,18 @@ namespace ns3 {
             // D' list of xmits means that all xmit in list have node_id_of_to_ to be D
             dtn_time_t contact_start_time_;
             dtn_time_t contact_end_time_;
-            int node_id_of_from_;       // transmission node
-            int node_id_of_to_;         // receiving node
+            node_id_t node_id_of_from_;       // transmission node
+            node_id_t node_id_of_to_;         // receiving node
             double data_transmission_rate_; // set it to 80 000
+            string ToString() const {
+                stringstream ss;
+                ss << "\n cgrxmit==> contact_start_time_ =" << contact_start_time_
+                    << ";contact_end_time_=" << contact_end_time_
+                    << ";node_id_of_from_=" << node_id_of_from_
+                    << ";node_id_of_to_=" << node_id_of_to_
+                    << ";data_transmission_rate_=" << data_transmission_rate_ << endl;
+                return ss.str();
+            }
         };
 
         bool operator<(CgrXmit const & lhs, CgrXmit const & rhs);
