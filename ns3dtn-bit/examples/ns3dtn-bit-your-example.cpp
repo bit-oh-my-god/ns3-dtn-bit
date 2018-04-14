@@ -36,7 +36,7 @@ namespace ns3 {
                     } else if (method == "DirectForward") {
                         ex_rm_ = DtnApp::RoutingMethod::DirectForward;
                     } else if (method == "QM") {
-                        ex_rm_ = DtnApp::RoutingMethod::CGR;
+                        ex_rm_ = DtnApp::RoutingMethod::QM;
                     } else {
                         std::cerr << "can't find routing method name or don't assign one." << std::endl;
                         abort();
@@ -78,6 +78,19 @@ namespace ns3 {
                         }
                     }
                 } 
+
+                void InitStorage() override {
+                    if (ex_rm_ == DtnApp::RoutingMethod::QM) {
+                        config_storage_max_[0] = 1000;
+                        config_storage_max_[1] = 500;
+                        config_storage_max_[2] = 400;
+                        config_storage_max_[3] = 500;
+                        config_storage_max_[4] = 500;
+                        config_storage_max_[5] = 1000;
+                        config_storage_max_[6] = 600;
+                        config_storage_max_[7] = 1000;
+                    }
+                }
 
                 void ReportEx(std::ostream& os) override;
 
@@ -155,13 +168,14 @@ namespace ns3 {
                 }
 
     } /* ns3dtnbit */ 
-
 } /* ns3  */ 
 
 int main(int argc, char *argv[]) {
     //!important LOG control
+    LogComponentEnable ("DtnCGRRouting",LOG_LEVEL_DEBUG);
+    //LogComponentEnable ("DtnCGRRouting",LOG_LEVEL_INFO);
     //LogComponentEnable ("DtnCGRRouting",LOG_LEVEL_DEBUG);
-    LogComponentEnable ("DtnCGRRouting",LOG_LEVEL_INFO);
+    LogComponentEnable ("DtnCGRQMRouting",LOG_LEVEL_INFO);
     //LogComponentEnable ("DtnRouting",LOG_LEVEL_DEBUG);
     //LogComponentEnable ("DtnRouting",LOG_LEVEL_INFO);
     //LogComponentEnable ("DtnApp",LOG_LEVEL_DEBUG);

@@ -81,7 +81,7 @@ namespace ns3 {
                 node_id_t from_id, std::vector<node_id_t> vec_of_current_neighbor, 
                 node_id_t own_id, dtn_time_t expired_time, 
                 uint32_t bundle_size, map<node_id_t, vector<node_id_t>> id2cur_exclude_vec_of_id, 
-                dtn_time_t local_time, dtn_seqno_t that_seqno) {
+                dtn_time_t local_time, dtn_seqno_t that_seqno, vector<node_id_t> exclude_node_of_thispkt) {
 
             debug_that_seqno_ = that_seqno;
         }
@@ -99,7 +99,7 @@ namespace ns3 {
                 node_id_t from_id, std::vector<node_id_t> vec_of_current_neighbor, 
                 node_id_t own_id, dtn_time_t expired_time, 
                 uint32_t bundle_size, map<node_id_t, vector<node_id_t>> id2cur_exclude_vec_of_id, 
-                dtn_time_t local_time, dtn_seqno_t that_seqno) {
+                dtn_time_t local_time, dtn_seqno_t that_seqno, vector<node_id_t> exclude_node_of_thispkt) {
 
             debug_that_seqno_ = that_seqno;
         }

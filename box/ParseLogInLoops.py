@@ -64,6 +64,7 @@ def get_x_time_trace_map_detail(p_x_time_trace_map, p_x_tosend_list, p_x_pkt_tra
             if seqno in p_x_pkt_trace_map :
                 print('key exist')
                 for trace in p_x_pkt_trace_map[seqno] :
+                    # loop trace and find hop time, receive time, receive node
                     if trace[4] != seqno :
                         print('error_02')
                         sys.exit()
@@ -78,10 +79,10 @@ def get_x_time_trace_map_detail(p_x_time_trace_map, p_x_tosend_list, p_x_pkt_tra
                     ref_x_arrive_n += 1
                     p_x_time_trace_map[seqno] = tmp 
                 else :
-                    print('there is one pkt don\'t arrive destination')
+                    print('there is one pkt-{0} don\'t arrive destination'.format(seqno))
                     p_x_time_trace_map[seqno] = tmp
             else :
-                print('key not exist-{0}'.format(seqno))
+                print('key not exist (pkt not send) pkt-{0}'.format(seqno))
                 p_x_time_trace_map[seqno] = tmp
     return ref_x_arrive_n
 def get_x_time_trace_map(p_x_time_trace_map, p_x_tosend_list, p_x_pkt_trace_map, ref_x_arrive_n,x_simulation_time,x_is_one_delivery_route) :

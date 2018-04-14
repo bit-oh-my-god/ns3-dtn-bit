@@ -65,8 +65,13 @@ namespace ns3 {
                 //Time get_hop_time_stamp() const {return Time(NanoSeconds(hop_time_stamp_));}
                 void set_hop_time_stamp(Time arg) {hop_time_stamp_ = arg.GetMilliSeconds();}
                 //void set_hop_time_stamp(Time arg) {hop_time_stamp_ = (double)arg.GetNanoSeconds();}
-                void set_hop_ip(Ipv4Address ip) {hop_ip_ = ip;}
-                Ipv4Address get_hop_ip() {return hop_ip_;}
+                void add_hop_ip(Ipv4Address ip) {
+                    if (std::find(hop_ips_.begin(), hop_ips_.end(), ip) == hop_ips_.end()) {
+                        hop_ips_.push_back(ip);
+                    }
+                }
+                vector<Ipv4Address> get_hop_ips() {return hop_ips_;}
+                Ipv4Address get_hop_ip() {return hop_ips_[hop_ips_.size() - 1];}
 
             private :
 
@@ -86,7 +91,8 @@ namespace ns3 {
                 uint32_t offset_size_;
                 dtn_time_t src_time_stamp_;
                 dtn_time_t hop_time_stamp_;
-                Ipv4Address hop_ip_;
+                // to encode hoped node to avoid loop
+                vector<Ipv4Address> hop_ips_;
         }; 
 
         std::ostream& operator<< (std::ostream& os, BPHeader const& rh);

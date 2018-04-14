@@ -26,7 +26,7 @@ namespace ns3 {
                 }
 
             protected :
-                size_t th_ = 0;
+                size_t th_ = 0; // a seqno for latter log parse use 
                 uint32_t random_seed_;
                 uint32_t node_number_;
                 dtn_time_t simulation_duration_;
@@ -36,7 +36,7 @@ namespace ns3 {
                 std::string teg_file_;
                 std::string log_file_;
                 std::ofstream file_stream_;
-                map<int, int> config_storage_max_;
+                map<node_id_t, size_t> config_storage_max_;
                 NodeContainer nodes_container_;
                 NetDeviceContainer net_devices_container_;
                 Ipv4InterfaceContainer ip_interface_container_;
@@ -46,6 +46,7 @@ namespace ns3 {
                 virtual void CreateNodes();
                 virtual void CreateDevices();
                 virtual void InstallInternetStack();
+                virtual void InitStorage();
                 virtual std::unique_ptr<RoutingMethodInterface> CreateRouting(DtnApp& dtn);
 
                 virtual void InstallApplications();

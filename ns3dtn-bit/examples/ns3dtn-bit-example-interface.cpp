@@ -126,23 +126,19 @@ namespace ns3 {
             // create adob for app
             auto adob = CreateAdjacentList();
             //Ptr<DtnApp> app[node_number_];
+            InitStorage();
             for (uint32_t i = 0; i < node_number_; ++i) { 
                 cout << "---> install app for node-" << i << endl;
                 // create app and set
                 apps_.push_back(CreateObject<DtnApp>());
+                if (config_storage_max_.count(i)) {
+                    apps_[i]->SetQueueParameter(config_storage_max_[i]);
+                }
                 apps_[i]->SetUp(nodes_container_.Get(i));
                 nodes_container_.Get(i)->AddApplication(apps_[i]);
                 apps_[i]->SetStartTime(Seconds(0.0));
                 apps_[i]->SetStopTime(Seconds(5000.0));
-                if (ex_rm_ == DtnApp::RoutingMethod::QM) {
-                    // CGRQM TODO
-                    // set (storage limit)queue parameter and id_of_d2cur_excluded_vec_of_d_
-                    if (config_storage_max_.count(i)) {
-                        apps_[i]->SetQueueParameter(config_storage_max_[i]);
-                    } else {
-
-                    }
-                }
+                // set (storage limit)queue parameter and id_of_d2cur_excluded_vec_of_d_
                 // bundle send socket would be set inside DtnApp
                 // set bundle receive socket
                 Ptr<Socket> dst = Socket::CreateSocket(nodes_container_.Get(i), udp_tid);
@@ -164,10 +160,16 @@ namespace ns3 {
                 recvSink->Bind(local);
                 recvSink->SetRecvCallback(MakeCallback(&DtnApp::ReceiveHello, apps_[i]));
                 // load adob to each app, and load RoutingMethodInterface
-                if (ex_rm_ == DtnApp::RoutingMethod::Other || ex_rm_ == DtnApp::RoutingMethod::TimeExpanded || ex_rm_ == DtnApp::RoutingMethod::CGR) {
+                if (
+                   ex_rm_ == DtnApp::RoutingMethod::Other 
+                || ex_rm_ == DtnApp::RoutingMethod::TimeExpanded 
+                || ex_rm_ == DtnApp::RoutingMethod::CGR
+                || ex_rm_ == DtnApp::RoutingMethod::QM
+                ) {
                     std::unique_ptr<RoutingMethodInterface> p_rm_in = CreateRouting(*apps_[i]);
                     apps_[i]->InvokeMeWhenInstallAppToSetupDtnAppRoutingAssister(ex_rm_, std::move(p_rm_in), adob);
-                } else if (ex_rm_ == DtnApp::RoutingMethod::SprayAndWait || ex_rm_ == DtnApp::RoutingMethod::DirectForward) {
+                } else if (ex_rm_ == DtnApp::RoutingMethod::SprayAndWait 
+                || ex_rm_ == DtnApp::RoutingMethod::DirectForward) {
                     apps_[i]->InvokeMeWhenInstallAppToSetupDtnAppRoutingAssister(ex_rm_, adob);
                 } else {
                     std::cout << "Error : can't find Routing method" << __LINE__ << std::endl;
@@ -226,16 +228,9 @@ namespace ns3 {
             //trace_file_ = "/home/dtn-012345/ns-3_build/ns3-dtn-bit/box/current_trace/current_trace.tcl";
             //teg_file_ = "/home/dtn-012345/ns-3_build/ns3-dtn-bit/box/current_trace/teg.txt";
             //log_file_ = "~/ns-3_build/ns3-dtn-bit/box/dtn_simulation_result/dtn_trace_log.txt";
-            config_storage_max_[0] = 1000;
-            config_storage_max_[1] = 500;
-            config_storage_max_[2] = 40;
-            config_storage_max_[3] = 500;
-            config_storage_max_[4] = 200;
-            config_storage_max_[5] = 1000;
-            config_storage_max_[6] = 600;
-            config_storage_max_[7] = 1000;
         }
 
+        void DtnExampleInterface::InitStorage() { }
 
         /* we define this would rewrite ( you can say shade ) the dufault CourseChange
          * and this rewrite is supposed in tutorial
@@ -356,12 +351,11 @@ namespace ns3 {
                 return std::unique_ptr<RoutingMethodInterface>(p);
             } else if (ex_rm_ == DtnApp::RoutingMethod::QM) {
                 auto p = new CGRQMRouting(dtn);
-                // CGRQM TODO
-                // hard-coded, later refactor would make it settable
-                map<int, pair<int, int>> empty01;
-                map<int, pair<int, int>> empty02;
-                map<int, int> storagemax = config_storage_max_;
-                vector<int> empty03;
+                cout << "CGRQM routing create" << endl;
+                map<node_id_t, pair<int, int>> empty01;
+                map<node_id_t, pair<int, int>> empty02;
+                map<node_id_t, size_t> storagemax = config_storage_max_;
+                pair<vector<node_id_t>, dtn_time_t> empty03;
                 p->StorageinfoMaintainInterface("give storage_max_", empty01, empty02, storagemax, empty03);
                 cout << "BundleTrace:Itisonedeliverymethon\n" << endl;
                 cout << "BundleTrace:install route :qm\n" << endl;

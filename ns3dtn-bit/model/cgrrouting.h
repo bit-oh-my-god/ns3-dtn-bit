@@ -10,30 +10,24 @@ namespace ns3 {
         // https://tools.ietf.org/html/draft-burleigh-dtnrg-cgr-00
         // note this algo is not CGR-EB, it's standard CGR (which can be found in here: Analysis of the contact graph routing algorithm: Bounding interplanetary paths)
         class CGRRouting : public RoutingMethodInterface {
-            public :
+            public:
             CGRRouting(DtnApp& dp);
+            ~CGRRouting() override {}
             // s is source index, d is dest index, return next hop
             int DoRoute(int s, int d) override;
 
-<<<<<<< HEAD
             void GetInfo(node_id_t destination_id, 
                 node_id_t from_id, std::vector<node_id_t> vec_of_current_neighbor, 
                 node_id_t own_id, dtn_time_t expired_time, 
                 uint32_t bundle_size, map<node_id_t, vector<node_id_t>> id2cur_exclude_vec_of_id, 
-                dtn_time_t local_time, dtn_seqno_t that_seqno);
-=======
-            void GetInfo(node_id_t destination_id, node_id_t from_id, std::vector<node_id_t> vec_of_current_neighbor, node_id_t own_id, dtn_time_t expired_time, int bundle_size, int networkconfigurationflag, map<int, vector<int>> id2cur_exclude_vec_of_id, dtn_time_t local_time, dtn_seqno_t that_seqno) override;
-
->>>>>>> dffd67e48f8b3f879df1cdb2868e437e8c694811
-            private :
-            
+                dtn_time_t local_time, dtn_seqno_t that_seqno, vector<node_id_t> exclude_node_of_thispkt) override;
+            protected:
             class RouteResultCandidate {
                 public:
                 static RouteResultCandidate NewExhaustedAs(node_id_t dest, dtn_time_t expiretime){
                     auto c = RouteResultCandidate();
                     c.dest_ = dest;
                     c.is_exhausted_ = true;
-<<<<<<< HEAD
                     c.cannot_arrive_until_ = expiretime;
                     return c;
                 }
@@ -65,19 +59,7 @@ namespace ns3 {
                     seqpkt_=rhs.seqpkt_;
                     debug_id_ = rhs.debug_id_;
                     return *this;
-=======
-                    c.cannot_arrive_until_ = expiretime + NS3DTNBIT_CGR_OPTIMAL_OPTION_REUSE_INTERVAL2;
-                    return c;
-                }
-                RouteResultCandidate(){
-                    result_cash_end_ = -0.1;
-                    result_cash_begin_=-0.1;
-                    nexthop_=-1;
-                    dest_=-1;
-                    forfeit_time_=-0.1;
-                    cannot_arrive_until_=-0.1;
-                    is_exhausted_=false;
->>>>>>> dffd67e48f8b3f879df1cdb2868e437e8c694811
+
                 }
                 void PushXmit(CgrXmit cgrxmit) {
                     vec_.push_back(cgrxmit);
@@ -86,7 +68,6 @@ namespace ns3 {
                     vec_.pop_back();
                 }
                 string ToString() {
-<<<<<<< HEAD
                     auto bb = is_exhausted_?"True":"False";
                     stringstream ss;
                     if (!is_exhausted_) {
@@ -136,20 +117,36 @@ namespace ns3 {
                         assert(vec_.empty());
                         return "";
                     }
-=======
-                    char str[200];
-                    sprintf(str, "result_cash_begin_=%f,result_cash_end_=%f,nexthop_=%d, dest_=%d,forfeit_time_=%f,cannot_arrive_until_=%f,is_exhausted_=%s", 
-                    result_cash_begin_, result_cash_end_, nexthop_, dest_, 
-                    forfeit_time_, cannot_arrive_until_, is_exhausted_);
-                    return string(str);
->>>>>>> dffd67e48f8b3f879df1cdb2868e437e8c694811
+                }
+                // @brief get path from next-to-dest to nexthop
+                vector<node_id_t> GetPath() const {
+                    // note: assume no loop-path, if have, would bug!
+                    bool dohaveloop = false;
+                    assert(!dohaveloop);
+                    vector<node_id_t> path;
+                    for (auto const & xmit : vec_) {
+                        path.emplace_back(xmit.node_id_of_to_);
+                        path.emplace_back(xmit.node_id_of_from_);
+                    }
+                    assert(path.size() >= 2);
+                    // pick cherry out (cherry is dest and ownnode)
+                    path.erase(path.begin());
+                    path.erase(path.end() - 1);
+                    return path;
+                }
+                size_t GetXmitSize() const {
+                    return vec_.size();
+                }
+                dtn_time_t GetArriveDestTimeIfGood() const {
+                    assert(!vec_.empty());
+                    // first xmit is from next-to-dest-node to dest-node
+                    return vec_[0].contact_start_time_;
                 }
                 dtn_time_t result_cash_end_;    // cash no longer work at this time
                 dtn_time_t result_cash_begin_;  // cash works at this time
                 node_id_t nexthop_; // if is exhausted, nexthop_ should be -1
                 node_id_t dest_;
                 dtn_time_t forfeit_time_;
-<<<<<<< HEAD
                 dtn_seqno_t seqpkt_;    // debug
                 dtn_time_t cannot_arrive_until_;    // if later pkt expired time is before this, it's exhausted.
                 bool is_exhausted_;
@@ -158,11 +155,6 @@ namespace ns3 {
                 void Complete(int id){debug_id_ = id;}
                 private:
                 int debug_id_;
-=======
-                dtn_time_t cannot_arrive_until_;    // if later pkt expired time is before this, it's exhausted.
-                bool is_exhausted_;
-                private:
->>>>>>> dffd67e48f8b3f879df1cdb2868e437e8c694811
                 vector<CgrXmit> vec_;
             };
             // @brief record for later use 
@@ -188,7 +180,7 @@ namespace ns3 {
                 vector<RouteResultCandidate> table_;
                 vector<RouteResultCandidate> this_route_;
                 int seqno_for_rrc_ = 0;
-
+                dtn_time_t last_remove_table_time_;
             };
             CashedRouteTable CRT_;
 
@@ -205,11 +197,11 @@ namespace ns3 {
             //---- best_delivery_time_
             virtual void ContactReviewProcedure(node_id_t cur_d, dtn_time_t cur_deadline, dtn_time_t best_deli);
             // @brief third step of CGR-three-steps
-            //int ForwardDecision(bool if_cannot_find_route=false,bool if_route_candidate_cashed=false);
             virtual int ForwardDecision(vector<RouteResultCandidate> & rrc_vec);
             // implement this! TODO
             // check https://tools.ietf.org/html/draft-burleigh-dtnrg-cgr-00 -------- 2.5.3
-            // @brief return index of rrc_vec
+            // @brief NetworkConfigureMaters Decision
+            // @return index of rrc_vec
             virtual int NCMDecision(vector<RouteResultCandidate> const & rrc_vec);
 
 
@@ -235,7 +227,6 @@ namespace ns3 {
 
             // -------------- end of debug
 
-            private :
             node_id_t destination_id_; 
             node_id_t own_id_;
             dtn_time_t local_time_;

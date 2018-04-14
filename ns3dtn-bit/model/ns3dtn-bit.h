@@ -100,6 +100,7 @@ namespace ns3 {
                 void ReceiveHello(Ptr<Socket> socket_handle);
                 void Report(std::ostream& os);
                 node_id_t GetNodeId() const {return node_->GetId();}
+                void DebugUseScheduleToDoSome();
                 std::string LogPrefix();
 
             private :
@@ -118,17 +119,17 @@ namespace ns3 {
                     node_id_t RouteIt(node_id_t src_node_n, node_id_t dest_node_n);
                     node_id_t FindTheNeighborThisBPHeaderTo(BPHeader& ref_bp_header);
                     std::string LogPrefix() {return out_app_.LogPrefix();}
-                    bool IsRouteMethodQM(){return rm_ == RoutingMethod::QM;}
                     friend RoutingMethodInterface;
                     // CGRQM TODO
                     void StorageinfoMaintainInterface(string s 
-                            ,map<int, pair<int, int>> parsed_storageinfo_from_neighbor
-                            ,map<int, pair<int, int>>& move_storageinfo_to_this
-                            ,map<int, int> storagemax
-                            ,vector<int> path_of_route
+                            ,map<node_id_t, pair<int, int>> parsed_storageinfo_from_neighbor
+                            ,map<node_id_t, pair<int, int>>& move_storageinfo_to_this
+                            ,map<node_id_t, size_t> storagemax
+                            ,pair<vector<node_id_t>, dtn_time_t> path_of_route
                         ,pair<int, int> update ={ -1, -1 }
                             );
-
+                    void DebugUseScheduleToDoSome();
+                    void NotifyRouteSeqnoIsAcked(dtn_seqno_t seq);
                     // data
                     vector<Adob> vec_;
                     std::unique_ptr<RoutingMethodInterface> p_rm_in_;
@@ -222,6 +223,7 @@ namespace ns3 {
 
             public :
 
+                // Set Storage of DTNAPP
                 void SetQueueParameter(int v) {
                     daemon_baq_pkts_max_ = v;
                 }
@@ -277,7 +279,7 @@ namespace ns3 {
                 map<dtn_seqno_t, node_id_t> seqno2fromid_map_;
                 set<dtn_seqno_t> before_receive_seqno_set_;
                 map<node_id_t, vector<node_id_t>> id2cur_exclude_vec_of_id_;    //used for CGR
-                uint32_t daemon_baq_pkts_max_ = 11111;
+                uint32_t daemon_baq_pkts_max_ = -1;
                 Ptr<Node> node_; 
                 Ipv4Address own_ip_;
                 set<dtn_seqno_t> to_remove_pktseqnos_by_routing_;
@@ -288,6 +290,7 @@ namespace ns3 {
                 Ptr<Queue> daemon_bundle_queue_; // m_queue, daemon bundle queue, this is where "store and forward" semantic stores
         };
 
+        std::ostream& operator<< (std::ostream& os, DtnApp::RoutingMethod const& rh);
     } /* ns3dtnbit */ 
 }
 

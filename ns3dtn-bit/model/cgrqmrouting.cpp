@@ -1,4 +1,3 @@
-
 #include "cgrqmrouting.h"
 
 namespace ns3 {
@@ -7,35 +6,82 @@ namespace ns3 {
     //
     namespace ns3dtnbit {
 
-        CGRQMRouting::CGRQMRouting(DtnApp& dp) : RoutingMethodInterface(dp) {
-#ifdef CGR_DEBUG_0
-            cgr_debug_flag_0 = true;
-#endif
-#ifdef CGR_DEBUG_1
-            cgr_debug_flag_1 = true;
-#endif
+        NS_LOG_COMPONENT_DEFINE ("DtnCGRQMRouting");
+        #define LogPrefixMacro LogPrefix()<<"[DtnCGRQMRouting]line-"<<__LINE__<<"]"
+
+        CGRQMRouting::CGRQMRouting(DtnApp& dp) : CGRRouting(dp) { 
+            // CGRQM didn't mean anything unless 
+            assert(NS3DTNBIT_CGR_OPTIMAL_DECISION_AMOUNT > 1);
+        }
+        CGRQMRouting::~CGRQMRouting() {}
+
+        void CGRQMRouting::DebugUseScheduleToDoSome() {
+            //NS_LOG_DEBUG(LogPrefixMacro << "in DebugUseSchedule");
+            for (auto const & me : storageinfo_maintained_) {
+                NS_LOG_DEBUG(LogPrefixMacro<<"storageinfo:" 
+                << "nodeid=" << get<0>(me) 
+                << "belive="<< get<1>(me).first 
+                << "storage_v="<< get<1>(me).second);
+            }
+        }
+
+        void CGRQMRouting::LoadCurrentStorageOfOwn(node_id_t node, size_t storage) {
+            storageinfo_maintained_[node] = make_pair(1, storage);
         }
 
         // maintain storageinfo_maintained_ and storage_max_ in this method
         // CGRQM TODO
         void CGRQMRouting::StorageinfoMaintainInterface(string action
-                ,map<int, pair<int, int>> parsed_storageinfo_from_neighbor
-                ,map<int, pair<int, int>>& move_storageinfo_to_this
-                ,map<int, int> storagemax
-                ,vector<int> path_of_route
-                ,pair<int, int> update_storage_from_hello
+                ,map<node_id_t, pair<int, int>> parsed_storageinfo_from_neighbor
+                ,map<node_id_t, pair<int, int>>& move_storageinfo_to_this
+                ,map<node_id_t, size_t> storagemax
+                ,pair<vector<node_id_t>, dtn_time_t> path_of_route_and_decaytime
+                ,pair<node_id_t, int> update_storage_from_hello
                 ) {
-            {
-                // CGRQM TODO
-                // release storage
+            NS_LOG_INFO(LogPrefixMacro<<"Into storageMaintainInterface");
+            auto nowtime = Simulator::Now().GetSeconds();
+            if (last_release_check_time_ + NS3DTNBIT_CGR_QM_ALGORITHM_DECAY_CHECK_TIME < nowtime) {
+                // local-pkt in bundle-queue would release when acked, if routing-method = QM in dtnapp
+                last_release_check_time_ = nowtime;
+                NS_LOG_INFO(LogPrefixMacro<<"to release storage and don't do it hot");
+                while (!release_queue_.empty() && get<0>(*release_queue_.begin())<nowtime) {
+                    for (auto nodeinpathtodecaystorage : (*release_queue_.begin()).second) {
+                        if (storageinfo_maintained_[nodeinpathtodecaystorage].second < 1) {
+                            // storage usage is too small
+                        } else {
+                            // release storage
+                            auto old = get<1>(storageinfo_maintained_[nodeinpathtodecaystorage]);
+                            get<1>(storageinfo_maintained_[nodeinpathtodecaystorage]) -= 1;
+                            assert(old != storageinfo_maintained_[nodeinpathtodecaystorage].second);
+                        }
+                    }
+                    // map is ordered, so the begin() points to is the smallest one
+                    release_queue_.erase(release_queue_.begin());
+                }
+            } else {
+                // don't release too hot
             }
+            if (last_belive_decay_ + NS3DTNBIT_CGR_QM_ALGORITHM_DECAY_DO_TIME < nowtime) {
+                last_belive_decay_ = nowtime;
+                for (auto & me : storageinfo_maintained_) {
+                    get<0>(get<1>(me)) += 1;
+                }
+            }
+            //NS_LOG_INFO(LogPrefixMacro);
             if (action == "route answer is made, add queue usage, and time to decay") {
                 // Do route answer is made means that pkt is acked? FIXME
-                for (auto nodeinpath : path_of_route) {
-                    storageinfo_maintained_[nodeinpath] = {storageinfo_maintained_[nodeinpath].first, storageinfo_maintained_[nodeinpath].second + 1};
+                for (auto nodeinpath : path_of_route_and_decaytime.first) {
+                    if (!storageinfo_maintained_.count(nodeinpath)) {
+                        storageinfo_maintained_[nodeinpath] = {10, 0};
+                    }
+                    //auto old = get<1>(storageinfo_maintained_[nodeinpath]);
+                    get<1>(storageinfo_maintained_[nodeinpath]) += 1;
+                    //assert(get<1>(storageinfo_maintained_[nodeinpath]) == old + 1);
+                    //{storageinfo_maintained_[nodeinpath].first, storageinfo_maintained_[nodeinpath].second + 1};
                 }
-                release_queue_[Simulator::Now().GetSeconds()] = path_of_route;
+                release_queue_[path_of_route_and_decaytime.second] = path_of_route_and_decaytime.first;
             } else if (action == "receive neighbor storageinfo") {
+                NS_LOG_INFO(LogPrefixMacro<< "receive neighbor storageinfo");
                 for (auto pp : parsed_storageinfo_from_neighbor) {
                     auto nodeid = pp.first;
                     auto belive = pp.second.first;
@@ -45,9 +91,16 @@ namespace ns3 {
                         int b1 = storageinfo_maintained_[nodeid].first;
                         int s1 = storageinfo_maintained_[nodeid].second;
                         be = (b1 + belive) / 2;
-                        st = (b1 * s1 + belive * storevalue) / (b1 + belive);
+                        // belive-value is bigger, the right is lower 
+                        st = double((belive * s1) + (b1 * storevalue)) /  double(b1 + belive);
+                        //NS_LOG_INFO(";st=" << st << ";belive="<< belive << ";s1=" << s1 << ";b1=" << b1 << ";storevalue=" << storevalue);
+                        assert(st <= s1 || st <= storevalue);
+                        assert(storage_max_[nodeid] > st);
+                        //NS_LOG_INFO("update storageinfo,nodeid=" << nodeid<< ";beli=" << be<<";stor=" << st);
                         storageinfo_maintained_[nodeid] = {be, st};
                     } else {
+                        assert(storage_max_[nodeid] > storevalue);
+                        //NS_LOG_INFO("update storageinfo,nodeid=" << nodeid<< ";beli=" << belive + 1<<";stor=" << storevalue);
                         storageinfo_maintained_[nodeid] = {belive + 1, storevalue};
                     }
                 }
@@ -56,361 +109,85 @@ namespace ns3 {
             } else if (action == "give storage_max_") {
                 storage_max_ = storagemax;
             } else if (action == "update storage info from hello") {
-                storageinfo_maintained_[update_storage_from_hello.first] = {1, storage_max_[update_storage_from_hello.first] - update_storage_from_hello.second};
+                auto usage = storage_max_[update_storage_from_hello.first] - update_storage_from_hello.second;
+                assert(usage >= 0);
+                //NS_LOG_INFO(LogPrefixMacro<< "update storage usage from hello, node="<< update_storage_from_hello.first<<"usage=" << usage);
+                //NS_LOG_INFO("update storageinfo,nodeid=" << update_storage_from_hello.first<< ";beli=" << 1<<";stor=" << usage);
+                storageinfo_maintained_[update_storage_from_hello.first] = {1, usage};  // max - current = usage
+                //update_storage_from_hello.second};
             } else {
-                cout << "StorageinfoMaintainInterface: can't find action, action str is :" << action << "\n would fatal." << endl;
+                NS_LOG_ERROR(LogPrefixMacro<< "StorageinfoMaintainInterface: can't find action, action str is :" << action << "\n would fatal." );
                 std::abort();
             }
+            //NS_ASSERT((!storageinfo_maintained_.count(4)) || storageinfo_maintained_[0].second != 66);
+            NS_LOG_INFO(LogPrefixMacro<<"outof storageMaintainInterface");
         }
-
-        int CGRQMRouting::DoRoute(int s, int d) {
-            cout << "DEBUG_CGR:" << " ============== A new DoRoute ==========\n" << endl;
-            Init();
-            assert(d == destination_id_);
-            assert(s == own_id_);
-            // once exhausted search, next time won't search, because timeout won't change. Is this colollary correct? FIXME
-            auto founds = find(exhausted_search_target_list_.begin(), exhausted_search_target_list_.end(), make_pair(d, debug_cgr_that_seqno_));
-            // if is found in routed_table_, we would reuse the result.
-            auto foundsx = find_if(routed_table_.begin(), routed_table_.end(), 
-                    [this](tuple<node_id_t, dtn_time_t, dtn_time_t, node_id_t, dtn_seqno_t, dtn_time_t, vector<int>> rtele){
-                    // get<0>(rtele) == destination_id_ 
-                    //&& (get<4>(rtele) == debug_cgr_that_seqno_ ||  (local_time_ - get<5>(rtele)) < (NS3DTNBIT_BUFFER_CHECK_INTERVAL * 15)) 
-                    //&& (get<1>(rtele) - (NS3DTNBIT_BUFFER_CHECK_INTERVAL * 3)) > local_time_) 
-                        if ( get<0>(rtele) == destination_id_
-                                && (get<1>(rtele) - NS3DTNBIT_BUFFER_CHECK_INTERVAL * 2) > local_time_
-                                && (local_time_ - get<5>(rtele)) < NS3DTNBIT_CGR_OPTIMAL_OPTION_REUSE_INTERVAL
-                           ) { return true; } else { return false; }
-                    });
-            bool reuse_flag = NS3DTNBIT_CGR_OPTIMAL_OPTION;
-            if (founds != exhausted_search_target_list_.end() && reuse_flag) {
-                cout << "DEBUG_CGR:" << "WARN:may make bad routing-1. this dest is searched before, and no available one is found, " 
-                    << "so this time it would exhausted search possiblity too. we would return a -1" 
-                    << " .This won't affect routing result, but can reduce simulation time." 
-                    << ";local_time_ = " << local_time_ 
-                    << ";debug_cgr_that_seqno_ = " << debug_cgr_that_seqno_
-                    << endl;
-                return -1;
-            } else if (foundsx != routed_table_.end() && reuse_flag) {
-                tuple<node_id_t, dtn_time_t, dtn_time_t, node_id_t, dtn_seqno_t, dtn_time_t, vector<int>> tmpfsx = *foundsx;
-                cout << "DEBUG_CGR:" << "WARN:may make bad routing-2. reuse routing result, reduce routing time" 
-                    << ";local_time_ = " << local_time_ 
-                    << ";debug_cgr_that_seqno_ = " << debug_cgr_that_seqno_
-                    << ";reused result = " << get<3>(tmpfsx) 
-                    << endl;
-                // CGRQM TODO
-                map<int, pair<int, int>> qm_empty01;
-                map<int, pair<int, int>> qm_empty02;
-                map<int, int> qm_empty03;
-                StorageinfoMaintainInterface("route answer is made, add queue usage, and time to decay", qm_empty01, qm_empty02, qm_empty03, get<6>(tmpfsx)); 
-                return get<3>(tmpfsx);
-            }
-            ContactReviewProcedure(destination_id_, forfeit_time_, best_delivery_time_, vector<int>());
-            cout << "DEBUG_CGR:" << "before ForwardDecision()" 
-                << "BundleTrace:entertimes=" << debug_crp_enter_count_ << "times" << endl;
-            int result_index = ForwardDecision();
-            int result = result_index >= 0 ? proximate_vec_[result_index] : -1;
-            if (debug_cgr_this_exhausted_search_not_found_) {
-                assert(result == -1);
-                exhausted_search_target_list_.push_back(make_pair(d, debug_cgr_that_seqno_));
+        void CGRQMRouting::NotifyRouteSeqnoIsAcked(dtn_seqno_t seq){
+            if (seqno2ackedcb_.count(seq)) {
+                seqno2ackedcb_[seq]();
             } else {
-                tuple<node_id_t, dtn_time_t, dtn_time_t, node_id_t, dtn_seqno_t, dtn_time_t, vector<int>> tmprvec = 
-                    make_tuple(
-                            destination_id_, 
-                            final_forfeit_time_[result_index], 
-                            final_best_delivery_time_[result_index], 
-                            result, 
-                            debug_cgr_that_seqno_, 
-                            local_time_,
-                            proximate_path_vec_[result_index]);
-                assert(local_time_ < final_forfeit_time_[result_index]);
-                if (cgr_debug_flag_0) {
-                    cout << "CGR_DEBUG:"
-                        << "push one route result"
-                        << ";destination_id_=" << destination_id_
-                        << ";forfeit_time_=" << final_forfeit_time_[result_index]
-                        << ";final_best_delivery_time_=" << final_best_delivery_time_[result_index]
-                        << ";result=" << result
-                        << ";debug_cgr_that_seqno_=" << debug_cgr_that_seqno_
-                        << ";local_time_=" << local_time_ 
-                        << ";vec path=" << " not yet!" << endl;
-                }
-                routed_table_.push_back(tmprvec);
-                // CGRQM TODO
-                map<int, pair<int, int>> qm_empty01;
-                map<int, pair<int, int>> qm_empty02;
-                map<int, int> qm_empty03;
-                StorageinfoMaintainInterface("route answer is made, add queue usage, and time to decay", qm_empty01, qm_empty02, qm_empty03, proximate_path_vec_[result_index]); 
-            }
-            assert(result < 100);
-            cout << "DEBUG_CGR:"  << " ================== end this DoRoute() =========\n"
-                << "result= " << result 
-                << ";CGR-" << s << "->" << d << endl;
-            return result;
-        }
-
-        void CGRQMRouting::GetInfo(node_id_t destination_id, 
-                node_id_t from_id, std::vector<node_id_t> vec_of_current_neighbor, 
-                node_id_t own_id, dtn_time_t expired_time, 
-                uint32_t bundle_size, map<node_id_t, vector<node_id_t>> id2cur_exclude_vec_of_id, 
-                dtn_time_t local_time, dtn_seqno_t that_seqno) {
-            id_of_d2cur_excluded_vec_of_d_=id2cur_exclude_vec_of_id;
-
-            local_time_ = local_time;
-            destination_id_ = destination_id;
-            node_id_transmit_from_ = from_id;
-            expired_time_ = expired_time;
-            own_id_ = own_id;
-            debug_cgr_that_seqno_ = that_seqno;
-            ecc_ = bundle_size;
-            id_of_current_neighbor_ = vec_of_current_neighbor;
-        }
-
-        void CGRQMRouting::Init() {
-            debug_recurrsive_deep_ = 0;
-            debug_crp_enter_count_ = 0;
-            debug_cgr_this_exhausted_search_not_found_ = false;
-            debug_node_access_count_map_ = map<int, int>();
-            debug_recurrsive_path_stack_ = stack<int>();
-            cgr_find_proximate_count_ = 0;
-            forfeit_time_ = expired_time_;
-            best_delivery_time_ = local_time_;
-            excluded_vec_ = vector<int>();
-            proximate_vec_ = vector<int>();
-            proximate_path_vec_ = vector<vector<int>>();
-            final_forfeit_time_.clear();
-            final_best_delivery_time_.clear();
-            auto cur_excluded = id_of_d2cur_excluded_vec_of_d_[destination_id_];
-            for (auto nei : id_of_current_neighbor_) {
-                auto found = find(cur_excluded.begin(), cur_excluded.end(), nei);
-                if (found != cur_excluded.end()) {
-                    excluded_vec_.push_back(nei);
-                }
-            }
-            excluded_vec_.push_back(node_id_transmit_from_);
-        }
-
-        void CGRQMRouting::DebugPrintXmit(vector<CgrXmit>& cgr_xmit_vec_ref, int cur_d) {
-            {
-                cout << "DEBUG_CGR:" << " ====== for node-" << cur_d 
-                    << " xmit is :" << endl;
-                for (auto m : cgr_xmit_vec_ref) {
-                    cout << "\n m ==> m.contact_start_time_ =" << m.contact_start_time_
-                        << ";m.contact_end_time_=" << m.contact_end_time_
-                        << ";m.node_id_of_from_=" << m.node_id_of_from_
-                        << ";m.node_id_of_to_=" << m.node_id_of_to_
-                        << ";m.data_transmission_rate_=" << m.data_transmission_rate_ << endl;
-                }
-                cout << "end of DEBUG_CGR" << endl;
-            }
-
-        }
-
-        /*
-         * Please read this link, if you want to know about this. https://tools.ietf.org/html/draft-burleigh-dtnrg-cgr-00
-         *  ---- cur_d 
-         *  ---- cur_deadline
-         *  ---- proximate_vec_
-         *  ---- excluded_vec_
-         *  ---- forfeit_time_
-         *  ---- best_delivery_time_
-         * */
-        void CGRQMRouting::ContactReviewProcedure(node_id_t cur_d, dtn_time_t cur_deadline, dtn_time_t best_deli, vector<node_id_t> cur_d_path) {
-            debug_crp_enter_count_ += 1;
-            assert(debug_crp_enter_count_ < 300);
-            if (cgr_debug_flag_1) {
-                debug_recurrsive_path_stack_.push(cur_d);
-                debug_recurrsive_deep_ += 1;
-                auto found = debug_node_access_count_map_.find(cur_d);
-                if (found != debug_node_access_count_map_.end()) {
-                    debug_node_access_count_map_[cur_d] += 1;
-                } else {
-                    debug_node_access_count_map_[cur_d] = 1;
-                }
-                if (debug_recurrsive_deep_ > 7) {
-                    if (debug_crp_enter_count_ > 5000) {
-                        cout << "Error: this CGR is missing in deep recurrsive, we would print all access map and abort, enter this function " << debug_crp_enter_count_ << " times, check readme.md to know what happens" << endl;
-                        while (!debug_recurrsive_path_stack_.empty()) {
-                            cout << "node-" << debug_recurrsive_path_stack_.top() << " to" << endl;
-                            debug_recurrsive_path_stack_.pop();
-                        }
-                        for (auto mv : debug_node_access_count_map_) {
-                            int idn = get<0>(mv);
-                            int count = get<1>(mv);
-                            cout << "node-" << idn << " access " << count << "times" << endl;
-                        }
-                        abort();
-                    }
-                }
-            }
-            if (cgr_find_proximate_count_ >= NS3DTNBIT_CGR_OPTIMAL_DECISION_AMOUNT) {
-                if (cgr_debug_flag_1) { debug_recurrsive_deep_ -= 1; } 
-                return;
-            }
-            // 1.
-            excluded_vec_.push_back(cur_d);
-            const Adob& ref_adob = RoutingMethodInterface::get_adob();
-            auto& cgr_xmit_vec_ref = ref_adob.node_id2cgr_xmit_vec_map_[cur_d];
-            if (cgr_debug_flag_0) {
-                if (debug_cgr_that_seqno_ == NS3DTNBIT_CGR_DEBUG_SEQ_1 || debug_cgr_that_seqno_ == NS3DTNBIT_CGR_DEBUG_SEQ_2) {
-                    cout << "CGR_DEBUG:temporary debug use, deleteme when you don't need me, xmitdebug-seqno-" << debug_cgr_that_seqno_ << __FILE__ << ":" <<  __LINE__ 
-                        << ";own_id_ = " << own_id_ 
-                        << ";local_time_ = " << local_time_ 
-                        << endl;
-                    DebugPrintXmit(cgr_xmit_vec_ref, cur_d);
-                }
-            }
-            // 2.
-            for (auto& m : cgr_xmit_vec_ref) {
-                bool last_moment_check = 
-                    local_time_ < cur_deadline - NS3DTNBIT_BUFFER_CHECK_INTERVAL * 2
-                    && m.contact_start_time_ + NS3DTNBIT_BUFFER_CHECK_INTERVAL * 2< cur_deadline 
-                    && local_time_ < m.contact_end_time_ - NS3DTNBIT_BUFFER_CHECK_INTERVAL * 2;
-                dtn_time_t local_forfeit_time = cur_deadline;
-                dtn_time_t local_best_delivery_time = best_deli;
-                if (!last_moment_check) {
-                    // 2.A
-                    continue;
-                } else {
-                    // 2.B
-                    node_id_t s = m.node_id_of_from_;
-                    bool s_is_local_node_with_own_id = s == own_id_;
-                    if (s_is_local_node_with_own_id) {
-                        if (cgr_debug_flag_1) {
-                            cout << "DEBUG_CGR:" << "in tail of recursive, and, if we find a proximate one,"
-                                << "we would break the search, because the CGR algorithm in RFC would force to find all possible pathes,"
-                                << " which is too big for some senario, mainly the group moving senario " << endl;
-                        }
-                        // 2.B.1
-                        // compute ECC for this bundle
-                        int ecc = ecc_;
-                        assert(m.contact_end_time_ - m.contact_start_time_ < 5000);
-                        // not accurate, just a hypothetic value,  TODO
-                        int ecc_of_other_bundles = 1800;
-                        int residual_capacity = ((m.contact_end_time_ - m.contact_start_time_) * m.data_transmission_rate_) - ecc_of_other_bundles; 
-                        assert(residual_capacity > 10000);
-                        auto found_1 = find(proximate_vec_.begin(), proximate_vec_.end(), cur_d);
-                        bool d_is_in_proximate = found_1 != proximate_vec_.end();
-                        if (residual_capacity < ecc) {
-                            continue;
-                        } else if (d_is_in_proximate) {
-                            continue;
-                        } else {
-                            if (m.contact_end_time_ < local_forfeit_time) {
-                                local_forfeit_time = m.contact_end_time_;
-                            } 
-                            if (m.contact_start_time_ > local_best_delivery_time) {
-                                local_best_delivery_time = m.contact_start_time_;
-                            }
-                            // this line won't let searching end imediately, still would find the available one in this branch.
-                            {
-
-                                cgr_find_proximate_count_ += 1;
-                            }
-                            // Note the computed forfeit time and best-case delivery time in the event that the bundle is queued for transmission to D.
-                            assert(local_time_ < local_forfeit_time);
-                            proximate_vec_.push_back(cur_d);
-                            cur_d_path.push_back(cur_d);
-                            proximate_path_vec_.push_back(cur_d_path);
-                            final_forfeit_time_.push_back(local_forfeit_time);
-                            final_best_delivery_time_.push_back(local_best_delivery_time);
-                            if (cgr_debug_flag_0) {
-                                if (debug_cgr_that_seqno_ == NS3DTNBIT_CGR_DEBUG_SEQ_1 || debug_cgr_that_seqno_ == NS3DTNBIT_CGR_DEBUG_SEQ_2) {
-                                    cout << "\nCGR_DEBUG:\nthis is the xmit we finally choose" 
-                                        << ";forfeit_time_ = " << local_forfeit_time
-                                        << ";cur_deadline = " << cur_deadline << endl;
-                                    cout << "\n m ==> m.contact_start_time_ =" << m.contact_start_time_
-                                        << ";m.contact_end_time_=" << m.contact_end_time_
-                                        << ";m.node_id_of_from_=" << m.node_id_of_from_
-                                        << ";m.node_id_of_to_=" << m.node_id_of_to_
-                                        << ";m.data_transmission_rate_=" << m.data_transmission_rate_ << endl;
-                                }
-                            }
-                        }
-                    } else {
-                        if (cgr_debug_flag_1) {
-                            cout << "DEBUG_CGR:" << "in body of recursive" << endl;
-                        }
-                        // 2.B.2
-                        auto found_2 = find(excluded_vec_.begin(), excluded_vec_.end(), s);
-                        bool s_is_in_excluded = found_2 != excluded_vec_.end();
-                        if (s_is_in_excluded) {
-                            continue;
-                        } else {
-                            if (m.contact_end_time_ < local_forfeit_time) {
-                                local_forfeit_time = m.contact_end_time_;
-                            }
-                            if (m.contact_start_time_ > local_best_delivery_time) {
-                                local_best_delivery_time = m.contact_start_time_;
-                            }
-                            double forwarding_latency = (2 * ecc_) / m.data_transmission_rate_;     // it's a very small account
-                            double next_deadline = min((m.contact_end_time_ - forwarding_latency), cur_deadline) - NS3DTNBIT_BUFFER_CHECK_INTERVAL;
-                            if (next_deadline < local_time_) {
-                                cout << "CGR_DEBUG:" << __LINE__
-                                    << ";m.contact_end_time_=" << m.contact_end_time_
-                                    << ";next_deadline=" << next_deadline
-                                    << ";cur_deadline=" << cur_deadline
-                                    << ";forwarding_latency=" << forwarding_latency
-                                    << ";local_time_=" << local_time_ << endl;
-                                continue;
-                            }
-                            if (cgr_debug_flag_0) {
-                                if (debug_cgr_that_seqno_ == NS3DTNBIT_CGR_DEBUG_SEQ_1 || debug_cgr_that_seqno_ == NS3DTNBIT_CGR_DEBUG_SEQ_2) {
-                                    cout << "\nCGR_DEBUG:\nthis is the xmit we enter" 
-                                        << ";cur_deadline = " << cur_deadline
-                                        << ";forfeit_time_ = " << local_forfeit_time
-                                        << ";next_deadline = " << next_deadline << endl;
-                                    cout << "\n m ==> m.contact_start_time_ =" << m.contact_start_time_
-                                        << ";m.contact_end_time_=" << m.contact_end_time_
-                                        << ";m.node_id_of_from_=" << m.node_id_of_from_
-                                        << ";m.node_id_of_to_=" << m.node_id_of_to_
-                                        << ";m.data_transmission_rate_=" << m.data_transmission_rate_ << endl;
-                                }
-                            }
-                            assert(local_time_ < next_deadline);
-                            auto cur_d_path_copy = cur_d_path;
-                            cur_d_path_copy.push_back(cur_d);
-                            ContactReviewProcedure(s, next_deadline, local_best_delivery_time,cur_d_path_copy);
-                        }
-                    }
-                }
-            }
-            // 3.
-            excluded_vec_.erase(find(excluded_vec_.begin(), excluded_vec_.end(), cur_d));
-            if (cgr_debug_flag_1) {
-                debug_recurrsive_deep_ -= 1;
-                debug_recurrsive_path_stack_.pop();
+                NS_ABORT_MSG("not cb");
             }
         }
 
-        int CGRQMRouting::ForwardDecision() {
-            if (proximate_vec_.empty()) {
-                std::cout << "Warn: cgr can't find one !" << __LINE__ << endl;
-                debug_cgr_this_exhausted_search_not_found_ = true;
-                return -1;
-            } else {
-                if (proximate_vec_.size() >= 2) {
-                    std::cout << "Warn : we need to implement a network configuration matter decision!" << endl;
-                    return NCMDecision();
-                } else if (proximate_vec_.size() == 1) {
-                    return 0;
-                } else {
-                    std::cout << "Error:" << __FILE__ <<  __LINE__ << endl;
+        int CGRQMRouting::ForwardDecision(vector<RouteResultCandidate> & rrc_vec) {
+            for (auto rrc:rrc_vec) {
+                if (rrc.is_exhausted_ && rrc_vec.size() != 1) {
+                    NS_LOG_ERROR(LogPrefixMacro << rrc.ToString());
                     std::abort();
                 }
             }
+            NS_LOG_DEBUG(LogPrefixMacro<<" forwarddecision: rrc_vec=" << rrc_vec.size());
+            auto storagefunc = [&](size_t index){
+                map<node_id_t, pair<int, int>> qm_empty01;
+                map<node_id_t, pair<int, int>> qm_empty02;
+                map<node_id_t, size_t> qm_empty03;
+                pair<vector<node_id_t>, dtn_time_t> path_of_route;
+                pair<node_id_t, int> update ={ -1, -1 };
+                auto t = rrc_vec[index].GetArriveDestTimeIfGood();
+                auto func = std::bind(&CGRQMRouting::StorageinfoMaintainInterface, this,
+                "route answer is made, add queue usage, and time to decay", 
+                qm_empty01, qm_empty02, qm_empty03, make_pair(std::move(rrc_vec[index].GetPath()), t), update); 
+                if (!seqno2ackedcb_.count(debug_cgr_that_seqno_)) {
+                    seqno2ackedcb_[debug_cgr_that_seqno_] = std::move(func);
+                }
+            };
+            if (rrc_vec.size() >= 2) {
+                // multiplt choice
+                size_t index_of_rrc_vec = NCMDecision(rrc_vec);
+                storagefunc(index_of_rrc_vec);
+                return rrc_vec[index_of_rrc_vec].nexthop_;
+            } else if (rrc_vec.size() == 1) {
+                if (rrc_vec[0].is_exhausted_) {
+                    // only one choice and is exhausted-route
+                    return -2;
+                } else {
+                    // only one choice and is good-route
+                    storagefunc(0);
+                    return rrc_vec[0].nexthop_;
+                }
+            } else {
+                NS_LOG_ERROR(LogPrefixMacro);
+                std::abort();
+            }
         }
-
         // check https://tools.ietf.org/html/draft-burleigh-dtnrg-cgr-00 -------- 2.5.3
-        int CGRQMRouting::NCMDecision() {
-            assert(proximate_vec_.size() >= 2);
-            assert(proximate_path_vec_.size() == proximate_vec_.size());
-            map<int, int> score_map;
-            for (int i = 0; i < proximate_path_vec_.size(); i++) {
-                auto route_path = proximate_path_vec_[i];
-                auto prox_node = proximate_vec_[i];
-                assert(score_map.count(prox_node)==0);  // overwrite? yes.
+        int CGRQMRouting::NCMDecision(vector<RouteResultCandidate> const & rrc_vec) {
+            map<size_t, int> score_map;
+            vector<vector<node_id_t>> proximate_path_vec_;
+            {
+                // construct proximate_path_vec_
+                for (auto const & rrc : rrc_vec) {
+                    vector<node_id_t> path = rrc.GetPath();
+                    NS_LOG_DEBUG(LogPrefixMacro << " in CGRQM::NCMDecision, one rrc.vecpathstr()=" << rrc.VecPathStr());
+                    proximate_path_vec_.push_back(std::move(path));
+                }
+            }
+            for (size_t i = 0; i < proximate_path_vec_.size(); i++) {
+                vector<node_id_t> route_path = proximate_path_vec_[i];
+                assert(score_map.count(i)==0);  // overwrite? yes.
                 int smallestinroutepath = INT_MAX;
-                for (auto node_inpath : route_path) {
+                for (auto const & node_inpath : route_path) {
                     assert(storage_max_.count(node_inpath));
                     if (!storageinfo_maintained_.count(node_inpath)) {
                         storageinfo_maintained_[node_inpath] = {1, 0};
@@ -419,14 +196,15 @@ namespace ns3 {
                     auto remain = storage_max_[node_inpath] - storagemaintained;
                     smallestinroutepath = smallestinroutepath < remain ? smallestinroutepath : remain;
                 }
-                score_map[prox_node] = smallestinroutepath;
+                score_map[i] = smallestinroutepath;
             }
-            int index_of_biggestsmall = 0;
+            size_t index_of_biggestsmall = 0;
             for (auto pair_v : score_map) {
-                if (get<1>(pair_v) > score_map[proximate_vec_[index_of_biggestsmall]]) {
-                    index_of_biggestsmall = find(proximate_vec_.begin(), proximate_vec_.end(), get<0>(pair_v)) - proximate_vec_.begin();
+                if (pair_v.second > score_map[index_of_biggestsmall]) {
+                    index_of_biggestsmall = pair_v.first;
                 }
             }
+            NS_LOG_DEBUG(LogPrefixMacro << " decision.rrc.vecpathstr()= " << rrc_vec[index_of_biggestsmall].VecPathStr());
             return index_of_biggestsmall;
         }
     } /* ns3dtnbit */ 

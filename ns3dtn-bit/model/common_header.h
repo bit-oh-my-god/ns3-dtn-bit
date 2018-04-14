@@ -37,13 +37,15 @@
 #include <boost/graph/graphviz.hpp>
 #include "ns3/config.txt"    // a string , contains the PWD, update every time invoke build.sh
 
-//#define CGR_DEBUG_1 // print stack winding and abort when deep(loop) recurrsive
-//#define CGR_DEBUG_0 // print detail of CgrXmit
+//#define CGR_DEBUG_1 // print stack winding and abort when deep(loop) recurrsive       Deprecated!
+//#define CGR_DEBUG_0 // print detail of CgrXmit        Deprecated!
 //#define UGLY_DEBUG 
-#define NS3DTNBIT_CGR_QM_ALGORITHM_DECAY_TIME 30.0
-#define NS3DTNBIT_CGR_OPTIMAL_DECISION_AMOUNT 1
+#define NS3DTNBIT_CGR_QM_ALGORITHM_DECAY_CHECK_TIME 3.0   // time to decay check
+#define NS3DTNBIT_CGR_QM_ALGORITHM_DECAY_DO_TIME 5.0   // time to decay belive
+#define NS3DTNBIT_CGR_OPTIMAL_DECISION_AMOUNT 3
 #define NS3DTNBIT_CGR_OPTIMAL_OPTION_REUSE_INTERVAL 10.0    // reuse routed
 #define NS3DTNBIT_CGR_OPTIMAL_OPTION_REUSE_INTERVAL2 30.0   // reuse exhausted
+#define NS3DTNBIT_CGR_OPTIMAL_OPTION_TABLE_REMOVE_INTERVAL 5.0    // reuse routed
 #define NS3DTNBIT_CGR_OPTIMAL_OPTION true   // you should always open this for reduce simulation time 
 #define NS3DTNBIT_CGR_DEBUG_SEQ_1 0
 #define NS3DTNBIT_CGR_DEBUG_SEQ_2 0
@@ -68,6 +70,7 @@
 #define NS3DTNBIT_HELLO_MAX_PKTS 100
 #define NS3DTNBIT_MAX_RETRANSMISSION 3
 #define NS3DTNBIT_HYPOTHETIC_BUNDLE_EXPIRED_TIME 500.0
+#define NS3DTNBIT_DEFAULT_QUEUE_MAX 2000
 #define NS3DTNBIT_ANTIPACKET_EXPIRED_TIME 1000.0
 #define NS3DTNBIT_HYPOTHETIC_INFINITE_DELAY (std::numeric_limits<int>::max()/2)
 #define NS3DTNBIT_HYPOTHETIC_CACHE_FACTOR 978

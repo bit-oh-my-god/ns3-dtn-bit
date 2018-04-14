@@ -33,7 +33,10 @@ namespace ns3 {
             start.WriteU32(offset_size_);
             start.WriteU32(src_time_stamp_);
             start.WriteU32(hop_time_stamp_);
-            WriteTo(start, hop_ip_);
+            start.WriteU32(hop_ips_.size());
+            for (auto const & ip : hop_ips_) {
+                WriteTo(start, ip);
+            }
         }
 
         uint32_t BPHeader::Deserialize(Buffer::Iterator start) {
@@ -48,7 +51,10 @@ namespace ns3 {
                 ttt == static_cast<std::underlying_type<BundleType>::type>(BundleType::HelloPacket)
                 ? BundleType::HelloPacket :
                 ttt == static_cast<std::underlying_type<BundleType>::type>(BundleType::TransmissionAck)
-                ? BundleType::TransmissionAck : BundleType::UnKnow;
+                ? BundleType::TransmissionAck :
+                ttt == static_cast<std::underlying_type<BundleType>::type>(BundleType::StorageinfoMaintainPkt)
+                ? BundleType::StorageinfoMaintainPkt :
+                BundleType::UnKnow;
             hop_count_ = i.ReadU32();
             spray_ = i.ReadU32();
             retransmission_count_ = i.ReadU32();
@@ -59,30 +65,23 @@ namespace ns3 {
             offset_size_ = i.ReadU32();
             src_time_stamp_ = i.ReadU32();
             hop_time_stamp_ = i.ReadU32();
-            ReadFrom(i, hop_ip_);
+            size_t hopips_size;
+            hopips_size = i.ReadU32();
+            hop_ips_.clear();
+            for (size_t j = 0 ; j < hopips_size; j++) {
+                Ipv4Address iptmp;
+                ReadFrom(i, iptmp);
+                hop_ips_.push_back(iptmp);
+            }
 
             uint32_t dist = i.GetDistanceFrom(start);
-            //std::cerr << "dist = " << dist << ", GetSeri = " << GetSerializedSize();
+           // std::cout << "dist = " << dist << ", GetSeri = " << GetSerializedSize() << "hopips_size=" << hopips_size<< std::endl;
             NS_ASSERT(dist == GetSerializedSize());
             return dist;
         }
 
         uint32_t BPHeader::GetSerializedSize() const {
-            // Serialized byte is not memo byte
-            /*
-               return (sizeof(BPHeader::bundle_type_) +
-               sizeof(BPHeader::hop_count_) +
-               sizeof(BPHeader::spray_) +
-               sizeof(BPHeader::retransmission_count_) +
-               sizeof(BPHeader::destination_ip_) +
-               sizeof(BPHeader::source_ip_) +
-               sizeof(BPHeader::source_seqno_) +
-               sizeof(BPHeader::payload_size_) +
-               sizeof(BPHeader::offset_size_) +
-               sizeof(BPHeader::src_time_stamp_) +
-               sizeof(BPHeader::hop_time_stamp_));
-               */
-            return 48;
+            return 48 + (4 * hop_ips_.size());
         }
 
         void BPHeader::Print(std::ostream& os) const {
@@ -91,6 +90,7 @@ namespace ns3 {
                 bundle_type_ == BundleType::AntiPacket ? "AntiPacket" :
                 bundle_type_ == BundleType::HelloPacket ? "HelloPacket" :
                 bundle_type_ == BundleType::TransmissionAck ? "TransmissionAck" :
+                bundle_type_ == BundleType::StorageinfoMaintainPkt ? "StorageinfoMaintainPkt" :
                 "Unknown, ERROR?";
 
             os << ",destination ip=" << destination_ip_
@@ -100,7 +100,7 @@ namespace ns3 {
                 << ",offset size=" << offset_size_
                 << ",src time stamp=" << get_src_time_stamp().GetSeconds()
                 << ",hop time stamp=" << get_hop_time_stamp().GetSeconds()
-                << ",hop ip=" << hop_ip_
+                << ",hop ip=" << hop_ips_[hop_ips_.size() - 1]
                 << ",bundle type=" << bt
                 << std::endl;
         }
@@ -116,6 +116,7 @@ namespace ns3 {
                 rh == BundleType::AntiPacket ? "AntiPacket" :
                 rh == BundleType::HelloPacket ? "HelloPacket" :
                 rh == BundleType::TransmissionAck ? "TransmissionAck" :
+                rh == BundleType::StorageinfoMaintainPkt ? "StorageinfoMaintainPkt" :
                 "Unknown, ERROR?";
             os << bt;
             return os;

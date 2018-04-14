@@ -102,18 +102,3 @@ would support '$ns at $time $node setdest x2 y2 z2 speed' format, and this forma
 - [x] fatal bug !! CGR would fall into a deep recursive in group moving senario.  This backtracking algorithm would decay into brute force in this senario, 
 which have a complexity of O(M * logN * N!) which N is amount of nodes that can have a link to each other at same time-window, M is the amount of time-windows.
 This may happen, because CGR has a assumption of topology it was applied on, a topology graph with density of sparseness not density of tightness. Read 'Analysis of the contact graph routing algorithm Bounding interplanetary paths 5.6 section'
-
-# Develpment Annoucement & Publish Log
-
-* First edition, ns3dtnbit-1.0, we are going to read [this](https://www.netlab.tkk.fi/tutkimus/dtn/ns/), then rename variables methods and do code refactoring.
-* Second edition, run a real example, and parse the log.
-    * get trace file done 29.Feb
-    * get jupyter to have an animation 5.Mar
-        <s>fine, we got a idle loop, and I can't fix it</s>
-        abstract example-interface
-    * debug a bunch
-        abstract routing-method interface
-* Third edition, features and anything else for research.
-* Fourth edition, ready to publish
-
-[image01]: https://github.com/bit-oh-my-god/ns3-dtn-bit/tree/master/box/Diagram1.png
