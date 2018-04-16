@@ -5,6 +5,7 @@ import sys
 import os
 import inspect
 from math import sqrt
+import math 
 import numpy as np
 from scipy import integrate
 from mpl_toolkits.axes_grid1 import host_subplot
@@ -78,21 +79,22 @@ def handy_draw_0(ax0, st, et, nid, seqnoindex, c) :
     dx = et - st
     ax0.bar3d(st, seqnoindex, nid, dx + 1.0, 0.2, 0.2, alpha=0.1, color=c, linewidth=0) # alpha = abs(dz[i]/max(dz))
 class JSONOB(object):
-    def __init__(self, name, tosend_list_ob, time_trace_map_ob, total_hop):
+    def __init__(self, name, tosend_list_ob, time_trace_map_ob, total_hop, storageinfomap):
         self.name = name
         self.tosend_list_ob = tosend_list_ob
         self.time_trace_map_ob = time_trace_map_ob
         self.total_hop = total_hop
+        self.storageinfomap = storageinfomap
     def get_name(self) :
         return self.name
-        # see #x_time_trace_map
     def get_map(self) :
         return self.time_trace_map_ob
-        # see #x_tosend_list
     def get_list(self) :
         return self.tosend_list_ob
     def get_total_hop(self) :
         return self.total_hop
+    def get_storagemap(self) :
+        return self.storageinfomap
 def save_this_jsonob_as(filename, jsonob_to) :
     fullpathname = './stuff folder/' + filename
     serialized_json = jsonpickle.encode(jsonob_to)
@@ -158,6 +160,7 @@ def abstract_value_from(jsonob_p) :
     j_tosend_list = jsonob_p.get_list()
     j_total_hop = jsonob_p.get_total_hop()
     j_name = jsonob_p.get_name()
+    j_storage = jsonob_p.get_storagemap()
     #r12 = re.compile('''([a-zA-Z]+[0-9]+(-)?[0-9]+)\swith\s([a-zA-Z]+)''', re.VERBOSE)
     r12 = re.compile('''([a-zA-Z]+[0-9]+)\swith\s([a-zA-Z]+)''', re.VERBOSE)
     r13 = re.compile('''arriveN\-(\d+\.*\d*)\-scheduleN\-(\d+\.*\d*)''', re.VERBOSE)
@@ -212,7 +215,17 @@ def abstract_value_from(jsonob_p) :
         print("fuck! average_delivery_delay = {0}".format(average_delivery_delay))
     else :
         average_delivery_delay = 500
-    return [senario_name, routing_name, delivery_rate, average_delivery_delay, overhead]
+    # time -> {node -> total diff between real-storage-usage and guess-storage-usage}
+    storagemap = {}
+    for time in j_storage :
+        if time not in storagemap :
+            storagemap[time] = {}
+        for nodeid in j_storage[time]["storageinfo"] :
+            diff = 0
+            for belivnode in j_storage[time]["storageinfo"][nodeid] :
+                diff += math.fabs(j_storage[time]["storageinfo"][nodeid][belivnode][1] - j_storage[time]["local"][belivnode][1])
+            storagemap[time][nodeid] = diff
+    return [senario_name, routing_name, delivery_rate, average_delivery_delay, overhead, storagemap]
     # return [senario_name, routing_name, delivery_rate, average_delivery_delay]
 def draw_jsonob_list(p_out_jsonob_list) :
     abstracted_v_list = []

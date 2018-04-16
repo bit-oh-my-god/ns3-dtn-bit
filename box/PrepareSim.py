@@ -11,6 +11,7 @@ import numpy as np
 from scipy import integrate
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.patches as mpatches
 from matplotlib.colors import cnames
 from matplotlib import animation
 #========
@@ -119,7 +120,7 @@ class PTVGenarator :
 #======================================
 #================================================
 # init some trace info
-axlimits = int(14000)       #change me !!!!!!!
+axlimits = int(10000)       #change me !!!!!!!
 maxspeed = int(axlimits / 20)
 T_max = 1000                #change me !!!!!!!
 teg_slice_n = 1000          #change me !!!!!!!
@@ -255,10 +256,17 @@ lines = sum([ax.plot([], [], [], '-', c=c)
              for c in colors], [])
 pts = sum([ax.plot([], [], [], 'o', c=c)
            for c in colors], [])
+# show legend
+patchs = []
+legendcount = 0
+for c in colors :
+    patchs.append(mpatches.Patch(color=c, label='node-{0}'.format(legendcount)))
+    legendcount += 1
+oldlegend = plt.legend(handles=patchs)
 # prepare the axes limits
-ax.set_xlim((0, axlimits))
-ax.set_ylim((0, axlimits))
-ax.set_zlim((0, axlimits))
+ax.set_xlim((1000, axlimits))
+ax.set_ylim((1000, axlimits))
+ax.set_zlim((1000, axlimits))
 # set point-of-view: specified by (altitude degrees, azimuth degrees)
 #‘elev’ stores the elevation angle in the z plane. ‘azim’ stores the azimuth angle in the x,y plane.
 ax.view_init(60, 20)
@@ -285,12 +293,16 @@ def animate(i):
         pt.set_data(x[-1:], y[-1:])
         pt.set_3d_properties(z[-1:])
 
-    #ax.view_init(40, 0.2 * i)
-    ax.view_init(40, 15)
+    # change angle per frame
+    ax.view_init(40, 0.2 * i)
+    # don't change angle per frame
+    #ax.view_init(40, 15)
     #ax.set_title('time- {0}; metric m/s; node-{1}-pox-{2}-{3}-{4}'.
     #         format(i, 1, pos_t[1][i][0], pos_t[1][i][1], pos_t[1][i][2]))
     fig.canvas.draw()
-    return lines + pts
+    # render legend
+    oldlegend = plt.legend()
+    return lines + pts 
 # instantiate the animator.
 anim = animation.FuncAnimation(fig, animate, init_func=init,
                                frames=Frames_n, interval=30, blit=True)

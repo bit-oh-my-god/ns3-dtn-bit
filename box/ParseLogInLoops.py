@@ -207,11 +207,12 @@ def handy_draw_0(ax0, st, et, nid, seqnoindex, c) :
     dx = et - st
     ax0.bar3d(st, seqnoindex, nid, dx + 1.0, 0.2, 0.2, alpha=0.1, color=c, linewidth=0) # alpha = abs(dz[i]/max(dz))
 class JSONOB(object):
-    def __init__(self, name, tosend_list_ob, time_trace_map_ob, total_hop):
+    def __init__(self, name, tosend_list_ob, time_trace_map_ob, total_hop, storageinfomap):
         self.name = name
         self.tosend_list_ob = tosend_list_ob
         self.time_trace_map_ob = time_trace_map_ob
         self.total_hop = total_hop
+        self.storageinfomap = storageinfomap
     def get_name(self) :
         return self.name
     def get_map(self) :
@@ -220,6 +221,8 @@ class JSONOB(object):
         return self.tosend_list_ob
     def get_total_hop(self) :
         return self.total_hop
+    def get_storagemap(self) :
+        return self.storageinfomap
 def save_this_jsonob_as(filename, jsonob_to,x_jsonfile_save_path) :
     fullpathname = x_jsonfile_save_path + filename
     serialized_json = jsonpickle.encode(jsonob_to)
@@ -301,6 +304,14 @@ def mainsmain():
     x_tosend_list = [] # element is also a list [source, time, destination, seqno] this is used to substitude x_schedule_list
     x_schedule_list = [] # element is also a list[source, time, destination, seqno]
     x_pkt_trace_map = {} # seqno -> [one_hop_snap, one_hop_snap... destination_snap]
+    x_storage_info_map = {}
+    # time -> {
+        #"local":{
+            #nodeid -> [maxofnode, usageofnode]}, 
+        # "storageinfo":{
+            #nodeid -> {
+                #belinode -> [belive, usagevalue]}}
+    # }
     # hop_snap , destination_snap = 
     #[receive_time, receive_id, dest_id, source_id, seqno, src_generate_time, hop_transmit_time, pkt_type, is_dst, hop_id]
     ############
@@ -368,6 +379,14 @@ def mainsmain():
         #may make bad routing-1
         r9 = re.compile(r'''may\smake\sbad\srouting-1''', re.VERBOSE)
         cgr_exhaust = r9.search(line)
+
+        #[time-10;node-0;[DtnApp]line-1045][Trace]in DebugUseScheduleToDoSome:;max storage=1000;current storage use=6
+        r10 = re.compile(r'''\[time-(\d+\.*\d*);node-(\d+\.*\d*);\[DtnApp\]line-1045\]\[Trace\]in\sDebugUseScheduleToDoSome:;max\sstorage=(\d+\.*\d*);current\sstorage\suse=(\d+\.*\d*)''', re.VERBOSE)
+        storagedebug01 = r10.search(line)
+
+        #[time-10;node-0;[DtnCGRQMRouting]line-24][Trace]storageinfo:nodeid=0belive=3storage_v=0
+        r11 = re.compile(r'''\[time-(\d+\.*\d*);node-(\d+\.*\d*);\[DtnCGRQMRouting\]line-24\]\[Trace\]storageinfo:nodeid=(\d+\.*\d*)belive=(\d+\.*\d*)storage_v=(\d+\.*\d*)''', re.VERBOSE)
+        storagedebug02 = r11.search(line)
         
         if schedule :
             #print(line)
@@ -450,7 +469,34 @@ def mainsmain():
                 new_list = []
                 new_list.append(tmp)
                 x_pkt_trace_map[dst_seqno] = new_list
-                
+        elif storagedebug01 :
+        #x_storage_info_map 
+        # time -> {
+        # "local":{nodeid -> [maxofnode, usageofnode]}, 
+        # "storageinfo":{nodeid -> {belinode -> [, belive, usagevalue]}}
+        # }
+            ztime = float(nums(storagedebug01.group(1)))
+            znode = int(nums(storagedebug01.group(2)))
+            zmax = int(nums(storagedebug01.group(3)))
+            zusage = int(nums(storagedebug01.group(4)))
+            # storagedebug01 is before storagedebug02, so it's safe to init map only here
+            if ztime not in x_storage_info_map :
+                x_storage_info_map[ztime] = {}
+            if "local" not in x_storage_info_map[ztime] :
+                x_storage_info_map[ztime]["local"] = {}
+            x_storage_info_map[ztime]["local"][znode] = [zmax, zusage]
+        elif storagedebug02 :
+            ztime = float(nums(storagedebug02.group(1)))
+            znode = int(nums(storagedebug02.group(2)))
+            infonode = int(nums(storagedebug02.group(3)))
+            infobelive = int(nums(storagedebug02.group(4)))
+            infousage = int(nums(storagedebug02.group(5)))
+            # init map 
+            if "storageinfo" not in x_storage_info_map[ztime] :
+                x_storage_info_map[ztime]["storageinfo"] = {}
+            if znode not in x_storage_info_map[ztime]["storageinfo"]:
+                x_storage_info_map[ztime]["storageinfo"][znode] = {}
+            x_storage_info_map[ztime]["storageinfo"][znode][infonode] = [infobelive, infousage]
     #========================================= end of parse ===================================================
 
     print(r'============= dividing end of parse =============')
@@ -489,7 +535,7 @@ def mainsmain():
     print('====================== serialize to json format =====================')
     name = '{4}-nodeN-{0}-timeT-{1}-arriveN-{2}-scheduleN-{3}'.\
                         format(x_nodes, x_simulation_time, x_arrive_n, x_sch_n, x_jsonfile_name)
-    jsonob_this = JSONOB(name, x_tosend_list, x_time_trace_map, g_total_hop_)
+    jsonob_this = JSONOB(name, x_tosend_list, x_time_trace_map, g_total_hop_, x_storage_info_map)
     print('json file is {0}'.format(name))
     save_this_jsonob_as(name, jsonob_this,x_jsonfile_save_path)
 

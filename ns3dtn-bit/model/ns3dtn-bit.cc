@@ -1039,7 +1039,7 @@ namespace ns3 {
         }
 
         void DtnApp::DebugUseScheduleToDoSome() {
-            NS_LOG_DEBUG(LogPrefixMacro << "in DebugUseScheduleToDoSome:"
+            NS_LOG_DEBUG(LogPrefixMacro << "[Trace]in DebugUseScheduleToDoSome:"
             << ";max storage=" << daemon_baq_pkts_max_
             << ";current storage use=" << daemon_bundle_queue_->GetNPackets()
             );

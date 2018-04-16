@@ -18,7 +18,7 @@ namespace ns3 {
         void CGRQMRouting::DebugUseScheduleToDoSome() {
             //NS_LOG_DEBUG(LogPrefixMacro << "in DebugUseSchedule");
             for (auto const & me : storageinfo_maintained_) {
-                NS_LOG_DEBUG(LogPrefixMacro<<"storageinfo:" 
+                NS_LOG_DEBUG(LogPrefixMacro<<"[Trace]storageinfo:" 
                 << "nodeid=" << get<0>(me) 
                 << "belive="<< get<1>(me).first 
                 << "storage_v="<< get<1>(me).second);
@@ -69,7 +69,6 @@ namespace ns3 {
             }
             //NS_LOG_INFO(LogPrefixMacro);
             if (action == "route answer is made, add queue usage, and time to decay") {
-                // Do route answer is made means that pkt is acked? FIXME
                 for (auto nodeinpath : path_of_route_and_decaytime.first) {
                     if (!storageinfo_maintained_.count(nodeinpath)) {
                         storageinfo_maintained_[nodeinpath] = {10, 0};

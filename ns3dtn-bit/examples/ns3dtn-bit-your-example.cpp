@@ -102,8 +102,8 @@ namespace ns3 {
                         this->apps_[i]->ScheduleTx(Seconds(sch_time), dstnode, sch_size);
                     };
                     */
-                    auto handy_func_x = [sch_size, this](double sch_time, int dstnode, int i, int times) {
-                        for (double rt = sch_time; rt < sch_time + times * 10; rt += 10.0) {
+                    auto handy_func_x = [sch_size, this](double sch_time, int dstnode, int i, int times, double interval=5.0) {
+                        for (double rt = sch_time; rt < sch_time + times * interval; rt += interval) {
                             std::cout << "bundle send schedule: time=" << rt << ";node-" << i << "send " << sch_size << " size-pkt to node-" << dstnode << std::endl;
                             this->apps_[i]->ScheduleTx(Seconds(rt), dstnode, sch_size);
                         }
@@ -134,7 +134,7 @@ namespace ns3 {
                                     handy_func_x(200, 4, 10, 6);
                                     handy_func_x(100, 0, 10, 7);
                                 } else if ((scenario_number / 100) == 4) {
-                                    handy_func_x(200, 2, 3, 6);
+                                    handy_func_x(5, 3, 2, 6, 0.5);
                                 } else if (scenario_number > 500) {
                                     cout << "warn: " << __FILE__ << __LINE__ << endl;
                                     abort();
