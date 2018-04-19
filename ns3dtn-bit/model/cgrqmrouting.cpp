@@ -25,8 +25,24 @@ namespace ns3 {
             }
         }
 
-        void CGRQMRouting::LoadCurrentStorageOfOwn(node_id_t node, size_t storage) {
-            storageinfo_maintained_[node] = make_pair(1, storage);
+        bool CGRQMRouting::ShouldForwardSI(Ipv4Address ip) {
+            auto nowtime = Simulator::Now().GetSeconds();
+            if (storageinfo_forward_map_.count(ip)) {
+                if (storageinfo_forward_map_[ip] + NS3DTNBIT_CGR_QM_ALGORITHM_SI_FORWARD_INTERVAL > nowtime) {
+                    storageinfo_forward_map_[ip] = nowtime;
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                storageinfo_forward_map_[ip] = nowtime;
+                return true;
+            }
+        }
+
+        void CGRQMRouting::LoadCurrentStorageOfOwn(node_id_t node, size_t usage) {
+            NS_LOG_INFO("[loadcurrentstorageofown]update local storage usage");
+            storageinfo_maintained_[node] = make_pair(1, usage);
         }
 
         // maintain storageinfo_maintained_ and storage_max_ in this method

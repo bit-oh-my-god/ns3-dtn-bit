@@ -380,8 +380,8 @@ def mainsmain():
         r9 = re.compile(r'''may\smake\sbad\srouting-1''', re.VERBOSE)
         cgr_exhaust = r9.search(line)
 
-        #[time-10;node-0;[DtnApp]line-1045][Trace]in DebugUseScheduleToDoSome:;max storage=1000;current storage use=6
-        r10 = re.compile(r'''\[time-(\d+\.*\d*);node-(\d+\.*\d*);\[DtnApp\]line-1045\]\[Trace\]in\sDebugUseScheduleToDoSome:;max\sstorage=(\d+\.*\d*);current\sstorage\suse=(\d+\.*\d*)''', re.VERBOSE)
+        #[time-10;node-0;[DtnApp]line-1050][Trace]in DebugUseScheduleToDoSome:;max storage=1000;current storage use=6
+        r10 = re.compile(r'''\[time-(\d+\.*\d*);node-(\d+\.*\d*);\[DtnApp\]line-1050\]\[Trace\]in\sDebugUseScheduleToDoSome:;max\sstorage=(\d+\.*\d*);current\sstorage\suse=(\d+\.*\d*)''', re.VERBOSE)
         storagedebug01 = r10.search(line)
 
         #[time-10;node-0;[DtnCGRQMRouting]line-24][Trace]storageinfo:nodeid=0belive=3storage_v=0
@@ -470,11 +470,11 @@ def mainsmain():
                 new_list.append(tmp)
                 x_pkt_trace_map[dst_seqno] = new_list
         elif storagedebug01 :
-        #x_storage_info_map 
-        # time -> {
-        # "local":{nodeid -> [maxofnode, usageofnode]}, 
-        # "storageinfo":{nodeid -> {belinode -> [, belive, usagevalue]}}
-        # }
+            #x_storage_info_map 
+            # time -> {
+            # "local":{nodeid -> [maxofnode, usageofnode]}, 
+            # "storageinfo":{nodeid -> {belinode -> [, belive, usagevalue]}}
+            # }
             ztime = float(nums(storagedebug01.group(1)))
             znode = int(nums(storagedebug01.group(2)))
             zmax = int(nums(storagedebug01.group(3)))
@@ -492,6 +492,8 @@ def mainsmain():
             infobelive = int(nums(storagedebug02.group(4)))
             infousage = int(nums(storagedebug02.group(5)))
             # init map 
+            if ztime not in x_storage_info_map:
+                sys.exit("error- 112321")
             if "storageinfo" not in x_storage_info_map[ztime] :
                 x_storage_info_map[ztime]["storageinfo"] = {}
             if znode not in x_storage_info_map[ztime]["storageinfo"]:

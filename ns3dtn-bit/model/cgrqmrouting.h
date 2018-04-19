@@ -29,6 +29,7 @@ namespace ns3 {
             // @brief return index of rrc_vec
             int NCMDecision(vector<RouteResultCandidate> const & rrc_vec) override;
             void DebugUseScheduleToDoSome() override;
+            bool ShouldForwardSI(Ipv4Address ip);
             void NotifyRouteSeqnoIsAcked(dtn_seqno_t seq)override;
             void LoadCurrentStorageOfOwn(node_id_t node, size_t storage) override;
             // nodeid -> [belive value , storageusage value]
@@ -39,6 +40,7 @@ namespace ns3 {
             // recordtime -> [nodeinpath, ...]
             map<dtn_time_t, vector<int>> release_queue_;
             dtn_time_t last_release_check_time_;
+            map<Ipv4Address, dtn_time_t> storageinfo_forward_map_;
             dtn_time_t last_belive_decay_;
             map<dtn_seqno_t, std::function<void()>> seqno2ackedcb_;
         };

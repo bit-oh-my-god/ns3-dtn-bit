@@ -121,6 +121,7 @@ namespace ns3 {
                     std::string LogPrefix() {return out_app_.LogPrefix();}
                     friend RoutingMethodInterface;
                     // CGRQM TODO
+                    bool ShouldForwardSI(Ipv4Address ip);
                     void StorageinfoMaintainInterface(string s 
                             ,map<node_id_t, pair<int, int>> parsed_storageinfo_from_neighbor
                             ,map<node_id_t, pair<int, int>>& move_storageinfo_to_this
@@ -130,6 +131,7 @@ namespace ns3 {
                             );
                     void DebugUseScheduleToDoSome();
                     void NotifyRouteSeqnoIsAcked(dtn_seqno_t seq);
+                    void LoadCurrentStorageOfOwn(node_id_t node, size_t storage);
                     // data
                     vector<Adob> vec_;
                     std::unique_ptr<RoutingMethodInterface> p_rm_in_;
@@ -191,7 +193,8 @@ namespace ns3 {
                     // send hello
                     vector<Ipv4Address> PackageStillNeighborAvailableDetail(BPHeader& ref_bp_header);
                     void ReceiveHelloDetail(Ptr<Socket>& socket_handle);
-                    pair<bool, Ipv4Address> HasNewNeighbor();
+                    //pair<bool, Ipv4Address> HasNewNeighbor();
+                    pair<bool, vector<Ipv4Address>> HasNewNeighborVec();
                     std::string LogPrefix() {return out_app_.LogPrefix();}
                     bool CheckBufferTimePass() {
                         if (Simulator::Now().GetSeconds() - last_check_buffer_time_.GetSeconds() > NS3DTNBIT_BUFFER_CHECK_INTERVAL) {

@@ -45,7 +45,7 @@ function test_target_simulation_run_func {
     echo "in tx1_func"
     ./changetrace.sh 200
     prefix="tx" # should be [a-z]{1,9}
-    for x_running_argument_0 in {201..201..1}
+    for x_running_argument_0 in {208..208..1}
     do
         echo "one"
         #x_running_argument_1="TEG"
@@ -153,7 +153,7 @@ function simulation_run_switch_func {
 #####################################
 
 #test_target_simulation_run_switch_func
-#test_target_simulation_run_func
+test_target_simulation_run_func
 #simulation_run_tx1_func
 #simulation_run_ran_func
-simulation_run_switch_func
+#simulation_run_switch_func

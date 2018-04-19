@@ -39,6 +39,8 @@ namespace ns3dtnbit {
                 virtual void DebugUseScheduleToDoSome(){}
                 // 
                 virtual void NotifyRouteSeqnoIsAcked(dtn_seqno_t seq){}
+                //
+                virtual bool ShouldForwardSI(Ipv4Address ip){return false;}
                 // CGRQM use 
                 virtual void LoadCurrentStorageOfOwn(node_id_t node, size_t storage){ }
             protected :

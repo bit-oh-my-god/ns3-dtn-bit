@@ -108,7 +108,7 @@ namespace ns3 {
             }
             Adob adob_ob = Adob();
             adob_ob.AdobDo_01(t_2_adjacent_array, node_number_);
-            // default, I recommand to use set teg_layer_n to be time_duration_ / 2
+            // by default, recommand to set teg_layer_n to be time_duration_ / 2
             adob_ob.AdobDo_02(node_number_, simulation_duration_, NS3DTNBIT_MAXRANGE);
             std::cout << "NOTE: after AdobDo_02()" <<std::endl;
             adob_ob.AdobDo_03();

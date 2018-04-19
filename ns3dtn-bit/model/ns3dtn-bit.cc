@@ -151,6 +151,11 @@ namespace ns3 {
         void DtnApp::DtnAppRoutingAssister::NotifyRouteSeqnoIsAcked(dtn_seqno_t seq) {
             p_rm_in_->NotifyRouteSeqnoIsAcked(seq);
         }
+
+        bool DtnApp::DtnAppRoutingAssister::ShouldForwardSI(Ipv4Address ip) {
+            return p_rm_in_->ShouldForwardSI(ip);
+        }
+
         void DtnApp::DtnAppRoutingAssister::DebugUseScheduleToDoSome(){
             p_rm_in_->DebugUseScheduleToDoSome();
         }
@@ -177,19 +182,19 @@ namespace ns3 {
             }
         }
 
-        pair<bool, Ipv4Address> DtnApp::DtnAppNeighborKeeper::HasNewNeighbor() {
+        pair<bool, vector<Ipv4Address>> DtnApp::DtnAppNeighborKeeper::HasNewNeighborVec() {
             bool ret = false;
-            Ipv4Address newip;
+            vector<Ipv4Address> newip;
             for (auto & nei : neighbor_info_map_) {
                 auto const & nei_ip = get<0>(nei);
                 if (get<1>(nei).IsLastSeen()) {
                     if (cur_neighbor_.count(nei_ip)) {
 
                     } else {
-                        // only one should return vector
+                        // only one, should return vector
                         cur_neighbor_.insert(nei_ip);
                         ret = true;
-                        newip = nei_ip;
+                        newip.push_back( nei_ip);
                     }
                 } else {
                     //NS_LOG_INFO(LogPrefixMacro << "remove from neighbor: ip=" << nei_ip);
@@ -201,6 +206,10 @@ namespace ns3 {
                 }
             }
             return {ret, newip};
+        }
+
+        void DtnApp::DtnAppRoutingAssister::LoadCurrentStorageOfOwn(node_id_t node, size_t storage) {
+            p_rm_in_->LoadCurrentStorageOfOwn(node, storage);
         }
 
         void DtnApp::DtnAppTransmitSessionAssister::ReceiveBundleDetail(Ptr<Socket>& socket) {
@@ -601,7 +610,7 @@ namespace ns3 {
                     dtn_time_t current_time = Simulator::Now().GetSeconds();
 
                     // -------------- dividing ----------
-                    p_rm_in_->LoadCurrentStorageOfOwn(out_app_.GetNodeId(), out_app_.daemon_consume_bundle_queue_->GetNPackets());
+                    //p_rm_in_->LoadCurrentStorageOfOwn(out_app_.GetNodeId(), out_app_.daemon_consume_bundle_queue_->GetNPackets());
                     p_rm_in_->GetInfo(destination_id, from_id, vec_of_current_neighbor, own_id, expired_time, 
                             bundle_size, out_app_.id2cur_exclude_vec_of_id_, current_time, that_seqno,hopped_nodes);
                     result = RouteIt(out_app_.node_->GetId(), d);
@@ -842,6 +851,7 @@ namespace ns3 {
                 NS_LOG_INFO(LogPrefixMacro << "into one TransmitCheck");
                 int decision_neighbor = -1;
                 BPHeader bp_header;
+                routing_assister_.LoadCurrentStorageOfOwn(GetNodeId(), daemon_bundle_queue_->GetNPackets());
                 if (wifi_ph_p->IsStateIdle()) {
                     NS_LOG_LOGIC(LogPrefixMacro << "is stateidle");
                     NS_LOG_INFO(LogPrefixMacro << "we have NPackets = " << daemon_bundle_queue_->GetNPackets());
@@ -852,7 +862,7 @@ namespace ns3 {
                         //assert(p_pkt_size == bp_header.get_payload_size() + bp_header.GetSerializedSize());
                         bool not_expired = Simulator::Now().GetSeconds() - bp_header.get_src_time_stamp().GetSeconds() < NS3DTNBIT_HYPOTHETIC_BUNDLE_EXPIRED_TIME;
                         bool is_toremove = IsToRemovePkt(bp_header.get_source_seqno());
-                        if (not_expired || !is_toremove) {
+                        if (not_expired && !is_toremove) {
                             // this for loop is too hot, find way to make it cool
                             NS_LOG_INFO(LogPrefixMacro<<"check for pkt");
                             bool bundle_check_good = (ReplicationGoodDetail(bp_header, 0));
@@ -892,7 +902,7 @@ namespace ns3 {
                             // would remove expired package and toremove pkt
                             NS_LOG_LOGIC(LogPrefixMacro 
                             << "would remove expired package or pkt which routing thinks to remove,seqno="
-                            <<bp_header.get_source_seqno() << " not expired, toremove=" << not_expired << is_toremove);
+                            <<bp_header.get_source_seqno() << " expired, toremove=" << !not_expired << is_toremove);
                             continue;   
                         }
                     }
@@ -905,52 +915,56 @@ namespace ns3 {
                 }
             } else if (s == "ReceiveHello") {
                 NS_LOG_INFO(LogPrefixMacro << "React ReceiveHello");
-                auto t01 = neighbor_keeper_.HasNewNeighbor();
+                auto t01 = neighbor_keeper_.HasNewNeighborVec();
                 auto t011 = t01.first;
                 auto t012 = t01.second;
                 if (neighbor_keeper_.CheckBufferTimePass() || t011) {  
                     if (t011 && routing_assister_.get_rm() == RoutingMethod::QM) {
-                        // CGRQM TODO send routing_assister_.StorageinfoMaintainInterface("to send storageinfo to neighbor")
-                        Ipv4Address toneighbor_ip = t012;
-                        map<node_id_t, pair<int, int>> empty01;
-                        map<node_id_t, pair<int, int>> current_storageinfo;
-                        map<node_id_t, size_t> empty02;
-                        pair<vector<node_id_t>,dtn_time_t> empty03;
-                        routing_assister_.StorageinfoMaintainInterface("to send storageinfo to neighbor", empty01, current_storageinfo, empty02,empty03);
-                        {
-                            // send storageinfo to 
-                            std::string tmp_payload_str;
+                        for (auto const & toneighbor_ip : t012) {
+                            // CGRQM TODO send routing_assister_.StorageinfoMaintainInterface("to send storageinfo to neighbor")
+                            if (!routing_assister_.ShouldForwardSI(toneighbor_ip)) {
+                                continue;
+                            }
+                            map<node_id_t, pair<int, int>> empty01;
+                            map<node_id_t, pair<int, int>> current_storageinfo;
+                            map<node_id_t, size_t> empty02;
+                            pair<vector<node_id_t>,dtn_time_t> empty03;
+                            routing_assister_.StorageinfoMaintainInterface("to send storageinfo to neighbor", empty01, current_storageinfo, empty02,empty03);
                             {
-                                // fill up payload
-                                std::stringstream tmp_sstream;
-                                tmp_sstream << current_storageinfo.size();
-                                for (auto const & ccp : current_storageinfo) {
-                                    tmp_sstream << " ";
-                                    tmp_sstream << ccp.first;
-                                    tmp_sstream << " ";
-                                    tmp_sstream << ccp.second.first;
-                                    tmp_sstream << " ";
-                                    tmp_sstream << ccp.second.second;
-                                    //NS_LOG_INFO("fuck!2222:" << (ccp.first) << ":"<< (ccp.second.first) << ":"<< (ccp.second.second));
+                                // send storageinfo to 
+                                std::string tmp_payload_str;
+                                {
+                                    // fill up payload
+                                    std::stringstream tmp_sstream;
+                                    tmp_sstream << current_storageinfo.size();
+                                    for (auto const & ccp : current_storageinfo) {
+                                        tmp_sstream << " ";
+                                        tmp_sstream << ccp.first;
+                                        tmp_sstream << " ";
+                                        tmp_sstream << ccp.second.first;
+                                        tmp_sstream << " ";
+                                        tmp_sstream << ccp.second.second;
+                                        //NS_LOG_INFO("fuck!2222:" << (ccp.first) << ":"<< (ccp.second.first) << ":"<< (ccp.second.second));
+                                    }
+                                    tmp_payload_str = tmp_sstream.str();
                                 }
-                                tmp_payload_str = tmp_sstream.str();
-                            }
-                            Ptr<Packet> p_pkt = Create<Packet>(tmp_payload_str.c_str(), tmp_payload_str.size());
-                            BPHeader bp_header;
-                            {
-                                // fill up bp_header
-                                SemiFillBPHeaderDetail(&bp_header);
-                                bp_header.set_bundle_type(BundleType::StorageinfoMaintainPkt);
-                                bp_header.set_destination_ip(toneighbor_ip);
-                                bp_header.set_source_seqno(p_pkt->GetUid());
-                                bp_header.set_payload_size(tmp_payload_str.size());
-                                bp_header.set_offset(tmp_payload_str.size());
-                            }
-                            p_pkt->AddHeader(bp_header);
-                            InetSocketAddress toneighbor_addr = InetSocketAddress(toneighbor_ip, NS3DTNBIT_PORT_NUMBER);
-                            if (!transmit_assister_.SocketSendDetail(p_pkt, 0, toneighbor_addr)) {
-                                NS_LOG_ERROR("SOCKET send error");
-                                std::abort();
+                                Ptr<Packet> p_pkt = Create<Packet>(tmp_payload_str.c_str(), tmp_payload_str.size());
+                                BPHeader bp_header;
+                                {
+                                    // fill up bp_header
+                                    SemiFillBPHeaderDetail(&bp_header);
+                                    bp_header.set_bundle_type(BundleType::StorageinfoMaintainPkt);
+                                    bp_header.set_destination_ip(toneighbor_ip);
+                                    bp_header.set_source_seqno(p_pkt->GetUid());
+                                    bp_header.set_payload_size(tmp_payload_str.size());
+                                    bp_header.set_offset(tmp_payload_str.size());
+                                }
+                                p_pkt->AddHeader(bp_header);
+                                InetSocketAddress toneighbor_addr = InetSocketAddress(toneighbor_ip, NS3DTNBIT_PORT_NUMBER);
+                                if (!transmit_assister_.SocketSendDetail(p_pkt, 0, toneighbor_addr)) {
+                                    NS_LOG_ERROR("SOCKET send error");
+                                    std::abort();
+                                }
                             }
                         }
                     }

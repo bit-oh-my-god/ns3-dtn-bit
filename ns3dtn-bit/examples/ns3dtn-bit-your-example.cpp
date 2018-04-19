@@ -127,14 +127,15 @@ namespace ns3 {
                                 } else if ((scenario_number / 100) == 2) {
                                     //handy_func_x(100, 5, 6, 35);
                                     //handy_func_x(300, 6, 5, 35);
-                                    handy_func_x(100, 5, 6, 10);
-                                    handy_func_x(300, 6, 5, 10);
-
+                                    handy_func_x(100, 5, 6, 10, 3);
+                                    handy_func_x(300, 6, 5, 10, 12);
+                                    handy_func_x(500, 5, 6, 10, 8);
+                                    handy_func_x(700, 5, 6, 10, 7);
                                 } else if ((scenario_number / 100) == 1) {
                                     handy_func_x(200, 4, 10, 6);
                                     handy_func_x(100, 0, 10, 7);
                                 } else if ((scenario_number / 100) == 4) {
-                                    handy_func_x(5, 3, 2, 6, 0.5);
+                                    handy_func_x(10, 3, 2, 5, 0.5);
                                 } else if (scenario_number > 500) {
                                     cout << "warn: " << __FILE__ << __LINE__ << endl;
                                     abort();
@@ -174,14 +175,17 @@ int main(int argc, char *argv[]) {
     //!important LOG control
     LogComponentEnable ("DtnCGRRouting",LOG_LEVEL_DEBUG);
     //LogComponentEnable ("DtnCGRRouting",LOG_LEVEL_INFO);
-    //LogComponentEnable ("DtnCGRRouting",LOG_LEVEL_DEBUG);
-    LogComponentEnable ("DtnCGRQMRouting",LOG_LEVEL_INFO);
+
+    LogComponentEnable ("DtnCGRQMRouting",LOG_LEVEL_DEBUG);
+    //LogComponentEnable ("DtnCGRQMRouting",LOG_LEVEL_INFO);
+
     //LogComponentEnable ("DtnRouting",LOG_LEVEL_DEBUG);
     //LogComponentEnable ("DtnRouting",LOG_LEVEL_INFO);
-    //LogComponentEnable ("DtnApp",LOG_LEVEL_DEBUG);
-    LogComponentEnable ("DtnApp",LOG_LEVEL_INFO);
+    LogComponentEnable ("DtnApp",LOG_LEVEL_DEBUG);
+    //LogComponentEnable ("DtnApp",LOG_LEVEL_INFO);
     //LogComponentEnable ("DtnApp",LOG_LEVEL_LOGIC);
     //LogComponentEnable ("DtnApp", LOG_LEVEL_ALL);
+
     LogComponentEnable("Ns2MobilityHelper", LOG_LEVEL_INFO);
     //LogComponentEnable("UdpSocket", LOG_LEVEL_INFO);
     //LogComponentEnable("UdpL4Protocol", LOG_LEVEL_INFO);

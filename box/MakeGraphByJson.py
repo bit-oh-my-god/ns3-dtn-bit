@@ -18,6 +18,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import jsonpickle
 from matplotlib.colors import cnames
 from matplotlib import animation
+import collections
 #========
 def get_path_suffix_of(suffix):
     def getupper(path):
@@ -31,7 +32,7 @@ def get_path_suffix_of(suffix):
     raise Exception('can\'t')
 #=========================== 
 #################################################
-handy_modify = True # diable me if you don't know what I'm doing , if you diable you may do some work to write senario_name into 'json' file TODO
+handy_modify = False # diable me if you don't know what I'm doing , if you diable you may do some work to write senario_name into 'json' file TODO
 g_senario_name_list = ['s-1', 's-2', 's-3', 's-4', 's-5', 's-6', 's-7', 's-8', 's-9', 's-10', 's-11', 's-12', 's-13', 's-14']
 g_handy_hooks = False
 #################################
@@ -212,21 +213,89 @@ def abstract_value_from(jsonob_p) :
         #average_delivery_delay = float(total_delivery_time) / float(arrived)
         # this is good
         average_delivery_delay = float(total_delivery_time + (total - arrived) * 500) / float(total)
-        print("fuck! average_delivery_delay = {0}".format(average_delivery_delay))
+        #print("fuck! average_delivery_delay = {0}".format(average_delivery_delay))
     else :
         average_delivery_delay = 500
     # time -> {node -> total diff between real-storage-usage and guess-storage-usage}
     storagemap = {}
-    for time in j_storage :
-        if time not in storagemap :
+    for time_str in j_storage :
+        time = nums(time_str)
+        nodelist = []
+        if len(nodelist) == 0 :
+            for nodeid_str in j_storage[time_str]["local"]:
+                nodeid = nums(nodeid_str)
+                nodelist.append(nodeid)
+        if  time not in storagemap :
             storagemap[time] = {}
-        for nodeid in j_storage[time]["storageinfo"] :
-            diff = 0
-            for belivnode in j_storage[time]["storageinfo"][nodeid] :
-                diff += math.fabs(j_storage[time]["storageinfo"][nodeid][belivnode][1] - j_storage[time]["local"][belivnode][1])
-            storagemap[time][nodeid] = diff
+        if "storageinfo" not in j_storage[time_str] :
+            for nodeid in nodelist:
+                if nodeid not in storagemap[time] :
+                    storagemap[time][nodeid] = 0
+        else :
+            for nodeid_str in j_storage[time_str]["storageinfo"] :
+                nodeid = nums(nodeid_str)
+                diff = 0
+                for belivnode in j_storage[time_str]["storageinfo"][nodeid_str] :
+                    guess_usage = j_storage[time_str]["storageinfo"][nodeid_str][belivnode][1]
+                    guess_beliv = j_storage[time_str]["storageinfo"][nodeid_str][belivnode][0]
+                    real_usage = j_storage[time_str]["local"][belivnode][1]
+                    numerator = 100
+                    #assert(guess_beliv < numerator)
+                    # beliv 越高，值的效用越低
+                    factor =(numerator - guess_beliv) / numerator
+                    if  factor > 0:
+                        diff += math.fabs(guess_usage - real_usage) * factor
+                storagemap[time][nodeid] = diff
+            for nodeid in nodelist:
+                if nodeid not in storagemap[time] :
+                    storagemap[time][nodeid] = 0
+    storagemap = collections.OrderedDict(sorted(storagemap.items()))
     return [senario_name, routing_name, delivery_rate, average_delivery_delay, overhead, storagemap]
     # return [senario_name, routing_name, delivery_rate, average_delivery_delay]
+def draw_jsonob_list_storagemap_by_filter(p_out_jsonob_list, filter = "default"):
+    abstracted_v_list = []
+    for jsonob in p_out_jsonob_list :
+        abstracted_v = abstract_value_from(jsonob)
+        abstracted_v_list.append(abstracted_v)
+    list_of_senario_name_k = []
+    for abv in abstracted_v_list :
+        if abv[0] not in list_of_senario_name_k :
+            list_of_senario_name_k.append(abv[0])
+    def detail_draw_storage(storagemap) :
+        print("in detail draw storagemap")
+        #print(storagemap)
+        # TODO
+        xseq = []
+        name2line ={}
+        for time in storagemap :
+            #print(storagemap[time])
+            xseq.append(time)
+            for nodeid in storagemap[time]:
+                nodename = 'n-' + str(nodeid)
+                if nodename not in name2line :
+                    name2line[nodename] = []
+                name2line[nodename].append(storagemap[time][nodeid])
+        for name in name2line :
+            if (len(xseq) != len(name2line[name])) :
+                print(name)
+        #print(name2line['n-4'])
+        #newname2line = {'n-4': name2line['n-4']}
+        #print(xseq)
+        maker = DetailGraphMaker_01(name2line, xseq, "time", "diff between guess and real", "diff-pkts")
+        maker.dograph()
+    if filter not in list_of_senario_name_k and filter == "default":
+        targetstorage = abstracted_v_list[0][5]
+        detail_draw_storage(targetstorage)
+    elif filter in list_of_senario_name_k :
+        targetstorage = None
+        for abv in abstracted_v_list :
+            if filter == abv[0] :
+                targetstorage = abv[5]
+        detail_draw_storage(targetstorage)
+    elif filter == "allinone":
+        sys.exit("Error-not implement yet")
+    else :
+        sys.exit("Error-231")
 def draw_jsonob_list(p_out_jsonob_list) :
     abstracted_v_list = []
     for jsonob in p_out_jsonob_list :
@@ -311,12 +380,13 @@ def getxseqfromsenarioname(jsonob,lenths) :
     namesf = r1.search(jsonob.name)
     if namesf:
         namesff = namesf.group(1)
+        if namesff == 'tx':
+            xseq = seqof(140,lenths+1)
+        else :
+            xseq = seqof(140,lenths+1)
+            #sys.exit('error--11103 unknown')
     else :
         sys.exit('error--11102 unknown {0}'.format(jsonob.name))
-    if namesff == 'tx':
-        xseq = seqof(140,lenths+1)
-    else :
-        sys.exit('error--11103 unknown')
     return xseq
 # defind DetailGraphMaker_01
 class DetailGraphMaker_01(object): # make graph with multi-lines 2d
@@ -330,12 +400,12 @@ class DetailGraphMaker_01(object): # make graph with multi-lines 2d
         fig = plt.figure()
         #ax = fig.add_subplot(111, axes_class=AA.Axes, title='delivery_rate')
         ax = host_subplot(111, axes_class=AA.Axes)
-        plt.title(self.m_title, y=1.13)
+        plt.title(self.m_title, y=1.01)
         ax.set_xlabel(self.m_xlabel, fontsize=18)
         ax.set_ylabel(self.m_ylabel, fontsize=16)
         for name in self.m_name2line :
             #index = list_of_line_route_name.index(name)
-            line = ax.plot(self.m_xseq, self.m_name2line[name], '--', linewidth = 2, label = name)
+            line = ax.plot(self.m_xseq, self.m_name2line[name], linewidth = 2, label = name)
         ax.legend(loc='lower right')
         #ax2 = ax.twin()  # ax2 is responsible for "top" axis and "right" axis
         #ax2.set_xticks(self.m_xseq)
@@ -527,9 +597,9 @@ def one_work_main(file_folder_path) :
     # ./stuff folder/
                 #'tx204 with TEG-nodeN-7-timeT-1000.0-arriveN-116-scheduleN-116',
     x_00_file_name_list = [
-            'tx201 with CGR-nodeN-7-timeT-1000.0-arriveN-0-scheduleN-70',
-            'tx202 with CGR-nodeN-7-timeT-1000.0-arriveN-0-scheduleN-140',
-            'tx203 with CGR-nodeN-7-timeT-1000.0-arriveN-0-scheduleN-210',
+            #'switch401 with QM-nodeN-8-timeT-1000.0-arriveN-6-scheduleN-6',
+            #'tx201 with QM-nodeN-7-timeT-1000.0-arriveN-40-scheduleN-40',
+            'tx208 with QM-nodeN-7-timeT-1000.0-arriveN-320-scheduleN-320',
             ]
     #
     x_01_file_name_list = [
@@ -583,6 +653,7 @@ def one_work_main(file_folder_path) :
     print('====================== good ending =======================')
     print('====================== draw jsonob list =======================')
     draw_jsonob_list(out_jsonob_list)
+    draw_jsonob_list_storagemap_by_filter(out_jsonob_list)
     #print('====================== draw one senario by name =======================')
     #draw_one_senario('cycle with CGR-nodeN-11-timeT-802.0-arriveN-14-scheduleN-14', out_jsonob_list)
 ###
