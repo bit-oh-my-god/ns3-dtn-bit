@@ -117,15 +117,15 @@ function test_target_simulation_run_switch_func {
     echo "in switch_func"
     prefix="switch" # should be [a-z]{1,9}
     ./changetrace.sh 400
-    for x_running_argument_0 in {401..401..1}
+    for x_running_argument_0 in {401..404..1}
     do
         echo "one"
         #x_running_argument_1="TEG"
         #x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
         #one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
-        #x_running_argument_1="CGR"
-        #x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
-        #one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+        x_running_argument_1="CGR"
+        x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
+        one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
         x_running_argument_1="QM"
         x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
         one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
@@ -152,8 +152,8 @@ function simulation_run_switch_func {
 }
 #####################################
 
-#test_target_simulation_run_switch_func
-test_target_simulation_run_func
+test_target_simulation_run_switch_func
+#test_target_simulation_run_func
 #simulation_run_tx1_func
 #simulation_run_ran_func
 #simulation_run_switch_func

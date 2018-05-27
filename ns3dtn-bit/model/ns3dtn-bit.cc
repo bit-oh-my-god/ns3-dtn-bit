@@ -103,7 +103,7 @@ namespace ns3 {
             if (daemon_baq_pkts_max_ == -1) {
                 // not set queue max
                 daemon_baq_pkts_max_=NS3DTNBIT_DEFAULT_QUEUE_MAX;
-            } else if (daemon_baq_pkts_max_ >= 20) {
+            } else if (daemon_baq_pkts_max_ >= 10) {
             } else {
                 NS_LOG_ERROR(LogPrefixMacro << "too small daemon_baq_pkts_max_="<< daemon_baq_pkts_max_);
                 std::abort();

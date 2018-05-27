@@ -80,15 +80,16 @@ namespace ns3 {
                 } 
 
                 void InitStorage() override {
-                    if (ex_rm_ == DtnApp::RoutingMethod::QM) {
-                        config_storage_max_[0] = 1000;
-                        config_storage_max_[1] = 500;
-                        config_storage_max_[2] = 400;
-                        config_storage_max_[3] = 500;
-                        config_storage_max_[4] = 500;
-                        config_storage_max_[5] = 1000;
-                        config_storage_max_[6] = 600;
-                        config_storage_max_[7] = 1000;
+                    if (ex_rm_ == DtnApp::RoutingMethod::QM
+                    ||  ex_rm_ == DtnApp::RoutingMethod::CGR) {
+                        config_storage_max_[0] = 12;
+                        config_storage_max_[1] = 12;
+                        config_storage_max_[2] = 40;
+                        config_storage_max_[3] = 50;
+                        config_storage_max_[4] = 50;
+                        config_storage_max_[5] = 100;
+                        config_storage_max_[6] = 12;
+                        config_storage_max_[7] = 100;
                     }
                 }
 
@@ -135,7 +136,8 @@ namespace ns3 {
                                     handy_func_x(200, 4, 10, 6);
                                     handy_func_x(100, 0, 10, 7);
                                 } else if ((scenario_number / 100) == 4) {
-                                    handy_func_x(10, 3, 2, 5, 0.5);
+                                    // switch401
+                                    handy_func_x(10, 3, 2, 30, 0.1);
                                 } else if (scenario_number > 500) {
                                     cout << "warn: " << __FILE__ << __LINE__ << endl;
                                     abort();

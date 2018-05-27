@@ -120,11 +120,16 @@ class PTVGenarator :
 #======================================
 #================================================
 # init some trace info
-axlimits = int(10000)       #change me !!!!!!!
-maxspeed = int(axlimits / 20)
+x_anim_interval = 50            #change me !!!!!!!
+ax_xlimits = [2000, 10000]       #change me !!!!!!!
+ax_ylimits = [2000, 10000]       #change me !!!!!!!
+ax_zlimits = [2000, 10000]       #change me !!!!!!!
+maxspeed = int(500)
 T_max = 1000                #change me !!!!!!!
 teg_slice_n = 1000          #change me !!!!!!!
 Frames_n = T_max
+global global_maxwifirange 
+global_maxwifirange = 2000  #change me !!!!!!!
 targettracefilepath = get_path_suffix_of('ns3-dtn-bit') + "/box/current_trace/current_trace.tcl"
 targettegfilepath = get_path_suffix_of('ns3-dtn-bit') + '/box/current_trace/teg.txt'
 #====
@@ -207,38 +212,38 @@ time_vec = np.linspace(0, 1, T_max)
 
 
 # this is a expression for position on time_vec, should be the (N_trajectories, time_vec.max, 3) shape
-pt = []
+x_pt = []
 for i in range(0, N_trajectories, 1) :
-    pt.append([])
+    x_pt.append([])
     ptvg_i = PTVGenarator(nodes_info[i]['origin_pos'], nodes_info[i]['time_changes'])
     # note, because time in nodes_info is double and double is not a friendly data type for visualization,
     # so we would do this with the int data type which would cause some precise loose
     for t in range(0, T_max, 1) :
-        pt[i].append([])
+        x_pt[i].append([])
         if t != 0 :
             # calculate time-changing pos
-            pt[i][t] = ptvg_i.get_pos(t)
+            x_pt[i][t] = ptvg_i.get_pos(t)
         else :
             # origin pos
             tx = pos_0[i][0]
             ty = pos_0[i][1]
             tz = pos_0[i][2]
-            pt[i][t] = [round(tx, 2), round(ty, 2), round(tz, 2)]
+            x_pt[i][t] = [round(tx, 2), round(ty, 2), round(tz, 2)]
             if i == 3 :
-                print(pt[3][0])
-pos_t = np.array(pt)
+                print(x_pt[3][0])
+pos_t = np.array(x_pt)
 print(np.shape(pos_t))
 print("good ending!!")
 # end-calculate
 #====
-# output the position of nodes. 'pt'.
+# output the position of nodes. 'x_pt'.
 # 
 
 with open(targettegfilepath, 'w') as teg_f:
     for i in range(0, N_trajectories, 1) :
         for t in range(0, T_max, int(T_max / teg_slice_n)) :
             teg_f.write('node {0} time {1} pos {2} {3} {4}\n'.
-                        format(i, t, int(pt[i][t][0]), int(pt[i][t][1]), int(pt[i][t][2])))
+                        format(i, t, int(x_pt[i][t][0]), int(x_pt[i][t][1]), int(x_pt[i][t][2])))
 #====
 # make graph
 # Set up figure & 3D axis for animation
@@ -264,9 +269,9 @@ for c in colors :
     legendcount += 1
 oldlegend = plt.legend(handles=patchs)
 # prepare the axes limits
-ax.set_xlim((1000, axlimits))
-ax.set_ylim((1000, axlimits))
-ax.set_zlim((1000, axlimits))
+ax.set_xlim(ax_xlimits)
+ax.set_ylim(ax_ylimits)
+ax.set_zlim(ax_zlimits)
 # set point-of-view: specified by (altitude degrees, azimuth degrees)
 #‘elev’ stores the elevation angle in the z plane. ‘azim’ stores the azimuth angle in the x,y plane.
 ax.view_init(60, 20)
@@ -279,11 +284,74 @@ def init():
         pt.set_data([], [])
         pt.set_3d_properties([])
     return lines + pts
+# ====== begin of CONTACTLINEHOLDER
+class CONTACTLINEHOLDER(object):
+    def __init__(self, ax):
+        nothing =1
+        self.m_ax = ax
+        self.clmap = {repr([-1,-2]): None}
+        #print(self.clmap)
+    def updateoneline(self, thatline, twonodeid=[1,2]):
+        restr = repr(twonodeid)
+        #print("in updateoneline, repr={0}".format(restr))
+        assert(len(twonodeid) == 2)
+        assert(twonodeid[0] != twonodeid[1])
+        twonodeid.sort()
+        if restr in self.clmap:
+            self.removeoneline(self.clmap[restr])
+        self.clmap[restr] = thatline
+        if thatline == None:
+            try:
+                del(self.clmap[restr])
+            except KeyError:
+                raise KeyError
+    def removeoneline(self,thatline):
+        #print("in removeoneline, thatline={0}".format(thatline))
+        thatline[0].remove()
+        del(thatline[0])
+        nothing = 1
+    def draw_one_line_as(self, linepoint1=None, linepoint2=None):
+        nothing = 1
+        xseq =  [linepoint1[0], linepoint2[0]]
+        yseq =  [linepoint1[1], linepoint2[1]]
+        zseq =  [linepoint1[2], linepoint2[2]]
+        line = self.m_ax.plot(xseq, yseq, zseq,"k:",linewidth=1)
+        return line
+    def draw_contact_line_between(self, x_pt, i) :
+        print("============ frame = {0} ------".format(i))
+        def dist(p1, p2):
+            dx = p1[0] - p2[0]
+            dy = p1[1] - p2[1]
+            dz = p1[2] - p2[2]
+            dis = round(sqrt(float(dx * dx + dy * dy + dz * dz))+ 0.01, 4)
+            return dis
+        pointpool = {}
+        for j in range(0, N_trajectories, 1) :
+            position = x_pt[j][i]
+            #print(position)
+            pointpool[j] = position
+        for k in pointpool :
+            for j in pointpool:
+                if (k == j) :
+                    continue
+                distance = dist(pointpool[k], pointpool[j])
+                global global_maxwifirange
+                if distance < global_maxwifirange: 
+                    thatline = self.draw_one_line_as(pointpool[k],pointpool[j])
+                    self.updateoneline(thatline, [k,j])
+                    #print(" has contact bet {0}, {1}; dis = {2}".format(k, j, distance))
+                else :
+                    self.updateoneline(None, [k,j])
+                    #print(" no contact bet {0}, {1}; dis = {2}".format(k, j, distance))
+        #print(self.clmap)
+# ======= end of CONTACTLINEHOLDER
+global g_contactlineholder
+g_contactlineholder = CONTACTLINEHOLDER(ax)
 # animation function.  This will be called sequentially with the frame number
 def animate(i):
     # we'll step two time-steps per frame.  This leads to nice results.
     #i = (2 * i) % pos_t.shape[1]
-
+    global g_contactlineholder
     for line, pt, pos_ti in zip(lines, pts, pos_t):
         #.T means transpose of an array
         x, y, z = pos_ti[:i].T
@@ -292,7 +360,7 @@ def animate(i):
 
         pt.set_data(x[-1:], y[-1:])
         pt.set_3d_properties(z[-1:])
-
+    g_contactlineholder.draw_contact_line_between(x_pt, i)
     # change angle per frame
     ax.view_init(40, 0.2 * i)
     # don't change angle per frame
@@ -305,7 +373,7 @@ def animate(i):
     return lines + pts 
 # instantiate the animator.
 anim = animation.FuncAnimation(fig, animate, init_func=init,
-                               frames=Frames_n, interval=30, blit=True)
+                               frames=Frames_n, interval=x_anim_interval, blit=True)
 # Save as mp4. This requires mplayer or ffmpeg to be installed
 ## anim.save('lorentz_attractor.mp4', fps=15, extra_args=['-vcodec', 'libx264'])
 plt.show()

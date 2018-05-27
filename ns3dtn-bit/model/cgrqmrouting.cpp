@@ -114,7 +114,7 @@ namespace ns3 {
                         //NS_LOG_INFO("update storageinfo,nodeid=" << nodeid<< ";beli=" << be<<";stor=" << st);
                         storageinfo_maintained_[nodeid] = {be, st};
                     } else {
-                        assert(storage_max_[nodeid] > storevalue);
+                        assert(storage_max_[nodeid] >= storevalue);
                         //NS_LOG_INFO("update storageinfo,nodeid=" << nodeid<< ";beli=" << belive + 1<<";stor=" << storevalue);
                         storageinfo_maintained_[nodeid] = {belive + 1, storevalue};
                     }

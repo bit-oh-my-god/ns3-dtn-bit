@@ -32,8 +32,6 @@ def get_path_suffix_of(suffix):
     raise Exception('can\'t')
 #=========================== 
 #################################################
-handy_modify = False # diable me if you don't know what I'm doing , if you diable you may do some work to write senario_name into 'json' file TODO
-g_senario_name_list = ['s-1', 's-2', 's-3', 's-4', 's-5', 's-6', 's-7', 's-8', 's-9', 's-10', 's-11', 's-12', 's-13', 's-14']
 g_handy_hooks = False
 #################################
 ######### definition
@@ -150,12 +148,44 @@ def draw_it(p_x_tosend_list, p_x_time_trace_map, p_x_simulation_time) :
     ax.set_ylabel('seqno')
     ax.set_zlabel('node')
     plt.show()
+###############################
+def g_hooks_handy_draw(map_of_one_line_of_delivery_rate, map_of_one_line_of_average_delivery_delay, map_of_one_line_of_overhead,xseqmean) :
+    if (g_handy_hooks) :
+        map_of_one_line_of_delivery_rate["CGR-QM"] = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.972]
+        map_of_one_line_of_average_delivery_delay["CGR-QM"] = [388, 384, 385, 391, 392, 388, 389, 390, 392, 391, 390, 392, 391, 400]
+        map_of_one_line_of_overhead["CGR-QM"] = [0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.325]
+        map_of_one_line_of_delivery_rate["CGR"] = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.99, 0.95, 0.89, 0.86, 0.82, 0.80]
+        map_of_one_line_of_average_delivery_delay["CGR"] = [389, 383, 386, 387, 393, 389, 388, 399, 410, 420, 431, 436, 442, 444]
+        map_of_one_line_of_overhead["CGR"] = [0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.330, 0.323, 0.319, 0.316, 0.314, 0.312]
+        if len(xseqmean) == 0 :
+            length = len(map_of_one_line_of_average_delivery_delay["CGR"])
+            step = 140
+            xseqmean =  list(range(step, (length * step) + step, step))
+            assert(length == len(xseqmean))
+    else :
+        print("don't hooks")
+    return [
+            map_of_one_line_of_delivery_rate,
+            map_of_one_line_of_average_delivery_delay,
+            map_of_one_line_of_overhead,
+            xseqmean,
+           ]
+###################### g_hooks_handy_draw
 def result_for_one_scenario(jsonob_one) :
     one_x_time_trace_map = jsonob_one.get_map()
     one_x_tosend_list = jsonob_one.get_list()
     #print(one_x_tosend_list)
     for key, value in one_x_time_trace_map.items() :
         handy_print_1(key, value, one_x_tosend_list)
+# @return [
+# senario_name, #0
+# routing_name, 
+# delivery_rate, #2
+# average_delivery_delay, 
+# overhead, #4
+# storagemap, 
+# totalpkts #6
+# ]
 def abstract_value_from(jsonob_p) :
     j_time_trace_map = jsonob_p.get_map()
     j_tosend_list = jsonob_p.get_list()
@@ -250,11 +280,15 @@ def abstract_value_from(jsonob_p) :
                 if nodeid not in storagemap[time] :
                     storagemap[time][nodeid] = 0
     storagemap = collections.OrderedDict(sorted(storagemap.items()))
-    return [senario_name, routing_name, delivery_rate, average_delivery_delay, overhead, storagemap]
+    totalpkts = len(j_tosend_list)
+    return [senario_name, routing_name, delivery_rate, average_delivery_delay, overhead, storagemap,totalpkts]
     # return [senario_name, routing_name, delivery_rate, average_delivery_delay]
 def draw_jsonob_list_storagemap_by_filter(p_out_jsonob_list, filter = "default"):
+    if len(p_out_jsonob_list) == 0 :
+        return
     abstracted_v_list = []
-    for jsonob in p_out_jsonob_list :
+    for para_ in p_out_jsonob_list :
+        jsonob=read_file_to_jsonob(para_[0])
         abstracted_v = abstract_value_from(jsonob)
         abstracted_v_list.append(abstracted_v)
     list_of_senario_name_k = []
@@ -283,6 +317,7 @@ def draw_jsonob_list_storagemap_by_filter(p_out_jsonob_list, filter = "default")
         #print(xseq)
         maker = DetailGraphMaker_01(name2line, xseq, "time", "diff between guess and real", "diff-pkts")
         maker.dograph()
+    # detail_draw_storage
     if filter not in list_of_senario_name_k and filter == "default":
         targetstorage = abstracted_v_list[0][5]
         detail_draw_storage(targetstorage)
@@ -296,98 +331,68 @@ def draw_jsonob_list_storagemap_by_filter(p_out_jsonob_list, filter = "default")
         sys.exit("Error-not implement yet")
     else :
         sys.exit("Error-231")
+#draw_jsonob_list_storagemap_by_filter
 def draw_jsonob_list(p_out_jsonob_list) :
     abstracted_v_list = []
-    for jsonob in p_out_jsonob_list :
-        abstracted_v = abstract_value_from(jsonob)
-        abstracted_v_list.append(abstracted_v)
-    #----
     map_of_one_line_of_delivery_rate = {}
     map_of_one_line_of_average_delivery_delay = {}
     map_of_one_line_of_overhead = {}
     list_of_line_route_name_k = []
-    list_of_senario_name_k = []
-    for abv in abstracted_v_list :
-        if abv[1] not in list_of_line_route_name_k :
-            list_of_line_route_name_k.append(abv[1])
-        if abv[0] not in list_of_senario_name_k :
-            list_of_senario_name_k.append(abv[0])
-    print('abstracted_v_list')
-    print(abstracted_v_list)
-    # prepare value from json_abstracted for makeing graph
-    for abvv in abstracted_v_list :
-        map_key = abvv[1]
-        sena_index = list_of_senario_name_k.index(abvv[0])
-        if map_key in map_of_one_line_of_delivery_rate :
-            drlist = map_of_one_line_of_delivery_rate[map_key]
-            drlist[sena_index] = abvv[2]
-            map_of_one_line_of_delivery_rate[map_key] = drlist
-        else :
-            tmpaddlist = [None] * len(list_of_senario_name_k)
-            tmpaddlist[sena_index] = abvv[2]
-            map_of_one_line_of_delivery_rate[map_key] = tmpaddlist
-        if map_key in map_of_one_line_of_average_delivery_delay :
-            drlist = map_of_one_line_of_average_delivery_delay[map_key]
-            drlist[sena_index] = abvv[3]
-            map_of_one_line_of_average_delivery_delay[map_key] = drlist
-        else :
-            tmpaddlist = [None] * len(list_of_senario_name_k)
-            tmpaddlist[sena_index] = abvv[3]
-            map_of_one_line_of_average_delivery_delay[map_key] = tmpaddlist
-        if map_key in map_of_one_line_of_overhead :
-            drlist = map_of_one_line_of_overhead[map_key]
-            drlist[sena_index] = abvv[4]
-            map_of_one_line_of_overhead[map_key] = drlist
-        else :
-            tmpaddlist = [None] * len(list_of_senario_name_k)
-            tmpaddlist[sena_index] = abvv[4]
-            map_of_one_line_of_overhead[map_key] = tmpaddlist
+    xseqmean = []
+    innerjsonfilelist = {}
+    for para_ in p_out_jsonob_list :
+        name = para_[0]
+        xseqmeaning = para_[1]
+        linename = para_[2]
+        if linename not in innerjsonfilelist:
+            innerjsonfilelist[linename] = {}
+        innerjsonfilelist[linename][xseqmeaning] = name
+        if xseqmeaning not in xseqmean :
+            xseqmean.append(xseqmeaning)
+    xseqmean.sort()
+    for linename in innerjsonfilelist :
+        for xseqmeaning in innerjsonfilelist[linename]:
+            name = innerjsonfilelist[linename][xseqmeaning]
+            jsonob=read_file_to_jsonob(name)
+            abvv = abstract_value_from(jsonob)
+            # prepare value from json_abstracted for makeing graph
+            # route-name
+            linename = abvv[1]
+            derate = abvv[2]
+            avdelay = abvv[3]
+            overhead = abvv[4]
+            if linename not in map_of_one_line_of_delivery_rate :
+                map_of_one_line_of_delivery_rate[linename] = []
+            map_of_one_line_of_delivery_rate[linename].append(derate)
+            if linename not in map_of_one_line_of_average_delivery_delay :
+                map_of_one_line_of_average_delivery_delay[linename] = []
+            map_of_one_line_of_average_delivery_delay[linename].append(avdelay)
+            if linename not in map_of_one_line_of_overhead :
+                map_of_one_line_of_overhead[linename] = []
+            map_of_one_line_of_overhead[linename].append(overhead)
     print('\nBefore Hooks:\nmap_of_one_line_of_delivery_rate={0}'.format(map_of_one_line_of_delivery_rate)) 
     print('\nBefore Hooks:\nmap_of_one_line_of_average_delivery_delay={0}'.format(map_of_one_line_of_average_delivery_delay)) 
     print('\nBefore Hooks:\nmap_of_one_line_of_overhead={0}'.format(map_of_one_line_of_overhead)) 
-    print('\nBefore Hooks:\nlist_of_line_route_name_k={0}'.format(list_of_line_route_name_k)) 
-    print('\nBefore Hooks:\nlist_of_senario_name_k={0}'.format(list_of_senario_name_k)) 
-    list_of_list = g_hooks_handy_draw(map_of_one_line_of_delivery_rate, map_of_one_line_of_average_delivery_delay, map_of_one_line_of_overhead, list_of_line_route_name_k)
+    list_of_list = g_hooks_handy_draw(map_of_one_line_of_delivery_rate, map_of_one_line_of_average_delivery_delay, map_of_one_line_of_overhead,xseqmean)
     map_of_one_line_of_delivery_rate = list_of_list[0]
     map_of_one_line_of_average_delivery_delay = list_of_list[1]
     map_of_one_line_of_overhead = list_of_list[2]
-    list_of_line_route_name_k = list_of_list[3]
+    xseqmean = list_of_list[3]
     print('\nAfter Hooks:\nmap_of_one_line_of_delivery_rate={0}'.format(map_of_one_line_of_delivery_rate)) 
     print('\nAfter Hooks:\nmap_of_one_line_of_average_delivery_delay={0}'.format(map_of_one_line_of_average_delivery_delay)) 
     print('\nAfter Hooks:\nmap_of_one_line_of_overhead={0}'.format(map_of_one_line_of_overhead)) 
-    print('\nAfter Hooks:\nlist_of_line_route_name_k={0}'.format(list_of_line_route_name_k)) 
-    print('\nAfter Hooks:\nlist_of_senario_name_k={0}'.format(list_of_senario_name_k)) 
-    xseq = getxseqfromsenarioname(p_out_jsonob_list[0],len(list_of_senario_name_k)) #TODO
-    print('\nxseq={0}'.format(xseq))
-    maker01 = DetailGraphMaker_01(map_of_one_line_of_delivery_rate, xseq, 'pkts', '', "delivery rate")
-    maker02 = DetailGraphMaker_01(map_of_one_line_of_average_delivery_delay, xseq, 'pkts', '', "delivery delay")
-    maker03 = DetailGraphMaker_01(map_of_one_line_of_overhead, xseq, 'pkts', '', "overhead")
-    maker01.dograph()
-    maker02.dograph()
-    maker03.dograph()
-    #draw_graph_of(map_of_one_line_of_delivery_rate, list_of_line_route_name_k, list_of_senario_name_k, "delivery rate")
-    #draw_graph_of(map_of_one_line_of_average_delivery_delay, list_of_line_route_name_k, list_of_senario_name_k, "delivery delay")
-    #draw_graph_of(map_of_one_line_of_overhead, list_of_line_route_name_k, list_of_senario_name_k, "overhead")
-# define getxseqfromsenarioname
-def getxseqfromsenarioname(jsonob,lenths) :
-    print(jsonob.name)
-    namesff = ''
-    def seqof(step,max):
-        return list(range(step,max*step,step ))
-    xseq = []
-    #tx202 with
-    r1 = re.compile(r'([a-z]{1,9})([0-9]{1,9})\swith', re.VERBOSE)
-    namesf = r1.search(jsonob.name)
-    if namesf:
-        namesff = namesf.group(1)
-        if namesff == 'tx':
-            xseq = seqof(140,lenths+1)
-        else :
-            xseq = seqof(140,lenths+1)
-            #sys.exit('error--11103 unknown')
-    else :
-        sys.exit('error--11102 unknown {0}'.format(jsonob.name))
-    return xseq
+# ==========================
+# init listof
+    listof = []
+    # 递交率
+    listof.append( [ map_of_one_line_of_delivery_rate, xseqmean, "pkts", "", "delivery rate", ]) 
+    # 延迟
+    #listof.append( [ map_of_one_line_of_average_delivery_delay, xseqmean, "pkts", "", "average_delivery_delay", ]) 
+    # 负载
+    listof.append( [ map_of_one_line_of_overhead, xseqmean, "pkts", "", "overhead", ]) 
+# ==========================
+    detailgraphmaker = DetailGraphMaker_02(listof)
+    detailgraphmaker.dographwithsub()
 # defind DetailGraphMaker_01
 class DetailGraphMaker_01(object): # make graph with multi-lines 2d
     def __init__(self, name2line, xseq, xlabel, title, ylabel):
@@ -413,67 +418,63 @@ class DetailGraphMaker_01(object): # make graph with multi-lines 2d
         #ax2.axis["top"].major_ticklabels.set_visible(True)
         plt.show()
 # end define DetailGraphMaker_01
-#  'y' of one line index by route name; list of route name; list of 'x' axis name; flag is which figure you want
-# change this graph func TODO
-def draw_graph_of(map_of_one_line, list_of_line_route_name, list_of_senario_name, flag) :
-    assert(len(map_of_one_line) == len(list_of_line_route_name))
-    assert(map_of_one_line != None)
-    sena_num = -1 # init
-    if g_handy_hooks :
-        if (len(map_of_one_line[list_of_line_route_name[0]]) == len(list_of_senario_name)) :
-            print("nothing")
+# ========== define DetailGraphMaker_02
+class DetailGraphMaker_02(object): # make graph with multi-lines 2d
+    # fuckbit
+    def __init__(self, listof) :
+        # name2line, xseq, xlabel, title, ylabel):
+        self.listof = listof
+        assert(len(self.listof[0]) == 5)
+        self.mark_list = [
+            [
+                '-', 	#solid line style
+                '--', 	#dashed line style
+                '-.', 	#dash-dot line style
+                ':', 	#dotted line style
+            ],
+            [
+                'o',    # circle marker
+                's',    # square markerr　
+                '*',    # star marker
+            ]
+        ]
+    def dographinonesub(self, i, subflag):
+        print(subflag + i)
+        #print(self.listof[i])
+        ax = plt.subplot(subflag + i)
+        ax.set_xlabel(self.listof[i][2], fontsize=10)
+        ax.set_ylabel(self.listof[i][4], fontsize=10)
+        j = 0
+        for name in self.listof[i][0] :
+            mark = self.mark_list[1][j % len(self.mark_list[1])] + self.mark_list[0][j % len(self.mark_list[0])]
+            print("mark=" + mark + "straname=" + name)
+            line = ax.plot(self.listof[i][1], self.listof[i][0][name], mark, linewidth = 2, label = name)
+            j += 1
+        ax.legend(loc='lower right')
+    def dographwithsub(self) :
+        fig = plt.figure()
+        subflag = -1
+        if len(self.listof) == 4 :
+            subflag = 411 
+        elif len(self.listof) == 3:
+            subflag = 311 
+        elif len(self.listof) == 2:
+            subflag = 211 
+        elif len(self.listof) == 1:
+            subflag = 111 
         else :
-            print("a={0}, b={1},".format(len(map_of_one_line[list_of_line_route_name[0]]), len(list_of_senario_name)))
-        sena_num = len(map_of_one_line[list_of_line_route_name[0]])
-        assert(sena_num > 1)
-    else :
-        assert(len(map_of_one_line[list_of_line_route_name[0]]) == len(list_of_senario_name))
-        sena_num = len(list_of_senario_name)
-    list_of_senario_name_kk = []
-    x = range(0, sena_num, 1)
-    if handy_modify :
-        list_of_senario_name_kk = g_senario_name_list
-        assert(len(map_of_one_line[list_of_line_route_name[0]]) == len(list_of_senario_name_kk))
-    if flag == "delivery rate" :
-        fig = plt.figure()
-        #ax = fig.add_subplot(111, axes_class=AA.Axes, title='delivery_rate')
-        ax = host_subplot(111, axes_class=AA.Axes)
-        plt.title('scenario name', y=1.03)
-        #ax.set_xlabel('scenario name', fontsize=18) 
-        ax.set_ylabel('delivery rate', fontsize=16)
-    elif (flag == "delivery delay") :
-        fig = plt.figure()
-        #ax = fig.add_subplot(111, axes_class=AA.Axes, title='delivery_delay')
-        ax = host_subplot(111, axes_class=AA.Axes)
-        plt.title('scenario name', y=1.03)
-        #ax.set_xlabel('scenario name', fontsize=18)
-        ax.set_ylabel('average delivery delay', fontsize=16)
-    elif (flag == "overhead") :
-        fig = plt.figure()
-        #ax = fig.add_subplot(111, axes_class=AA.Axes, title='delivery_delay')
-        ax = host_subplot(111, axes_class=AA.Axes)
-        plt.title('scenario name', y=1.03)
-        #ax.set_xlabel('scenario name', fontsize=18)
-        ax.set_ylabel('overhead ', fontsize=16)
-    else :
-        print("Error 10")
-        sys.exit()
-    for name in list_of_line_route_name :
-        #index = list_of_line_route_name.index(name)
-        line = ax.plot(x, map_of_one_line[name], '--', linewidth = 2, label = name)
-    ax.legend(loc='lower right')
-    ax2 = ax.twin()  # ax2 is responsible for "top" axis and "right" axis
-    ax2.set_xticks(x)
-    if not handy_modify :
-        ax2.set_xticklabels(list_of_senario_name)
-    else :
-        ax2.set_xticklabels(list_of_senario_name_kk) # handy_modify
-
-    ax2.axis["right"].major_ticklabels.set_visible(False)
-    ax2.axis["top"].major_ticklabels.set_visible(True)
-    plt.show()
-def draw_one_senario(strname, out_jsonob_list_k):
-    def draw_all_routing_path_of_one_senario_by_name(strname, out_jsonob_list_k) :
+            sys.exit("error - 21321dsc")
+        #ax = host_subplot(subflag)
+        #try:
+            #for k in listof[0]:
+        #except ValueError:
+            #return float(s)
+        for i in range(0,len(self.listof),1) :
+            self.dographinonesub(i, subflag)
+        plt.show()
+# ========== define DetailGraphMaker_02
+def draw_one_senario(strname):
+    def draw_all_routing_path_of_one_senario_by_name(strname) :
         # @brief draw 3d-way routing result, with sequence of pktseqno, seq of nodeid, seq of resident-time-interval
         def draw_it_after_json(p_x_tosend_list, p_x_time_trace_map, p_x_simulation_time) :
             fig = plt.figure()
@@ -519,21 +520,21 @@ def draw_one_senario(strname, out_jsonob_list_k):
             ax.set_ylabel('seqno')
             ax.set_zlabel('node')
             plt.show()
-        #===
-        for js_one_scenario in out_jsonob_list_k :
-            if js_one_scenario.name == strname :
-                that_x_time_trace_map = js_one_scenario.get_map()
-                that_x_tosend_list = js_one_scenario.get_list()
-                r14 = re.compile('''timeT\-(\d+\.*\d*)''', re.VERBOSE)
-                timetag = r14.search(strname)
-                that_simulation_time = None
-                if timetag :
-                    that_simulation_time = nums(timetag.group(1))
-                else :
-                    print("error_0123")
-                    sys.exit()
-                draw_it_after_json(that_x_tosend_list, that_x_time_trace_map, that_simulation_time)
-    def draw_routing_path_of_one_senario_by_name(strname, out_jsonob_list_k) :
+        #===draw_it_after_json
+        js_one_scenario = read_file_to_jsonob(strname)
+        that_x_time_trace_map = js_one_scenario.get_map()
+        that_x_tosend_list = js_one_scenario.get_list()
+        r14 = re.compile('''timeT\-(\d+\.*\d*)''', re.VERBOSE)
+        timetag = r14.search(strname)
+        that_simulation_time = None
+        if timetag :
+            that_simulation_time = nums(timetag.group(1))
+        else :
+            print("error_0123")
+            sys.exit()
+        draw_it_after_json(that_x_tosend_list, that_x_time_trace_map, that_simulation_time)
+    # draw_all_routing_path_of_one_senario_by_name
+    def draw_routing_path_of_one_senario_by_name(strname) :
         # @brief draw 2d-way routing result, with one pktseqno, seq of nodeid, seq of resident-time-interval
         def draw_it_after_json2(p_x_tosend_list, p_x_time_trace_map, p_x_simulation_time) :
             fig = plt.figure()
@@ -543,121 +544,54 @@ def draw_one_senario(strname, out_jsonob_list_k):
             targetpktseqno = p_x_tosend_list[12341 % len(p_x_tosend_list)][3]
             colors = plt.cm.ScalarMappable(cmap=plt.cm.get_cmap('jet')).to_rgba(x=np.linspace(0, 1, len(p_x_tosend_list)))
             #TODO
-        #===
-        for js_one_scenario in out_jsonob_list_k :
-            if js_one_scenario.name == strname :
-                that_x_time_trace_map = js_one_scenario.get_map()
-                that_x_tosend_list = js_one_scenario.get_list()
-                r14 = re.compile('''timeT\-(\d+\.*\d*)''', re.VERBOSE)
-                timetag = r14.search(strname)
-                that_simulation_time = None
-                if timetag :
-                    that_simulation_time = nums(timetag.group(1))
-                else :
-                    print("error_0123")
-                    sys.exit()
-                draw_it_after_json2(that_x_tosend_list, that_x_time_trace_map, that_simulation_time)
-                break
-    draw_all_routing_path_of_one_senario_by_name(strname, out_jsonob_list_k)
-    draw_routing_path_of_one_senario_by_name(strname, out_jsonob_list_k)
-######## end of definition
-###############################
-def g_hooks_handy_draw(map_of_one_line_of_delivery_rate, map_of_one_line_of_average_delivery_delay, map_of_one_line_of_overhead, list_of_line_route_name_k) :
-    if (g_handy_hooks) :
-        list_of_line_route_name_k.append("CGR-QM")
-        map_of_one_line_of_delivery_rate["CGR-QM"] = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.972]
-        map_of_one_line_of_average_delivery_delay["CGR-QM"] = [388, 384, 385, 391, 392, 388, 389, 390, 392, 391, 390, 392, 391, 400]
-        map_of_one_line_of_overhead["CGR-QM"] = [0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.325]
-        list_of_line_route_name_k.append("CGR")
-        map_of_one_line_of_delivery_rate["CGR"] = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.99, 0.95, 0.89, 0.86, 0.82, 0.80]
-        map_of_one_line_of_average_delivery_delay["CGR"] = [389, 383, 386, 387, 393, 389, 388, 399, 410, 420, 431, 436, 442, 444]
-        map_of_one_line_of_overhead["CGR"] = [0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.330, 0.323, 0.319, 0.316, 0.314, 0.312]
-    else :
-        print("don't hooks")
-    return [
-            map_of_one_line_of_delivery_rate,
-            map_of_one_line_of_average_delivery_delay,
-            map_of_one_line_of_overhead,
-            list_of_line_route_name_k,
-           ]
-######################
+        #===draw_it_after_json2
+        js_one_scenario = read_file_to_jsonob(strname)
+        that_x_time_trace_map = js_one_scenario.get_map()
+        that_x_tosend_list = js_one_scenario.get_list()
+        r14 = re.compile('''timeT\-(\d+\.*\d*)''', re.VERBOSE)
+        timetag = r14.search(strname)
+        that_simulation_time = None
+        if timetag :
+            that_simulation_time = nums(timetag.group(1))
+        else :
+            print("error_0123")
+            sys.exit()
+        draw_it_after_json2(that_x_tosend_list, that_x_time_trace_map, that_simulation_time)
+    # draw_routing_path_of_one_senario_by_name
+    draw_all_routing_path_of_one_senario_by_name(strname )
+    draw_routing_path_of_one_senario_by_name(strname )
+######## end of definition draw_one_senario
 
-def filter_strlist_by_name(list_v, name) :
-    newlist = []
-    for strname in list_v :
-        r17 = re.compile(name, re.VERBOSE)
-        isname = r17.search(strname)
-        if isname :
-            newlist.append(strname)
-    return newlist
-# this is the main to run
+
+
+
+#####################
 def one_work_main(file_folder_path) :
-    #=========
-    #== settings
-    # ./stuff folder/
-                #'tx204 with TEG-nodeN-7-timeT-1000.0-arriveN-116-scheduleN-116',
-    x_00_file_name_list = [
-            #'switch401 with QM-nodeN-8-timeT-1000.0-arriveN-6-scheduleN-6',
-            #'tx201 with QM-nodeN-7-timeT-1000.0-arriveN-40-scheduleN-40',
-            'tx208 with QM-nodeN-7-timeT-1000.0-arriveN-320-scheduleN-320',
-            ]
-    #
-    x_01_file_name_list = [
-            'MaxRange-2000/tx201 with CGR-nodeN-7-timeT-1000.0-arriveN-48-scheduleN-70',
-            ]
-    x_02_file_name_list = [
-            'MaxRange-2000/ran301 with CGR-nodeN-6-timeT-1000.0-arriveN-17-scheduleN-51',
-            ]
-    x_03_file_name_list = [
-            'MaxRange-3000/tx201 with CGR-nodeN-7-timeT-1000.0-arriveN-70-scheduleN-70',
-            ]
-    x_04_file_name_list = [
-            'MaxRange-3000/ran301 with CGR-nodeN-6-timeT-1000.0-arriveN-51-scheduleN-51',
-            ]
-    x_05_file_name_list =  [
-            'MaxRange-4000/tx201 with CGR-nodeN-7-timeT-1000.0-arriveN-70-scheduleN-70',
-            ]
-    x_06_file_name_list = [
-            'MaxRange-4000/ran301 with CGR-nodeN-6-timeT-1000.0-arriveN-51-scheduleN-51',
-            ]
-    
-    ######
-    # cycle
-    #x_do_file_name_list = filter_strlist_by_name(x_05_file_name_list, "CGR") + filter_strlist_by_name(x_05_file_name_list, "TEG") + filter_strlist_by_name(x_05_file_name_list, "Heuristic") + filter_strlist_by_name(x_05_file_name_list, "DirectForward")
-
-    # Random
-    #x_do_file_name_list = filter_strlist_by_name(x_04_file_name_list, "Spray") + filter_strlist_by_name(x_04_file_name_list, "DirectForward")
-
-    # CGRQM
-    #x_do_file_name_list = []
-
-    x_do_file_name_list = x_00_file_name_list
-    ##====
-    file_name_list = []
-    #=====
-    #==  change this TODO
-    for filename in x_do_file_name_list :
-        file_name_list.append(file_folder_path + filename)
-    #== end of settings
-    #=================
-    print('====================== read serialized json =====================')
-    out_jsonob_list = []
-    for filename in file_name_list :
-        out_jsonob_list.append(read_file_to_jsonob(filename))
-    if len(out_jsonob_list) < 1 :
-        print('error_04')
-    for js_one_scenario in out_jsonob_list :
-        print('''┌∩┐(◣_◢)┌∩┐ ┌∩┐(◣_◢)┌∩┐ ┌∩┐(◣_◢)┌∩┐   FOR   ONE  JSON  FILE  ┌∩┐(◣_◢)┌∩┐ ┌∩┐(◣_◢)┌∩┐ ┌∩┐(◣_◢)┌∩┐''')
-        print('=========== name:{0} ======='.format(js_one_scenario.name))
-        #result_for_one_scenario(js_one_scenario)
-    print('====================== good ending =======================')
+    x_00_file_name_map  = {
+        #'tx204 with TEG-nodeN-7-timeT-1000.0-arriveN-116-scheduleN-116':[116, "TEG"],
+        "switch404 with QM-nodeN-8-timeT-1000.0-arriveN-36-scheduleN-124":[124,"QM"],
+        "switch404 with CGR-nodeN-8-timeT-1000.0-arriveN-124-scheduleN-124":[124,"CGR"],
+        "switch403 with QM-nodeN-8-timeT-1000.0-arriveN-36-scheduleN-93":[93,"QM"],
+        "switch403 with CGR-nodeN-8-timeT-1000.0-arriveN-93-scheduleN-93":[93,"CGR"],
+        "switch402 with QM-nodeN-8-timeT-1000.0-arriveN-36-scheduleN-62":[62,"QM"],
+        "switch402 with CGR-nodeN-8-timeT-1000.0-arriveN-62-scheduleN-62":[62,"CGR"],
+        "switch401 with QM-nodeN-8-timeT-1000.0-arriveN-31-scheduleN-31":[31,"QM"],
+        "switch401 with CGR-nodeN-8-timeT-1000.0-arriveN-31-scheduleN-31":[31,"CGR"],
+    }
+    x_do_file_name_map = x_00_file_name_map
+    x_wanted_list = []
+    for filename in x_do_file_name_map :
+        para_ = x_do_file_name_map[filename]
+        xseqmean = para_[0]
+        linename = para_[1]
+        x_wanted_list.append([file_folder_path + filename, xseqmean, linename])
     print('====================== draw jsonob list =======================')
-    draw_jsonob_list(out_jsonob_list)
-    draw_jsonob_list_storagemap_by_filter(out_jsonob_list)
+    draw_jsonob_list(x_wanted_list)
+    draw_jsonob_list_storagemap_by_filter(x_wanted_list)
     #print('====================== draw one senario by name =======================')
-    #draw_one_senario('cycle with CGR-nodeN-11-timeT-802.0-arriveN-14-scheduleN-14', out_jsonob_list)
+    #draw_one_senario(file_folder_path + "switch401 with CGR-nodeN-8-timeT-1000.0-arriveN-5-scheduleN-5")
 ###
 ######################
 ###################################
-print(get_path_suffix_of('ns3-dtn-bit') + "/box/jupyter/stuff folder/")
-one_work_main(get_path_suffix_of('ns3-dtn-bit') + "/box/jupyter/stuff folder/")
+str_folder_preffix = get_path_suffix_of('ns3-dtn-bit') + "/box/jupyter/stuff folder/"
+one_work_main(str_folder_preffix)

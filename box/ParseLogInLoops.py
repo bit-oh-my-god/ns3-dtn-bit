@@ -277,6 +277,12 @@ def draw_it(p_x_tosend_list, p_x_time_trace_map, p_x_simulation_time) :
     ax.set_zlabel('node')
     plt.show()
 #end of definition
+#===============================
+
+#################################
+#################################
+###### fuckaswdawd ##########
+#################################
 #################################
 def mainsmain():
     #====
@@ -287,6 +293,7 @@ def mainsmain():
     #====
     g_total_hop_ = 0
     x_is_one_delivery_route = False
+    x_drawpktstrace = False
     x_jsonfile_save_path = get_path_suffix_of('ns3-dtn-bit') + "/box/jupyter/stuff folder/"
     x_jsonfile_name = 'haha' # TEG CGR Spray Heuristic  #"cycle12 with TEG"
     if len(sys.argv) > 1 :
@@ -315,6 +322,7 @@ def mainsmain():
     # hop_snap , destination_snap = 
     #[receive_time, receive_id, dest_id, source_id, seqno, src_generate_time, hop_transmit_time, pkt_type, is_dst, hop_id]
     ############
+
     #================================================ dividing parse ========================================
     # parse for x_ nodes and x_ simualtion_time
     # parse for bundle trace and schedule
@@ -381,11 +389,11 @@ def mainsmain():
         cgr_exhaust = r9.search(line)
 
         #[time-10;node-0;[DtnApp]line-1050][Trace]in DebugUseScheduleToDoSome:;max storage=1000;current storage use=6
-        r10 = re.compile(r'''\[time-(\d+\.*\d*);node-(\d+\.*\d*);\[DtnApp\]line-1050\]\[Trace\]in\sDebugUseScheduleToDoSome:;max\sstorage=(\d+\.*\d*);current\sstorage\suse=(\d+\.*\d*)''', re.VERBOSE)
+        r10 = re.compile(r'''\[time-(\d+\.*\d*);node-(\d+\.*\d*);\[DtnApp\]line-[0-9]*\]\[Trace\]in\sDebugUseScheduleToDoSome:;max\sstorage=(\d+\.*\d*);current\sstorage\suse=(\d+\.*\d*)''', re.VERBOSE)
         storagedebug01 = r10.search(line)
 
         #[time-10;node-0;[DtnCGRQMRouting]line-24][Trace]storageinfo:nodeid=0belive=3storage_v=0
-        r11 = re.compile(r'''\[time-(\d+\.*\d*);node-(\d+\.*\d*);\[DtnCGRQMRouting\]line-24\]\[Trace\]storageinfo:nodeid=(\d+\.*\d*)belive=(\d+\.*\d*)storage_v=(\d+\.*\d*)''', re.VERBOSE)
+        r11 = re.compile(r'''\[time-(\d+\.*\d*);node-(\d+\.*\d*);\[DtnCGRQMRouting\]line-[0-9]*\]\[Trace\]storageinfo:nodeid=(\d+\.*\d*)belive=(\d+\.*\d*)storage_v=(\d+\.*\d*)''', re.VERBOSE)
         storagedebug02 = r11.search(line)
         
         if schedule :
@@ -475,6 +483,7 @@ def mainsmain():
             # "local":{nodeid -> [maxofnode, usageofnode]}, 
             # "storageinfo":{nodeid -> {belinode -> [, belive, usagevalue]}}
             # }
+            #print(line)
             ztime = float(nums(storagedebug01.group(1)))
             znode = int(nums(storagedebug01.group(2)))
             zmax = int(nums(storagedebug01.group(3)))
@@ -486,6 +495,7 @@ def mainsmain():
                 x_storage_info_map[ztime]["local"] = {}
             x_storage_info_map[ztime]["local"][znode] = [zmax, zusage]
         elif storagedebug02 :
+            #print(line)
             ztime = float(nums(storagedebug02.group(1)))
             znode = int(nums(storagedebug02.group(2)))
             infonode = int(nums(storagedebug02.group(3)))
@@ -547,13 +557,18 @@ def mainsmain():
         break
     #print(x_time_trace_map)
 
-    print('================================= dividing ========================')
-    #draw_it(x_tosend_list, x_time_trace_map, x_simulation_time)
+    if x_drawpktstrace :
+        print('================================= dividing pkts-trace graph ========================')
+        draw_it(x_tosend_list, x_time_trace_map, x_simulation_time)
 
     if x_totoal_cgr_enter_count > 0 :
         print('================================= CGR only print for debug ========================')
         print('totoal cgr enter count = {0}'.format(x_totoal_cgr_enter_count))
         print('running time optimal routing result successive routing reuse count = {0}'.format(x_total_cgr_reuse_optimal_count))
         print('running time optimal routing result exhaust routing reuse count = {0}'.format(x_total_cgr_exhaust_optimal_count))
-############
+#################################
+#################################
+##### fuckaswdawd #########
+#################################
+#################################
 mainsmain()
