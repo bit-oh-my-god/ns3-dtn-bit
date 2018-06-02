@@ -52,11 +52,12 @@ namespace ns3 {
                         302,303,304,305,306,307,308,309,310,311,312,313,314,315,316,};
                         auto switch_traffic_number = std::vector<int>{401, // switch401
                         402,403,404,405,406,407,408,409,410,411,412,413,414,415,416,};
+                        auto current_traffic_number = std::vector<int>{501, // current501
+                        502,503,504,505,506,507,508,509,510,511,512,513,514,515,516,};
+                        auto loadbalance_traffic_number = std::vector<int>{601, // load601
+                        602,603,604,605,606,607,608,609,610,611,612,613,614,615,616,};
                         
-                        if (scenario_number == 6) {
-                            node_number_ = 20;
-                            simulation_duration_ = 802;
-                        } else if (std::find(cycle_traffic_number.begin(), cycle_traffic_number.end(), scenario_number) != cycle_traffic_number.end()) { 
+                        if (std::find(cycle_traffic_number.begin(), cycle_traffic_number.end(), scenario_number) != cycle_traffic_number.end()) { 
                             // 0100_current_trace.tcl + 0100_teg.txt
                             node_number_ = 12;
                             simulation_duration_ = 802;
@@ -72,6 +73,14 @@ namespace ns3 {
                             // 0400_current_trace.tcl + 0400_teg.txt
                             node_number_ = 8;
                             simulation_duration_ = 1000;
+                        } else if (std::find(current_traffic_number.begin(), current_traffic_number.end(), scenario_number) != current_traffic_number.end()) { 
+                            // 0500_current_trace.tcl + 0500_teg.txt
+                            node_number_ = 10;
+                            simulation_duration_ = 2000;
+                        } else if (std::find(loadbalance_traffic_number.begin(), loadbalance_traffic_number.end(), scenario_number) != loadbalance_traffic_number.end()) { 
+                            // 0600_current_trace.tcl + 0600_teg.txt
+                            node_number_ = 10;
+                            simulation_duration_ = 2000;
                         } else {
                             cout << "warn: " << __FILE__ << __LINE__ << endl;
                             std::abort();
@@ -80,8 +89,9 @@ namespace ns3 {
                 } 
 
                 void InitStorage() override {
-                    if (ex_rm_ == DtnApp::RoutingMethod::QM
-                    ||  ex_rm_ == DtnApp::RoutingMethod::CGR) {
+                    bool bool_var = true;
+                    if (bool_var) {
+                      if (scenario_number / 100 == 4) {
                         config_storage_max_[0] = 12;
                         config_storage_max_[1] = 12;
                         config_storage_max_[2] = 40;
@@ -90,23 +100,33 @@ namespace ns3 {
                         config_storage_max_[5] = 100;
                         config_storage_max_[6] = 12;
                         config_storage_max_[7] = 100;
+                      } else if (scenario_number / 100 == 6) {
+                        config_storage_max_[3] = 10;
+                        config_storage_max_[5] = 20;
+                        config_storage_max_[6] = 20;
+                        config_storage_max_[7] = 30;
+                        config_storage_max_[8] = 30;
+                        config_storage_max_[9] = 10;
+                      }
                     }
                 }
 
                 void ReportEx(std::ostream& os) override;
 
                 void ScheduleTask() override {
-                    int sch_size = 345;
+                    int headerlenth = 80; //  有hops， 变长
+                    int sch_size = NS3DTNBIT_HYPOTHETIC_CACHE_FACTOR - headerlenth;
+                    NS_ASSERT(sch_size > 400);
                     /*
                     auto handy_func = [sch_size, this](double sch_time, int dstnode, int i) {
                         std::cout << "bundle send schedule: time=" << sch_time << ";node-" << i << "send " << sch_size << " size-pkt to node-" << dstnode << std::endl;
                         this->apps_[i]->ScheduleTx(Seconds(sch_time), dstnode, sch_size);
                     };
                     */
-                    auto handy_func_x = [sch_size, this](double sch_time, int dstnode, int i, int times, double interval=5.0) {
+                    auto handy_func_x = [sch_size, this](double sch_time, int dstnode, int srcnode, int times, double interval=5.0) {
                         for (double rt = sch_time; rt < sch_time + times * interval; rt += interval) {
-                            std::cout << "bundle send schedule: time=" << rt << ";node-" << i << "send " << sch_size << " size-pkt to node-" << dstnode << std::endl;
-                            this->apps_[i]->ScheduleTx(Seconds(rt), dstnode, sch_size);
+                            std::cout << "bundle send schedule: time=" << rt << ";node-" << srcnode << "send " << sch_size << " size-pkt to node-" << dstnode << std::endl;
+                            this->apps_[srcnode]->ScheduleTx(Seconds(rt), dstnode, sch_size);
                         }
                     };
                     {
@@ -115,36 +135,38 @@ namespace ns3 {
                         if (scenario_number > 100) {
                             std::srand(1102);
                             auto amount = scenario_number % 100;
-                            while (amount --) {
-                                if ((scenario_number / 100) == 3) {
-                                    int rand1 = std::rand() % 6;
-                                    int rand2 = std::rand() % 6;
-                                    int rand3 = std::rand() % 6;
-                                    while (rand1 == rand2) {rand2 = std::rand() % 6;}
-                                    while (rand2 == rand3 || rand1 == rand3) {rand3 = std::rand() % 6;}
-                                    handy_func_x(100, rand1, rand2, 17);
-                                    handy_func_x(100, rand2, rand3, 17);
-                                    handy_func_x(100, rand3, rand1, 17);
-                                } else if ((scenario_number / 100) == 2) {
-                                    //handy_func_x(100, 5, 6, 35);
-                                    //handy_func_x(300, 6, 5, 35);
-                                    handy_func_x(100, 5, 6, 10, 3);
-                                    handy_func_x(300, 6, 5, 10, 12);
-                                    handy_func_x(500, 5, 6, 10, 8);
-                                    handy_func_x(700, 5, 6, 10, 7);
-                                } else if ((scenario_number / 100) == 1) {
-                                    handy_func_x(200, 4, 10, 6);
-                                    handy_func_x(100, 0, 10, 7);
-                                } else if ((scenario_number / 100) == 4) {
-                                    // switch401
-                                    handy_func_x(10, 3, 2, 30, 0.1);
-                                } else if (scenario_number > 500) {
-                                    cout << "warn: " << __FILE__ << __LINE__ << endl;
-                                    abort();
-                                } else {
-                                    cout << "warn: " << __FILE__ << __LINE__ << endl;
-                                    abort();
-                                }
+                            if ((scenario_number / 100) == 3) {
+                                int rand1 = std::rand() % 6;
+                                int rand2 = std::rand() % 6;
+                                int rand3 = std::rand() % 6;
+                                while (rand1 == rand2) {rand2 = std::rand() % 6;}
+                                while (rand2 == rand3 || rand1 == rand3) {rand3 = std::rand() % 6;}
+                                handy_func_x(100, rand1, rand2, 10 * amount, 27.0 / double(amount));
+                                handy_func_x(100, rand2, rand3, 10 * amount, 27.0 / double(amount));
+                                handy_func_x(100, rand3, rand1, 10 * amount, 27.0 / double(amount));
+                            } else if ((scenario_number / 100) == 2) {
+                                handy_func_x(100, 5, 6, 5 * amount, 15.0 / double(amount));
+                                handy_func_x(300, 6, 5, 5 * amount, 14.0 / double(amount));
+                                handy_func_x(500, 5, 6, 5 * amount, 24.0 / double(amount));
+                                handy_func_x(700, 5, 6, 5 * amount, 24.0 / double(amount));
+                            } else if ((scenario_number / 100) == 1) {
+                                handy_func_x(200, 4, 10, 16 * amount, 21.0 / double(amount));
+                                handy_func_x(100, 0, 10, 16 * amount, 20.0 / double(amount));
+                            } else if ((scenario_number / 100) == 4) {
+                                // switch401
+                                handy_func_x(10, 3, 2, 30 * amount, 16.0 / double(amount));
+                            } else if ((scenario_number / 100) == 5) {
+                                // current501
+                                handy_func_x(10, 0, 2, 30 * amount, 16.0 / double(amount));
+                            } else if ((scenario_number / 100) == 6) {
+                                // loadbal601
+                                handy_func_x(1.0, 2, 0, 10 * amount, 90.0 / double(amount));
+                            } else if (scenario_number > 500) {
+                                cout << "warn: " << __FILE__ << __LINE__ << endl;
+                                abort();
+                            } else {
+                                cout << "warn: " << __FILE__ << __LINE__ << endl;
+                                abort();
                             }
                         } else {
                             cout << "WARN: can't find schdule, define it or use default random one " << endl;
@@ -183,6 +205,7 @@ int main(int argc, char *argv[]) {
 
     //LogComponentEnable ("DtnRouting",LOG_LEVEL_DEBUG);
     //LogComponentEnable ("DtnRouting",LOG_LEVEL_INFO);
+
     LogComponentEnable ("DtnApp",LOG_LEVEL_DEBUG);
     //LogComponentEnable ("DtnApp",LOG_LEVEL_INFO);
     //LogComponentEnable ("DtnApp",LOG_LEVEL_LOGIC);

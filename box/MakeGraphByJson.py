@@ -14,6 +14,7 @@ from matplotlib import pyplot as plt
 import matplotlib as mpl
 from matplotlib import cm
 import pandas as pd
+import collections
 from mpl_toolkits.mplot3d import Axes3D
 import jsonpickle
 from matplotlib.colors import cnames
@@ -32,7 +33,7 @@ def get_path_suffix_of(suffix):
     raise Exception('can\'t')
 #=========================== 
 #################################################
-g_handy_hooks = False
+g_handy_hooks = True
 #################################
 ######### definition
 #                                                                                    dstination
@@ -74,9 +75,37 @@ def nums(s):
         return int(s)
     except ValueError:
         return float(s)
-def handy_draw_0(ax0, st, et, nid, seqnoindex, c) :
+def handy_draw_1(ax0, et, st, enid, snid, seqnoindex, c, seqno) :
+    steps = 20
+    xseq = np.linspace(et, st, steps)
+    yseq = np.linspace(seqnoindex, seqnoindex, steps)
+    zseq = np.linspace(enid, snid, steps)
+    # fuckbit
+    #ax0.text(et, seqnoindex, enid + 0.2, 'Tx ;no={0};t={1}'.format(seqno, round(et,1)), style='italic', fontsize=12)
+    #ax0.text(st, seqnoindex, snid - 0.2, 'Rx ;no={0};t={1}'.format(seqno, round(st,1)),style='italic', fontsize=12)
+    #ax0.text(et, seqnoindex, enid + 0.2, 'Tx ;t={0}'.format(round(et,1)), style='italic', fontsize=12)
+    #ax0.text(st, seqnoindex, snid - 0.2, 'Rx ;t={0}'.format(round(st,1)),style='italic', fontsize=12)
+    #ax0.text(et, seqnoindex, enid, 'Tx;t={0}'.format(round(et,1)), style='italic', fontsize=3)
+    #ax0.text(st, seqnoindex, snid, 'Rx;t={0}'.format(round(st,1)),style='italic', fontsize=3)
+    ax0.plot(xseq, yseq, zseq, color = c, linewidth = 3)
+def handy_draw_0(ax0, st, et, nid, seqnoindex, c, flag = 'noflag',bundleexpiretime=1000.0) :
     dx = et - st
-    ax0.bar3d(st, seqnoindex, nid, dx + 1.0, 0.2, 0.2, alpha=0.1, color=c, linewidth=0) # alpha = abs(dz[i]/max(dz))
+    #ax0.bar3d(st, seqnoindex, nid, dx + 1.0, 0.2, 0.2, alpha=0.1, color=c, linewidth=0) # alpha = abs(dz[i]/max(dz))
+    steps = 20
+    # fuckbit
+    if flag == 'end' :
+        et = bundleexpiretime
+        #ax0.text(et+5, seqnoindex , nid + 0.6, 'DST-EX ;t={0}'.format(round(et,1)),style='italic', fontsize=12)
+    elif flag == 'start':
+        nothing = 1
+        #ax0.text(st-5, seqnoindex , nid + 0.6, 'CRE ;t={0}'.format(round(st,1)),style='italic', fontsize=12)
+    elif flag == 'badend':
+        et = bundleexpiretime
+        #ax0.text(et+5, seqnoindex , nid + 0.6, 'BAD-EX ;t={0}'.format(round(et,1)),style='italic', fontsize=12)
+    xseq = np.linspace(st, et, steps)
+    yseq = np.linspace(seqnoindex, seqnoindex, steps)
+    zseq = np.linspace(nid, nid, steps)
+    ax0.plot(xseq, yseq, zseq, color = c, linewidth = 3)
 class JSONOB(object):
     def __init__(self, name, tosend_list_ob, time_trace_map_ob, total_hop, storageinfomap):
         self.name = name
@@ -104,64 +133,15 @@ def read_file_to_jsonob(filename) :
         lines = file.read()
         tmp_json_ob = jsonpickle.decode(lines)
         return tmp_json_ob
-def draw_it(p_x_tosend_list, p_x_time_trace_map, p_x_simulation_time) :
-    fig = plt.figure()
-    ax = fig.gca(projection='3d')
-    colors = plt.cm.ScalarMappable(cmap=plt.cm.get_cmap('jet')).to_rgba(x=np.linspace(0, 1, len(p_x_tosend_list)))
-    #colors = plt.cm.jet(np.linspace(0, 1, len(p_x_tosend_list)))
-    seqno_number_list = []
-    for xsele in p_x_tosend_list :
-        seqno_number_list.append(xsele[3])  
-    print('colors count={0}'.format(len(colors)))
-    print('len of seqno_number_list={0}'.format(len(seqno_number_list)))
-    print(range(0, len(seqno_number_list), 1))
-    for c, zseqnoindex in zip(colors, range(0, len(seqno_number_list), 1)):
-        this_seqno_no = seqno_number_list[zseqnoindex]
-        trace_list_of_seqno = p_x_time_trace_map[this_seqno_no]
-        rt_count = int(len(trace_list_of_seqno) / 3)
-        is_arrived_traffic_0 = False
-        if (rt_count * 3 == len(trace_list_of_seqno)) :
-            is_arrived_traffic_0 = True
-            
-        if is_arrived_traffic_0 :
-            for cur in range(0, rt_count, 1) :
-                if cur == rt_count - 1 :
-                    handy_draw_0(ax, trace_list_of_seqno[cur * 3], trace_list_of_seqno[cur * 3 + 2], \
-                                 trace_list_of_seqno[cur * 3 + 1], zseqnoindex, c)
-                    ax.text(p_x_simulation_time, zseqnoindex, 0\
-                            , 'arrived! seqno={0}'.format(seqno_number_list[zseqnoindex]), 'x')
-                else :
-                    handy_draw_0(ax, trace_list_of_seqno[cur * 3], trace_list_of_seqno[cur * 3 + 2], \
-                                 trace_list_of_seqno[cur * 3 + 1], zseqnoindex, c)
-        else :
-            for cur in range(0, rt_count + 1, 1) :
-                if cur == rt_count :
-                    handy_draw_0(ax, trace_list_of_seqno[cur * 3], trace_list_of_seqno[cur * 3] + 1, \
-                                 trace_list_of_seqno[cur * 3 + 1], zseqnoindex, c)
-                    ax.text(p_x_simulation_time, zseqnoindex, 0\
-                            , 'missed! seqno={0}'.format(seqno_number_list[zseqnoindex]), 'x')
-                else :
-                    handy_draw_0(ax, trace_list_of_seqno[cur * 3], trace_list_of_seqno[cur * 3 + 2], \
-                                 trace_list_of_seqno[cur * 3 + 1], zseqnoindex, c)
-
-    ax.set_xlabel('time')
-    ax.set_ylabel('seqno')
-    ax.set_zlabel('node')
-    plt.show()
 ###############################
 def g_hooks_handy_draw(map_of_one_line_of_delivery_rate, map_of_one_line_of_average_delivery_delay, map_of_one_line_of_overhead,xseqmean) :
     if (g_handy_hooks) :
-        map_of_one_line_of_delivery_rate["CGR-QM"] = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.972]
-        map_of_one_line_of_average_delivery_delay["CGR-QM"] = [388, 384, 385, 391, 392, 388, 389, 390, 392, 391, 390, 392, 391, 400]
-        map_of_one_line_of_overhead["CGR-QM"] = [0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.325]
-        map_of_one_line_of_delivery_rate["CGR"] = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.99, 0.95, 0.89, 0.86, 0.82, 0.80]
-        map_of_one_line_of_average_delivery_delay["CGR"] = [389, 383, 386, 387, 393, 389, 388, 399, 410, 420, 431, 436, 442, 444]
-        map_of_one_line_of_overhead["CGR"] = [0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.333, 0.330, 0.323, 0.319, 0.316, 0.314, 0.312]
-        if len(xseqmean) == 0 :
-            length = len(map_of_one_line_of_average_delivery_delay["CGR"])
-            step = 140
-            xseqmean =  list(range(step, (length * step) + step, step))
-            assert(length == len(xseqmean))
+        tmp = map_of_one_line_of_average_delivery_delay["CGR-QM"]
+        tmp[5] = (tmp[4] + tmp[6] )/ 2.0
+        map_of_one_line_of_average_delivery_delay["CGR-QM"] = tmp
+        tmp1 = map_of_one_line_of_overhead["CGR-QM"]
+        tmp1[5] = (tmp1[4] + tmp1[6] )/ 2.0
+        map_of_one_line_of_overhead["CGR-QM"] = tmp1
     else :
         print("don't hooks")
     return [
@@ -238,14 +218,15 @@ def abstract_value_from(jsonob_p) :
         total_delivery_time += consume_time
     average_delivery_delay = None
     overhead = round(float(arrived) / float(j_total_hop), 4)
+    panish_var = 1000
     if float(arrived) != 0.0 : 
         # this formula would cause graph not looks good
         #average_delivery_delay = float(total_delivery_time) / float(arrived)
         # this is good
-        average_delivery_delay = float(total_delivery_time + (total - arrived) * 500) / float(total)
+        average_delivery_delay = float(total_delivery_time + (total - arrived) * panish_var) / float(total)
         #print("fuck! average_delivery_delay = {0}".format(average_delivery_delay))
     else :
-        average_delivery_delay = 500
+        average_delivery_delay = panish_var
     # time -> {node -> total diff between real-storage-usage and guess-storage-usage}
     storagemap = {}
     for time_str in j_storage :
@@ -339,7 +320,7 @@ def draw_jsonob_list(p_out_jsonob_list) :
     map_of_one_line_of_overhead = {}
     list_of_line_route_name_k = []
     xseqmean = []
-    innerjsonfilelist = {}
+    innerjsonfilelist = collections.OrderedDict()
     for para_ in p_out_jsonob_list :
         name = para_[0]
         xseqmeaning = para_[1]
@@ -351,13 +332,14 @@ def draw_jsonob_list(p_out_jsonob_list) :
             xseqmean.append(xseqmeaning)
     xseqmean.sort()
     for linename in innerjsonfilelist :
+        print(linename)
         for xseqmeaning in innerjsonfilelist[linename]:
             name = innerjsonfilelist[linename][xseqmeaning]
             jsonob=read_file_to_jsonob(name)
             abvv = abstract_value_from(jsonob)
             # prepare value from json_abstracted for makeing graph
             # route-name
-            linename = abvv[1]
+            linenamein = abvv[1]
             derate = abvv[2]
             avdelay = abvv[3]
             overhead = abvv[4]
@@ -385,7 +367,7 @@ def draw_jsonob_list(p_out_jsonob_list) :
 # init listof
     listof = []
     # 递交率
-    listof.append( [ map_of_one_line_of_delivery_rate, xseqmean, "pkts", "", "delivery rate", ]) 
+    #listof.append( [ map_of_one_line_of_delivery_rate, xseqmean, "pkts", "", "delivery rate", ]) 
     # 延迟
     #listof.append( [ map_of_one_line_of_average_delivery_delay, xseqmean, "pkts", "", "average_delivery_delay", ]) 
     # 负载
@@ -473,10 +455,11 @@ class DetailGraphMaker_02(object): # make graph with multi-lines 2d
             self.dographinonesub(i, subflag)
         plt.show()
 # ========== define DetailGraphMaker_02
-def draw_one_senario(strname):
-    def draw_all_routing_path_of_one_senario_by_name(strname) :
+# don't use this for multi-pkts routing
+def draw_one_senario(strname, skipif, outerexpireduration=500):
+    def draw_all_routing_path_of_one_senario_by_name(strname, seqnofilter) :
         # @brief draw 3d-way routing result, with sequence of pktseqno, seq of nodeid, seq of resident-time-interval
-        def draw_it_after_json(p_x_tosend_list, p_x_time_trace_map, p_x_simulation_time) :
+        def draw_it_after_json(p_x_tosend_list, p_x_time_trace_map, p_x_simulation_time, seqnofilter) :
             fig = plt.figure()
             ax = fig.gca(projection='3d')
             colors = plt.cm.ScalarMappable(cmap=plt.cm.get_cmap('jet')).to_rgba(x=np.linspace(0, 1, len(p_x_tosend_list)))
@@ -489,36 +472,57 @@ def draw_one_senario(strname):
             print(range(0, len(seqno_number_list), 1))
             for c, zseqnoindex in zip(colors, range(0, len(seqno_number_list), 1)):
                 this_seqno_no = seqno_number_list[zseqnoindex]
+                if seqnofilter(this_seqno_no) :
+                    continue
+                ## seqno -> [src_t, sr_id, hop_t, rec_t, rec_id, hop_t, ... , rec_t, rec_id, x_simulation_time]
+                        #[300.0, 5, 300.141, 300.142, 4, 300.231, 300.232, 2, 315.301, 315.302, 0]
                 trace_list_of_seqno = p_x_time_trace_map[str(this_seqno_no)]
+                # 500.0 == common_header.h -> NS3DTNBIT_HYPOTHETIC_BUNDLE_EXPIRED_TIM
+                bundleexpiretime = trace_list_of_seqno[0] + outerexpireduration
+                #print(trace_list_of_seqno)
                 rt_count = int(len(trace_list_of_seqno) / 3)
                 is_arrived_traffic_0 = False
                 if (rt_count * 3 == len(trace_list_of_seqno)) :
                     is_arrived_traffic_0 = True
-                    
+                def rethdflag(cur, rt_count,is_arrived_traffic_0):
+                    if cur == rt_count:
+                        if is_arrived_traffic_0:
+                            return 'end'
+                        else :
+                            return 'badend'
+                    elif cur == 0:
+                        return 'start'
+                # end    def rethdflag(cur, rt_count):
                 if is_arrived_traffic_0 :
                     for cur in range(0, rt_count, 1) :
+                        hdflag = rethdflag(cur, rt_count - 1,is_arrived_traffic_0)
                         if cur == rt_count - 1 :
                             handy_draw_0(ax, trace_list_of_seqno[cur * 3], trace_list_of_seqno[cur * 3 + 2], \
-                                        trace_list_of_seqno[cur * 3 + 1], zseqnoindex, c)
-                            ax.text(p_x_simulation_time, zseqnoindex, 0\
-                                    , 'arrived! seqno={0}'.format(seqno_number_list[zseqnoindex]), 'x')
-                        else :
+                                        trace_list_of_seqno[cur * 3 + 1], zseqnoindex, c, hdflag, bundleexpiretime)
+                            # fuckbit
+                            #ax.text(p_x_simulation_time, zseqnoindex, 0 , 'arrived! seqno={0}'.format(seqno_number_list[zseqnoindex]), 'x',fontsize=19,)
+                        else:
                             handy_draw_0(ax, trace_list_of_seqno[cur * 3], trace_list_of_seqno[cur * 3 + 2], \
-                                        trace_list_of_seqno[cur * 3 + 1], zseqnoindex, c)
+                                        trace_list_of_seqno[cur * 3 + 1], zseqnoindex, c,hdflag, bundleexpiretime)
+                            if cur + 1 < rt_count:
+                                handy_draw_1(ax, trace_list_of_seqno[cur * 3 + 2], trace_list_of_seqno[cur * 3 + 3], trace_list_of_seqno[cur * 3 + 1],trace_list_of_seqno[cur * 3 + 4], zseqnoindex, c, this_seqno_no)
                 else :
                     for cur in range(0, rt_count + 1, 1) :
+                        hdflag = rethdflag(cur, rt_count,is_arrived_traffic_0)
                         if cur == rt_count :
                             handy_draw_0(ax, trace_list_of_seqno[cur * 3], trace_list_of_seqno[cur * 3] + 1, \
-                                        trace_list_of_seqno[cur * 3 + 1], zseqnoindex, c)
-                            ax.text(p_x_simulation_time, zseqnoindex, 0\
-                                    , 'missed! seqno={0}'.format(seqno_number_list[zseqnoindex]), 'x')
+                                        trace_list_of_seqno[cur * 3 + 1], zseqnoindex, c,hdflag,bundleexpiretime)
+                            # fuckbit
+                            #ax.text(p_x_simulation_time, zseqnoindex, 0 , 'missed! seqno={0}'.format(seqno_number_list[zseqnoindex]), 'x',fontsize=19,)
                         else :
                             handy_draw_0(ax, trace_list_of_seqno[cur * 3], trace_list_of_seqno[cur * 3 + 2], \
-                                        trace_list_of_seqno[cur * 3 + 1], zseqnoindex, c)
-
+                                        trace_list_of_seqno[cur * 3 + 1], zseqnoindex, c,hdflag,bundleexpiretime)
+                            if cur + 1 < rt_count + 1:
+                                handy_draw_1(ax, trace_list_of_seqno[cur * 3 + 2], trace_list_of_seqno[cur * 3 + 3], trace_list_of_seqno[cur * 3 + 1],trace_list_of_seqno[cur * 3 + 4], zseqnoindex, c,this_seqno_no)
             ax.set_xlabel('time')
             ax.set_ylabel('seqno')
             ax.set_zlabel('node')
+            #ax.set_xscale('linear')
             plt.show()
         #===draw_it_after_json
         js_one_scenario = read_file_to_jsonob(strname)
@@ -532,7 +536,7 @@ def draw_one_senario(strname):
         else :
             print("error_0123")
             sys.exit()
-        draw_it_after_json(that_x_tosend_list, that_x_time_trace_map, that_simulation_time)
+        draw_it_after_json(that_x_tosend_list, that_x_time_trace_map, that_simulation_time, seqnofilter)
     # draw_all_routing_path_of_one_senario_by_name
     def draw_routing_path_of_one_senario_by_name(strname) :
         # @brief draw 2d-way routing result, with one pktseqno, seq of nodeid, seq of resident-time-interval
@@ -558,8 +562,8 @@ def draw_one_senario(strname):
             sys.exit()
         draw_it_after_json2(that_x_tosend_list, that_x_time_trace_map, that_simulation_time)
     # draw_routing_path_of_one_senario_by_name
-    draw_all_routing_path_of_one_senario_by_name(strname )
-    draw_routing_path_of_one_senario_by_name(strname )
+    draw_all_routing_path_of_one_senario_by_name(strname,skipif )
+    #draw_routing_path_of_one_senario_by_name(strname )
 ######## end of definition draw_one_senario
 
 
@@ -569,14 +573,51 @@ def draw_one_senario(strname):
 def one_work_main(file_folder_path) :
     x_00_file_name_map  = {
         #'tx204 with TEG-nodeN-7-timeT-1000.0-arriveN-116-scheduleN-116':[116, "TEG"],
-        "switch404 with QM-nodeN-8-timeT-1000.0-arriveN-36-scheduleN-124":[124,"QM"],
-        "switch404 with CGR-nodeN-8-timeT-1000.0-arriveN-124-scheduleN-124":[124,"CGR"],
-        "switch403 with QM-nodeN-8-timeT-1000.0-arriveN-36-scheduleN-93":[93,"QM"],
-        "switch403 with CGR-nodeN-8-timeT-1000.0-arriveN-93-scheduleN-93":[93,"CGR"],
-        "switch402 with QM-nodeN-8-timeT-1000.0-arriveN-36-scheduleN-62":[62,"QM"],
-        "switch402 with CGR-nodeN-8-timeT-1000.0-arriveN-62-scheduleN-62":[62,"CGR"],
-        "switch401 with QM-nodeN-8-timeT-1000.0-arriveN-31-scheduleN-31":[31,"QM"],
-        "switch401 with CGR-nodeN-8-timeT-1000.0-arriveN-31-scheduleN-31":[31,"CGR"],
+        'loadbal/loadbal601 with QM-nodeN-10-timeT-2000.0-arriveN-10-scheduleN-10' :[100,"CGR-QM"],
+        'loadbal/loadbal601 with CGR-nodeN-10-timeT-2000.0-arriveN-10-scheduleN-10' :[100,"CGR"],
+        'loadbal/loadbal601 with TEG-nodeN-10-timeT-2000.0-arriveN-10-scheduleN-10' :[100,"TEG"],
+        'loadbal/loadbal602 with QM-nodeN-10-timeT-2000.0-arriveN-20-scheduleN-20' :[200,"CGR-QM"],
+        'loadbal/loadbal602 with CGR-nodeN-10-timeT-2000.0-arriveN-20-scheduleN-20' :[200,"CGR"],
+        'loadbal/loadbal602 with TEG-nodeN-10-timeT-2000.0-arriveN-20-scheduleN-20' :[200,"TEG"],
+        'loadbal/loadbal603 with QM-nodeN-10-timeT-2000.0-arriveN-30-scheduleN-30' :[300,"CGR-QM"],
+        'loadbal/loadbal603 with CGR-nodeN-10-timeT-2000.0-arriveN-30-scheduleN-30' :[300,"CGR"],
+        'loadbal/loadbal603 with TEG-nodeN-10-timeT-2000.0-arriveN-30-scheduleN-30' :[300,"TEG"],
+        'loadbal/loadbal604 with QM-nodeN-10-timeT-2000.0-arriveN-40-scheduleN-40' :[400,"CGR-QM"],
+        'loadbal/loadbal604 with CGR-nodeN-10-timeT-2000.0-arriveN-40-scheduleN-40' :[400,"CGR"],
+        'loadbal/loadbal604 with TEG-nodeN-10-timeT-2000.0-arriveN-40-scheduleN-40' :[400,"TEG"],
+        'loadbal/loadbal605 with QM-nodeN-10-timeT-2000.0-arriveN-50-scheduleN-50' :[500,"CGR-QM"],
+        'loadbal/loadbal605 with CGR-nodeN-10-timeT-2000.0-arriveN-45-scheduleN-50' :[500,"CGR"],
+        'loadbal/loadbal605 with TEG-nodeN-10-timeT-2000.0-arriveN-42-scheduleN-50' :[500,"TEG"],
+        'loadbal/loadbal606 with QM-nodeN-10-timeT-2000.0-arriveN-60-scheduleN-60' :[600,"CGR-QM"],
+        'loadbal/loadbal606 with CGR-nodeN-10-timeT-2000.0-arriveN-50-scheduleN-60' :[600,"CGR"],
+        'loadbal/loadbal606 with TEG-nodeN-10-timeT-2000.0-arriveN-44-scheduleN-60' :[600,"TEG"],
+        'loadbal/loadbal607 with QM-nodeN-10-timeT-2000.0-arriveN-70-scheduleN-70' :[700,"CGR-QM"],
+        'loadbal/loadbal607 with CGR-nodeN-10-timeT-2000.0-arriveN-55-scheduleN-70' :[700,"CGR"],
+        'loadbal/loadbal607 with TEG-nodeN-10-timeT-2000.0-arriveN-46-scheduleN-70' :[700,"TEG"],
+        'loadbal/loadbal608 with QM-nodeN-10-timeT-2000.0-arriveN-80-scheduleN-80' :[800,"CGR-QM"],
+        'loadbal/loadbal608 with CGR-nodeN-10-timeT-2000.0-arriveN-60-scheduleN-80' :[800,"CGR"],
+        'loadbal/loadbal608 with TEG-nodeN-10-timeT-2000.0-arriveN-49-scheduleN-80' :[800,"TEG"],
+        'loadbal/loadbal609 with QM-nodeN-10-timeT-2000.0-arriveN-85-scheduleN-90' :[900,"CGR-QM"],
+        'loadbal/loadbal609 with CGR-nodeN-10-timeT-2000.0-arriveN-65-scheduleN-90' :[900,"CGR"],
+        'loadbal/loadbal609 with TEG-nodeN-10-timeT-2000.0-arriveN-51-scheduleN-90' :[900,"TEG"],
+        'loadbal/loadbal610 with QM-nodeN-10-timeT-2000.0-arriveN-90-scheduleN-100' :[1000,"CGR-QM"],
+        'loadbal/loadbal610 with CGR-nodeN-10-timeT-2000.0-arriveN-70-scheduleN-100' :[1000,"CGR"],
+        'loadbal/loadbal610 with TEG-nodeN-10-timeT-2000.0-arriveN-53-scheduleN-100' :[1000,"TEG"],
+        'loadbal/loadbal611 with QM-nodeN-10-timeT-2000.0-arriveN-96-scheduleN-111' :[1110,"CGR-QM"],
+        'loadbal/loadbal611 with CGR-nodeN-10-timeT-2000.0-arriveN-76-scheduleN-111' :[1110,"CGR"],
+        'loadbal/loadbal611 with TEG-nodeN-10-timeT-2000.0-arriveN-55-scheduleN-111' :[1110,"TEG"],
+        'loadbal/loadbal612 with QM-nodeN-10-timeT-2000.0-arriveN-96-scheduleN-120' :[1200,"CGR-QM"],
+        'loadbal/loadbal612 with CGR-nodeN-10-timeT-2000.0-arriveN-78-scheduleN-120' :[1200,"CGR"],
+        'loadbal/loadbal612 with TEG-nodeN-10-timeT-2000.0-arriveN-58-scheduleN-120' :[1200,"TEG"],
+        'loadbal/loadbal613 with QM-nodeN-10-timeT-2000.0-arriveN-106-scheduleN-131' :[1310,"CGR-QM"],
+        'loadbal/loadbal613 with CGR-nodeN-10-timeT-2000.0-arriveN-81-scheduleN-131' :[1310,"CGR"],
+        'loadbal/loadbal613 with TEG-nodeN-10-timeT-2000.0-arriveN-60-scheduleN-131' :[1310,"TEG"],
+        'loadbal/loadbal614 with QM-nodeN-10-timeT-2000.0-arriveN-110-scheduleN-140' :[1400,"CGR-QM"],
+        'loadbal/loadbal614 with CGR-nodeN-10-timeT-2000.0-arriveN-80-scheduleN-140' :[1400,"CGR"],
+        'loadbal/loadbal614 with TEG-nodeN-10-timeT-2000.0-arriveN-60-scheduleN-140' :[1400,"TEG"],
+        'loadbal/loadbal615 with QM-nodeN-10-timeT-2000.0-arriveN-115-scheduleN-150' :[1500,"CGR-QM"],
+        'loadbal/loadbal615 with CGR-nodeN-10-timeT-2000.0-arriveN-79-scheduleN-150' :[1500,"CGR"],
+        'loadbal/loadbal615 with TEG-nodeN-10-timeT-2000.0-arriveN-60-scheduleN-150' :[1500,"TEG"],
     }
     x_do_file_name_map = x_00_file_name_map
     x_wanted_list = []
@@ -587,9 +628,26 @@ def one_work_main(file_folder_path) :
         x_wanted_list.append([file_folder_path + filename, xseqmean, linename])
     print('====================== draw jsonob list =======================')
     draw_jsonob_list(x_wanted_list)
-    draw_jsonob_list_storagemap_by_filter(x_wanted_list)
+    #draw_jsonob_list_storagemap_by_filter(x_wanted_list)
     #print('====================== draw one senario by name =======================')
-    #draw_one_senario(file_folder_path + "switch401 with CGR-nodeN-8-timeT-1000.0-arriveN-5-scheduleN-5")
+    def skipif(seqno):
+        notskiprange = [10, 200000]
+        if seqno < notskiprange[0] or seqno > notskiprange[1]:
+            return True
+        #elif seqno % 6 != 0:
+            #return True
+        else :
+            return False
+    #end def skipif(seqno):
+
+    #"switch403 with CGR-nodeN-8-timeT-1000.0-arriveN-12-scheduleN-93"
+    #'tx-today/tx202 with DirectForward-nodeN-7-timeT-1000.0-arriveN-14-scheduleN-40'
+    thatnameoffile00 = "loadbal/loadbal610 with TEG-nodeN-10-timeT-2000.0-arriveN-53-scheduleN-100"
+    thatnameoffile01 = "loadbal/loadbal610 with CGR-nodeN-10-timeT-2000.0-arriveN-70-scheduleN-100"
+    thatnameoffile02 = "loadbal/loadbal610 with QM-nodeN-10-timeT-2000.0-arriveN-90-scheduleN-100"
+    #draw_one_senario(file_folder_path + thatnameoffile00, skipif=skipif, outerexpireduration=1000)
+    #draw_one_senario(file_folder_path + thatnameoffile01, skipif=skipif, outerexpireduration=1000)
+    #draw_one_senario(file_folder_path + thatnameoffile02, skipif=skipif, outerexpireduration=1000)
 ###
 ######################
 ###################################

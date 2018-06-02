@@ -162,9 +162,10 @@ namespace ns3 {
                     void BundleReceptionTailWorkDetail(DaemonBundleHeaderInfo tmp_header_info);
 
                     // Duplicate
-                    bool NotDuplicatedBundle() {return !this_dup_;};
-                    void DuplicatedBundleGuard() {this_dup_ = true;}
-                    void ThisIsNotDup() {this_dup_ = false;}
+                    bool NotDuplicatedBundle() {return this_dup_ == 1;}
+                    void DuplicatedBundleGuard() {this_dup_ = -1;}
+                    void ThisIsNotDup() {this_dup_ = 0;}
+                    void ThisIsDup() {this_dup_ = 1;}
 
                     // Ack
                     void ToSendAckDetail(BPHeader& ref_bp_header, Ipv4Address response_ip);
@@ -173,11 +174,18 @@ namespace ns3 {
                     bool SocketSendDetail(Ptr<Packet> p_pkt, uint32_t flags, InetSocketAddress trans_addr);
                     std::string LogPrefix() {return out_app_.LogPrefix();}
 
+                    // getinfo
+                    size_t get_pkts_in_queue_which_send_to_node(Ipv4Address nei_ip);
+                    size_t decrease_pkts_in_queue_which_send_to_node(Ipv4Address nei_ip);
+                    size_t increase_pkts_in_queue_which_send_to_node(Ipv4Address nei_ip);
+
+
                     // data
                     map<DaemonBundleHeaderInfo, DaemonTransmissionInfo> daemon_transmission_info_map_;
                     map<DaemonBundleHeaderInfo, DaemonReceptionInfo> daemon_reception_info_map_;
+                    map<Ipv4Address, size_t> pkts_which_send_to_node_;
                     private :
-                    bool this_dup_ = false;
+                    int this_dup_ = 0;
                     DtnApp& out_app_;
                 };
                 DtnAppTransmitSessionAssister transmit_assister_;

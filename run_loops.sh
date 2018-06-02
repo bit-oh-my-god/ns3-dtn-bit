@@ -45,16 +45,25 @@ function test_target_simulation_run_func {
     echo "in tx1_func"
     ./changetrace.sh 200
     prefix="tx" # should be [a-z]{1,9}
-    for x_running_argument_0 in {208..208..1}
+    for x_running_argument_0 in {201..201..1}
     do
         echo "one"
-        #x_running_argument_1="TEG"
-        #x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
-        #one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
-        #x_running_argument_1="CGR"
-        #x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
-        #one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+        x_running_argument_1="TEG"
+        x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
+        one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+        x_running_argument_1="CGR"
+        x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
+        one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
         x_running_argument_1="QM"
+        x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
+        one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+        x_running_argument_1="Spray"
+        x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
+        one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+        x_running_argument_1="Heuristic"
+        x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
+        one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+        x_running_argument_1="DirectForward"
         x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
         one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
     done
@@ -68,12 +77,12 @@ function simulation_run_tx1_func {
     for x_running_argument_0 in {201..201..1}
     do
         echo "one"
-        x_running_argument_1="TEG"
-        x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
-        one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
-        #x_running_argument_1="CGR"
+        #x_running_argument_1="TEG"
         #x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
         #one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+        x_running_argument_1="CGR"
+        x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
+        one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
         #x_running_argument_1="Spray"
         #x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
         #one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
@@ -81,6 +90,9 @@ function simulation_run_tx1_func {
         #x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
         #one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
         #x_running_argument_1="DirectForward"
+        #x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
+        #one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+        #x_running_argument_1="QM"
         #x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
         #one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
     done
@@ -117,7 +129,7 @@ function test_target_simulation_run_switch_func {
     echo "in switch_func"
     prefix="switch" # should be [a-z]{1,9}
     ./changetrace.sh 400
-    for x_running_argument_0 in {401..404..1}
+    for x_running_argument_0 in {403..404..1}
     do
         echo "one"
         #x_running_argument_1="TEG"
@@ -142,6 +154,44 @@ function simulation_run_switch_func {
         #x_running_argument_1="TEG"
         #x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
         #one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+        x_running_argument_1="CGR"
+        x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
+        one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+        x_running_argument_1="QM"
+        x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
+        one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+    done
+}
+
+function simulation_run_currcent_func {
+    echo "in currcent_func"
+    prefix="currcent" # should be [a-z]{1,9}
+    ./changetrace.sh 500
+    for x_running_argument_0 in {501..501..1}
+    do
+        echo "one"
+        #x_running_argument_1="TEG"
+        #x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
+        #one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+        x_running_argument_1="CGR"
+        x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
+        one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+        #x_running_argument_1="QM"
+        #x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
+        #one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
+    done
+}
+
+function simulation_run_loadbalance_func {
+    echo "in loadbalance_func"
+    prefix="loadbal" # should be [a-z]{1,9}
+    ./changetrace.sh 600
+    for x_running_argument_0 in {606..606..1}
+    do
+        echo "one"
+        #x_running_argument_1="TEG"
+        #x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
+        #one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
         #x_running_argument_1="CGR"
         #x_parse_argument="$prefix$x_running_argument_0 with $x_running_argument_1"
         #one_loop_func $x_running_argument_0 $x_running_argument_1 $x_parse_argument
@@ -152,8 +202,10 @@ function simulation_run_switch_func {
 }
 #####################################
 
-test_target_simulation_run_switch_func
+#test_target_simulation_run_switch_func
 #test_target_simulation_run_func
 #simulation_run_tx1_func
 #simulation_run_ran_func
 #simulation_run_switch_func
+#simulation_run_currcent_func
+simulation_run_loadbalance_func

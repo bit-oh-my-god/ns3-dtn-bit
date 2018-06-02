@@ -139,8 +139,14 @@ namespace ns3 {
                 }
                 dtn_time_t GetArriveDestTimeIfGood() const {
                     assert(!vec_.empty());
-                    // first xmit is from next-to-dest-node to dest-node
-                    return vec_[0].contact_start_time_;
+                    double desttimeifgood = 0.0;
+                    for (auto vec_var : vec_) {
+                        desttimeifgood = std::max(desttimeifgood, vec_var.contact_start_time_);
+                        //std::cout << "fuckfuck!" << vec_var.ToString() << std::endl;
+                    }
+                    //std::cout << "fuck8120!;forfeit_time_=" << forfeit_time_ << std::endl;
+                    //std::cout << "fuck8972!;desttimeifgood=" << desttimeifgood << std::endl;
+                    return std::max(desttimeifgood, forfeit_time_);
                 }
                 dtn_time_t result_cash_end_;    // cash no longer work at this time
                 dtn_time_t result_cash_begin_;  // cash works at this time

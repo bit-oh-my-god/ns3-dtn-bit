@@ -121,15 +121,15 @@ class PTVGenarator :
 #================================================
 # init some trace info
 x_anim_interval = 50            #change me !!!!!!!
-ax_xlimits = [2000, 10000]       #change me !!!!!!!
-ax_ylimits = [2000, 10000]       #change me !!!!!!!
-ax_zlimits = [2000, 10000]       #change me !!!!!!!
+ax_xlimits = [3000, 14000]       #change me !!!!!!!
+ax_ylimits = [3000, 14000]       #change me !!!!!!!
+ax_zlimits = [5000, 14000]       #change me !!!!!!!
 maxspeed = int(500)
-T_max = 1000                #change me !!!!!!!
-teg_slice_n = 1000          #change me !!!!!!!
+T_max = 2000                #change me !!!!!!!
+teg_slice_n = 2000          #change me !!!!!!! teg_slice_n should equal to T_max
 Frames_n = T_max
 global global_maxwifirange 
-global_maxwifirange = 2000  #change me !!!!!!!
+global_maxwifirange = 1500  #change me !!!!!!!
 targettracefilepath = get_path_suffix_of('ns3-dtn-bit') + "/box/current_trace/current_trace.tcl"
 targettegfilepath = get_path_suffix_of('ns3-dtn-bit') + '/box/current_trace/teg.txt'
 #====
@@ -362,7 +362,7 @@ def animate(i):
         pt.set_3d_properties(z[-1:])
     g_contactlineholder.draw_contact_line_between(x_pt, i)
     # change angle per frame
-    ax.view_init(40, 0.2 * i)
+    #ax.view_init(40, 0.2 * i)
     # don't change angle per frame
     #ax.view_init(40, 15)
     #ax.set_title('time- {0}; metric m/s; node-{1}-pox-{2}-{3}-{4}'.

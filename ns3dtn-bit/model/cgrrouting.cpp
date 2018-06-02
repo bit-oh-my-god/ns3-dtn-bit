@@ -138,7 +138,7 @@ namespace ns3 {
         }
 
         int CGRRouting::DoRoute(int s, int d) {
-            NS_LOG_INFO(LogPrefixMacro<< "DEBUG_CGR:" << " ====== Into DoRoute ===== "<< ";seqno=" << debug_cgr_that_seqno_);
+            NS_LOG_DEBUG(LogPrefixMacro<< "DEBUG_CGR:" << " ====== Into DoRoute ===== "<< ";seqno=" << debug_cgr_that_seqno_);
             Init();
             assert(d == destination_id_);
             assert(s == own_id_);
@@ -166,7 +166,7 @@ namespace ns3 {
                 destination_id_, expired_time_, proximate_vec_.empty());
                 result = ForwardDecision(result_vec);
             }
-            NS_LOG_INFO(LogPrefixMacro<< "DEBUG_CGR:" << " ======= outof DoRoute ==== result=" << result << ";seqno=" << debug_cgr_that_seqno_ <<"\n");
+            NS_LOG_DEBUG(LogPrefixMacro<< "DEBUG_CGR:" << " ======= outof DoRoute ==== result=" << result << ";seqno=" << debug_cgr_that_seqno_ <<"\n");
             return result; 
         }
 
@@ -275,10 +275,9 @@ namespace ns3 {
                         if (residual_capacity < ecc) {
                             NS_LOG_INFO(LogPrefixMacro<<"contine-2:");
                             continue;
-                        } else if (d_is_in_proximate) {
-                            NS_LOG_INFO(LogPrefixMacro<<"contine-3:");
-
-                            continue;
+                        //} else if (d_is_in_proximate) {
+                         //   NS_LOG_INFO(LogPrefixMacro<<"contine-3:");
+                            //continue;
                         } else {
                             if (m.contact_end_time_ < local_forfeit_time) {
                                 local_forfeit_time = m.contact_end_time_;
@@ -315,7 +314,7 @@ namespace ns3 {
                                 local_best_delivery_time = m.contact_start_time_;
                             }
                             double forwarding_latency = (2 * ecc_) / m.data_transmission_rate_;     // it's a very small account
-                            double next_deadline = min((m.contact_end_time_ - forwarding_latency), cur_deadline) - NS3DTNBIT_CGR_CRP_REMAIN_INNODE;
+                            double next_deadline = std::min((m.contact_end_time_ - forwarding_latency), cur_deadline) - NS3DTNBIT_CGR_CRP_REMAIN_INNODE;
                             if (next_deadline < local_time_) {
                                 NS_LOG_INFO(LogPrefixMacro<<"contine-5:");
 

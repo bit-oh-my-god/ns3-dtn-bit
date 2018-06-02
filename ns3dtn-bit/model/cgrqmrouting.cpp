@@ -41,8 +41,14 @@ namespace ns3 {
         }
 
         void CGRQMRouting::LoadCurrentStorageOfOwn(node_id_t node, size_t usage) {
-            NS_LOG_INFO("[loadcurrentstorageofown]update local storage usage");
-            storageinfo_maintained_[node] = make_pair(1, usage);
+            NS_LOG_INFO("[loadcurrentstorageofown]update local storage usage" << usage << ":"<< int (usage));
+            storageinfo_maintained_[node] = make_pair(int(1), int(usage));
+            //for (auto itt: storageinfo_maintained_) {
+            //    if (itt.second.second < 0) {
+            //        NS_LOG_ERROR(itt.first << ":" << itt.second.first << ";" << itt.second.second);
+            //        NS_ASSERT(itt.second.second >= 0);
+            //    }
+            //}
         }
 
         // maintain storageinfo_maintained_ and storage_max_ in this method
@@ -66,9 +72,9 @@ namespace ns3 {
                             // storage usage is too small
                         } else {
                             // release storage
-                            auto old = get<1>(storageinfo_maintained_[nodeinpathtodecaystorage]);
+                            //auto old = get<1>(storageinfo_maintained_[nodeinpathtodecaystorage]);
                             get<1>(storageinfo_maintained_[nodeinpathtodecaystorage]) -= 1;
-                            assert(old != storageinfo_maintained_[nodeinpathtodecaystorage].second);
+                            //assert(old != storageinfo_maintained_[nodeinpathtodecaystorage].second);
                         }
                     }
                     // map is ordered, so the begin() points to is the smallest one
@@ -79,64 +85,111 @@ namespace ns3 {
             }
             if (last_belive_decay_ + NS3DTNBIT_CGR_QM_ALGORITHM_DECAY_DO_TIME < nowtime) {
                 last_belive_decay_ = nowtime;
+                // increase belive
                 for (auto & me : storageinfo_maintained_) {
                     get<0>(get<1>(me)) += 1;
                 }
             }
-            //NS_LOG_INFO(LogPrefixMacro);
             if (action == "route answer is made, add queue usage, and time to decay") {
-                for (auto nodeinpath : path_of_route_and_decaytime.first) {
-                    if (!storageinfo_maintained_.count(nodeinpath)) {
-                        storageinfo_maintained_[nodeinpath] = {10, 0};
+                NS_LOG_INFO("route answer is made, add queue usage, and time to decay");
+                //if (path_of_route_and_decaytime.second < nowtime - 200) {
+                    //NS_LOG_INFO( " fuckyou!!"
+                    //<< ";decay=" << path_of_route_and_decaytime.second 
+                    //<< ";nowtime=" << nowtime
+                    //);
+                    //NS_ASSERT_MSG(path_of_route_and_decaytime.second > nowtime - 50, 
+                    //"decay time should be contact_start_time of (last hop to dst)");
+                //}
+                auto sizeofdecaypath = path_of_route_and_decaytime.first.size();
+                node_id_t nexthopindecaypath;
+                if (sizeofdecaypath >= 1) {
+                    nexthopindecaypath = path_of_route_and_decaytime.first[sizeofdecaypath - 1];
+                    for (auto nodeinpath : path_of_route_and_decaytime.first) {
+                        if (!storageinfo_maintained_.count(nodeinpath)) {
+                            storageinfo_maintained_[nodeinpath] = {10, 0};
+                        }
+                        //auto old = get<1>(storageinfo_maintained_[nodeinpath]);
+                        get<1>(storageinfo_maintained_[nodeinpath]) += 1;
+                        NS_ASSERT(get<1>(storageinfo_maintained_[nodeinpath]) >= 0);
+                        //assert(get<1>(storageinfo_maintained_[nodeinpath]) == old + 1);
+                        //{storageinfo_maintained_[nodeinpath].first, storageinfo_maintained_[nodeinpath].second + 1};
                     }
-                    //auto old = get<1>(storageinfo_maintained_[nodeinpath]);
-                    get<1>(storageinfo_maintained_[nodeinpath]) += 1;
-                    //assert(get<1>(storageinfo_maintained_[nodeinpath]) == old + 1);
-                    //{storageinfo_maintained_[nodeinpath].first, storageinfo_maintained_[nodeinpath].second + 1};
+                    NS_LOG_DEBUG(LogPrefixMacro << " route pkts is acked"
+                    << ";add decaytime=" << path_of_route_and_decaytime.second 
+                    << ";next hop=" << nexthopindecaypath);
+                    release_queue_[path_of_route_and_decaytime.second] = path_of_route_and_decaytime.first;
                 }
-                release_queue_[path_of_route_and_decaytime.second] = path_of_route_and_decaytime.first;
             } else if (action == "receive neighbor storageinfo") {
                 NS_LOG_INFO(LogPrefixMacro<< "receive neighbor storageinfo");
                 for (auto pp : parsed_storageinfo_from_neighbor) {
                     auto nodeid = pp.first;
                     auto belive = pp.second.first;
                     auto storevalue = pp.second.second;
+                    assert(belive>=1);
+                    assert(nodeid>=0);
+                    assert(storevalue>=0);
                     if (storageinfo_maintained_.count(nodeid)) {
                         int be, st;
                         int b1 = storageinfo_maintained_[nodeid].first;
                         int s1 = storageinfo_maintained_[nodeid].second;
                         be = (b1 + belive) / 2;
                         // belive-value is bigger, the right is lower 
-                        st = double((belive * s1) + (b1 * storevalue)) /  double(b1 + belive);
+                        st = double(((belive * s1) + (b1 * storevalue))) /  double(b1 + belive);
                         //NS_LOG_INFO(";st=" << st << ";belive="<< belive << ";s1=" << s1 << ";b1=" << b1 << ";storevalue=" << storevalue);
                         assert(st <= s1 || st <= storevalue);
-                        assert(storage_max_[nodeid] > st);
+                        if (storage_max_[nodeid] < st) {
+                            NS_LOG_INFO(LogPrefixMacro << ":"<<st << ":" << storage_max_[nodeid]);
+                            assert(storage_max_[nodeid] >= st);
+                        }
                         //NS_LOG_INFO("update storageinfo,nodeid=" << nodeid<< ";beli=" << be<<";stor=" << st);
+                        NS_ASSERT(st >= 0);
                         storageinfo_maintained_[nodeid] = {be, st};
                     } else {
-                        assert(storage_max_[nodeid] >= storevalue);
-                        //NS_LOG_INFO("update storageinfo,nodeid=" << nodeid<< ";beli=" << belive + 1<<";stor=" << storevalue);
+                        if (storage_max_[nodeid] < storevalue) {
+                            NS_LOG_WARN(LogPrefixMacro << " storage max should >= storevalue"
+                            <<";nodeid="<< nodeid << ";max=" <<storage_max_[nodeid] <<";sto="<< storevalue);
+                            NS_ASSERT_MSG(storevalue < 1000000 ,"overflow?");
+                        }
+                        NS_LOG_INFO("update storageinfo,nodeid=" << nodeid<< ";beli=" << belive + 1<<";stor=" << storevalue);
+                        NS_ASSERT(storevalue >= 0);
                         storageinfo_maintained_[nodeid] = {belive + 1, storevalue};
                     }
                 }
             } else if (action == "to send storageinfo to neighbor") {
+                NS_LOG_INFO("to send storageinfo to neighbor");
                 move_storageinfo_to_this = storageinfo_maintained_;
             } else if (action == "give storage_max_") {
+                NS_LOG_INFO("give storage_max_");
                 storage_max_ = storagemax;
+                for (auto it : storage_max_) {
+                    NS_LOG_INFO(LogPrefixMacro<< "storagemax=" << it.second << "at node=" << it.first);
+                }
             } else if (action == "update storage info from hello") {
-                auto usage = storage_max_[update_storage_from_hello.first] - update_storage_from_hello.second;
-                assert(usage >= 0);
+                NS_LOG_INFO("update storage info from hello");
+                // max - avai = usage
+                NS_LOG_INFO("fuck128967" << ";nodeid=" << update_storage_from_hello.first << ";avai=" << update_storage_from_hello.second << ";max=" << storage_max_[update_storage_from_hello.first]);
+                NS_ASSERT(update_storage_from_hello.second>=0);
+                int usage = storage_max_[update_storage_from_hello.first] - (update_storage_from_hello.second);
+                NS_ASSERT(usage >= 0);
                 //NS_LOG_INFO(LogPrefixMacro<< "update storage usage from hello, node="<< update_storage_from_hello.first<<"usage=" << usage);
-                //NS_LOG_INFO("update storageinfo,nodeid=" << update_storage_from_hello.first<< ";beli=" << 1<<";stor=" << usage);
-                storageinfo_maintained_[update_storage_from_hello.first] = {1, usage};  // max - current = usage
+                NS_LOG_INFO("update storageinfo,nodeid=" << update_storage_from_hello.first<< ";beli=" << 1<<";stor=" << usage);
+                storageinfo_maintained_[update_storage_from_hello.first] = {1, usage};  
                 //update_storage_from_hello.second};
             } else {
                 NS_LOG_ERROR(LogPrefixMacro<< "StorageinfoMaintainInterface: can't find action, action str is :" << action << "\n would fatal." );
                 std::abort();
             }
             //NS_ASSERT((!storageinfo_maintained_.count(4)) || storageinfo_maintained_[0].second != 66);
+
+            //for (auto itt: storageinfo_maintained_) {
+            //    NS_LOG_INFO("fuckyou"<<itt.first << ":" << itt.second.first << ";" << itt.second.second);
+            //    if (itt.second.second < 0) {
+            //        NS_ASSERT(itt.second.second >= 0);
+            //    }
+            //}
             NS_LOG_INFO(LogPrefixMacro<<"outof storageMaintainInterface");
         }
+
         void CGRQMRouting::NotifyRouteSeqnoIsAcked(dtn_seqno_t seq){
             if (seqno2ackedcb_.count(seq)) {
                 seqno2ackedcb_[seq]();
@@ -158,11 +211,11 @@ namespace ns3 {
                 map<node_id_t, pair<int, int>> qm_empty02;
                 map<node_id_t, size_t> qm_empty03;
                 pair<vector<node_id_t>, dtn_time_t> path_of_route;
-                pair<node_id_t, int> update ={ -1, -1 };
-                auto t = rrc_vec[index].GetArriveDestTimeIfGood();
-                auto func = std::bind(&CGRQMRouting::StorageinfoMaintainInterface, this,
-                "route answer is made, add queue usage, and time to decay", 
-                qm_empty01, qm_empty02, qm_empty03, make_pair(std::move(rrc_vec[index].GetPath()), t), update); 
+                pair<node_id_t, int> emptyupdate ={ -1, -1 };
+                double decaytime = rrc_vec[index].GetArriveDestTimeIfGood();
+                auto func = std::bind(&CGRQMRouting::StorageinfoMaintainInterface, this, "route answer is made, add queue usage, and time to decay", 
+                qm_empty01, qm_empty02, qm_empty03, make_pair(std::move(rrc_vec[index].GetPath()), decaytime), emptyupdate); 
+                NS_ASSERT_MSG(decaytime > 0.0, "decay time should be >= 0.0");
                 if (!seqno2ackedcb_.count(debug_cgr_that_seqno_)) {
                     seqno2ackedcb_[debug_cgr_that_seqno_] = std::move(func);
                 }
@@ -186,6 +239,7 @@ namespace ns3 {
                 std::abort();
             }
         }
+
         // check https://tools.ietf.org/html/draft-burleigh-dtnrg-cgr-00 -------- 2.5.3
         int CGRQMRouting::NCMDecision(vector<RouteResultCandidate> const & rrc_vec) {
             map<size_t, int> score_map;
@@ -215,6 +269,7 @@ namespace ns3 {
             }
             size_t index_of_biggestsmall = 0;
             for (auto pair_v : score_map) {
+                NS_LOG_DEBUG(LogPrefixMacro<< "score of hop(" << rrc_vec[pair_v.first].VecPathStr() << ")=" << pair_v.second);
                 if (pair_v.second > score_map[index_of_biggestsmall]) {
                     index_of_biggestsmall = pair_v.first;
                 }

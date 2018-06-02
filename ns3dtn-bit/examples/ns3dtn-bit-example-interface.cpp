@@ -20,10 +20,10 @@ namespace ns3 {
          */
         void DtnExampleInterface::CreateDevices() {
             WifiHelper wifi;
-            std::string phyMode("DsssRate1Mbps");
             if (print_wifi_log_) {
                 wifi.EnableLogComponents();  // Turn on all Wifi logging
             }
+
             wifi.SetStandard(WIFI_PHY_STANDARD_80211b);
             YansWifiPhyHelper wifiPhy =  YansWifiPhyHelper::Default();
             wifiPhy.Set("RxGain", DoubleValue(0)); 
@@ -35,7 +35,11 @@ namespace ns3 {
             wifiPhy.SetChannel(wifiChannel.Create());
             WifiMacHelper wifiMac;
 
-            wifi.SetRemoteStationManager("ns3::IdealWifiManager");
+            //wifi.SetRemoteStationManager("ns3::IdealWifiManager");
+            wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
+                                "DataMode", StringValue ("DsssRate1Mbps"),
+                                "ControlMode", StringValue ("DsssRate1Mbps"));
+
             // Set it to adhoc mode
             wifiMac.SetType("ns3::AdhocWifiMac");
             net_devices_container_ = wifi.Install(wifiPhy, wifiMac, nodes_container_);
@@ -127,13 +131,12 @@ namespace ns3 {
             auto adob = CreateAdjacentList();
             //Ptr<DtnApp> app[node_number_];
             InitStorage();
+            for (uint32_t i = 0; i < node_number_; ++i) { if (config_storage_max_.count(i)) { } else { config_storage_max_[i] = NS3DTNBIT_DEFAULT_QUEUE_MAX; } }
             for (uint32_t i = 0; i < node_number_; ++i) { 
                 cout << "---> install app for node-" << i << endl;
                 // create app and set
                 apps_.push_back(CreateObject<DtnApp>());
-                if (config_storage_max_.count(i)) {
-                    apps_[i]->SetQueueParameter(config_storage_max_[i]);
-                }
+                apps_[i]->SetQueueParameter(config_storage_max_[i]);
                 apps_[i]->SetUp(nodes_container_.Get(i));
                 nodes_container_.Get(i)->AddApplication(apps_[i]);
                 apps_[i]->SetStartTime(Seconds(0.0));
